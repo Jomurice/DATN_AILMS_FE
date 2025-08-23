@@ -2,6 +2,7 @@
   <div class="container-fluid vh-100 d-flex justify-content-center align-items-center p-0 m-0">
     <div class="row w-100 h-100 m-0 shadow-none border-0">
       
+      
       <div class="col-lg-8 d-none d-lg-flex bg-light justify-content-center align-items-center p-0 m-0">
         <img src="@/assets/hinh2.png" class="img-fluid h-100 w-100" alt="illustration" />
       </div>
@@ -18,6 +19,7 @@
               type="text"
               id="username"
               v-model="username"
+              @input="clearError('username')"   
               class="form-control"
               :class="{ 'is-invalid': errors.username }"
               placeholder="Nhập username"
@@ -25,13 +27,14 @@
             <div class="invalid-feedback">{{ errors.username }}</div>
           </div>
 
-          
+         
           <div class="mb-3">
             <label for="password" class="form-label">Mật Khẩu :</label>
             <input
               type="password"
               id="password"
               v-model="password"
+              @input="clearError('password')"   
               class="form-control"
               :class="{ 'is-invalid': errors.password }"
               placeholder="Nhập mật khẩu"
@@ -62,69 +65,77 @@
 <script setup>
 import { ref } from "vue"
 import axios from "axios"
+import { useRouter } from "vue-router"
 
-const username = ref("")
-const password = ref("")
-const remember = ref(false)
-const errors = ref({})
-const apiError = ref("")
-const loading = ref(false)
+const router = useRouter();
+
+const username = ref("");
+const password = ref("");
+const remember = ref(false);
+const errors = ref({});
+const apiError = ref("");
+const loading = ref(false);
+
+
+const clearError = (field) => {
+  if (errors.value[field]) {
+    errors.value[field] = "";
+  }
+}
+
 
 const validateForm = () => {
-  errors.value = {}
-  let valid = true
+  errors.value = {};
+  let valid = true;
 
   if (!username.value) {
-    errors.value.username = "Vui lòng nhập username"
-    valid = false
+    errors.value.username = "Vui lòng nhập username";
+    valid = false;
   } else if (username.value.length < 4) {
-  errors.value.username = "Username phải có ít nhất 4 ký tự"
-  valid = false
+    errors.value.username = "Username phải có ít nhất 4 ký tự";
+    valid = false;
   }
 
   if (!password.value) {
-    errors.value.password = "Vui lòng nhập mật khẩu"
-    valid = false
+    errors.value.password = "Vui lòng nhập mật khẩu";
+    valid = false;
   } else if (password.value.length < 6) {
-    errors.value.password = "Mật khẩu phải ít nhất 6 ký tự"
-    valid = false
-  } else if (!/^[a-zA-Z0-9._]+$/.test(username.value)) {
-  errors.value.username = "Username chỉ được chứa chữ cái, số, dấu chấm hoặc gạch dưới"
-  valid = false
+    errors.value.password = "Mật khẩu phải ít nhất 6 ký tự";
+    valid = false;
   }
 
-  return valid
+  return valid;
 }
 
 const handleLogin = async () => {
-  apiError.value = ""
-  if (!validateForm()) return
+  apiError.value = "";
+  if (!validateForm()) return;
 
-  loading.value = true
+  loading.value = true;
   try {
     const res = await axios.post("http://localhost:8080/identity/auth/token", {
       username: username.value,
       password: password.value,
     })
 
-    const token = res.data.token
+    const token = res.data.token;
 
     if (remember.value) {
-      localStorage.setItem("authToken", token)
+      localStorage.setItem("authToken", token);
     } else {
-      sessionStorage.setItem("authToken", token)
+      sessionStorage.setItem("authToken", token);
     }
 
-    window.location.href = "/dashboard"
+    router.push("/home");
   } catch (err) {
     if (err.response) {
-      apiError.value = err.response.data.message || "Đăng nhập thất bại"
+      apiError.value = err.response.data.message || "Đăng nhập thất bại";
     } else {
-      apiError.value = "Không thể kết nối đến server"
+      apiError.value = "Không thể kết nối đến server";
     }
-    console.error("Login error:", err)
+    console.error("Login error:", err);
   } finally {
-    loading.value = false
+    loading.value = false;
   }
 }
 </script>
