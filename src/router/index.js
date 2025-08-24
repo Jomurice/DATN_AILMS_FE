@@ -1,7 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-
 import UserManagement from '../components/admin/UserManagement.vue'
-
 
 const routes = [
   { path: '/', redirect: '/users' },

@@ -5,7 +5,7 @@
   <div>
     <nav style="margin-bottom:20px;">
       <router-link to="/users">Danh sách Users</router-link> |
-      <router-link to="/users/add">Thêm User</router-link>
+      <router-link to="/users/add">Admin</router-link>
     </nav>
     <router-view></router-view>
   </div>
