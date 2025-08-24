@@ -84,8 +84,7 @@ async function load() {
     const token = localStorage.getItem("token");
 
     try {
-        const response = await fetch(`http://localhost:8080/users/${userId}`, {
-
+        const response = await axios.get(`http://localhost:8080/users/${userId}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
