@@ -1,33 +1,66 @@
 <template>
-    <div class="profile-container p-6 d-flex gap-3">
-
-        <div class="profile md:col-span-2 bg-white rounded-2xl p-6">
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Thông tin cá nhân</h2>
-            <div class="space-y-3">
-                <p class="text"><span class="text-gray-500 px-1">Mã NV:</span> {{ employee.username }}</p>
-                <p class="text"><span class="text-gray-500 px-1">Họ tên:</span> {{ employee.name }}</p>
-                <p class="text"><span class="text-gray-500 px-1">Giới tính:</span> {{ employee.gender }} </p>
-                <p class="text"><span class="text-gray-500 px-1">Ngày sinh:</span> {{ formatDate(employee.dob) }}</p>
-                <p class="text"><span class="text-gray-500 px-1">Điện thoại:</span> {{ employee.phone }}</p>
-                <p class="text"><span class="text-gray-500 px-1">Email:</span> {{ employee.email }}</p>
-                <p class="text"><span class="text-gray-500 px-1">Địa chỉ:</span> {{ employee.address }}</p>
-                <p class="text"><span class="text-gray-500 px-1">Role:</span>
-                    <span class="font-semibold text-blue-600 px-1">{{ employee.role }}</span>
-                </p>
+    <div class="container mt-4">
+        <div class="row">
+            <!-- Cột trái -->
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <h3 class="card-header bg-primary text-white">
+                        Thông tin cá nhân
+                    </h3>
+                    <div class="card-body px-1">
+                        <p class="profile-info">
+                            <i class="fa-regular fa-user px-2"></i>
+                            <span class="fw-bold">Mã NV:</span> {{ employee.username }}
+                        </p>
+                        <p class="profile-info">
+                            <i class="fa-regular fa-id-card px-2"></i>
+                            <span class="fw-bold">Họ tên:</span> {{ employee.name }}
+                        </p>
+                        <p class="profile-info">
+                            <i class="fa-solid fa-venus-mars px-2"></i>
+                            <span class="fw-bold">Giới tính:</span> {{ employee.gender }} 
+                        </p>
+                        <p class="profile-info">
+                            <i class="fa-regular fa-calendar px-2"></i>
+                            <span class="fw-bold">Ngày sinh:</span> {{ formatDate(employee.dob) }}
+                        </p>
+                        <p class="profile-info">
+                            <i class="fa-solid fa-phone px-2"></i>
+                            <span class="fw-bold">Điện thoại:</span> {{ employee.phone }}
+                        </p>
+                        <p class="profile-info">
+                            <i class="fa-regular fa-envelope px-2"></i>
+                            <span class="fw-bold">Email:</span> {{ employee.email }}
+                        </p>
+                        <p class="profile-info">
+                            <i class="fa-solid fa-location-dot px-2"></i>
+                            <span class="fw-bold">Địa chỉ:</span> {{ employee.address }}
+                        </p>
+                        <p class="profile-info">
+                            <i class="fa-solid fa-briefcase px-2"></i>
+                            <span class="fw-bold">Role:</span> 
+                            <span class="font-semibold text-blue-600 px-1">{{ employee.role }}</span> </p>
+                    </div>
+                </div>
             </div>
 
-            <div>
-                <button class=" btn">Change Password</button>
+            <!-- Cột phải -->
+            <div class="col-md-4">
+                <div class="card shadow-sm p-1 text-center">
+                    <div class="card-body">
+                        <img src="/public/z6827970432778_2b43b97a704617f03c546e5bc7bd82e8.jpg"
+                            class="rounded-circle img-fluid mb-3"
+                            style="width: 140px; height: 140px; object-fit: cover;" alt="Ảnh nhân viên">
+                        <p class="fw-bold">{{employee.name }}</p>
+                        <p>{{ employee.email }}</p>
+                        <hr>
+                        <button class="btn btn-warning">Đổi mật khẩu</button>
+                    </div>
+                </div>
             </div>
         </div>
-
-
-        <div class=" p-6">
-            <img class=" img w-100 object-cover border rounded-full mb-4" src="/public/z6827970432778_2b43b97a704617f03c546e5bc7bd82e8.jpg" alt="Employee Avatar" />
-            <p class="text-gray-600 text-sm">Ảnh thẻ nhân viên</p>
-        </div>
-
     </div>
+
 </template>
 
 <script setup>
@@ -52,6 +85,7 @@ async function load() {
 
     try {
         const response = await fetch(`http://localhost:8080/users/${userId}`, {
+
             headers: {
                 Authorization: `Bearer ${token}`,
             },
@@ -102,7 +136,7 @@ body {
     margin-left: 30px;
 }
 
-.text {
+.profile-info {
     font-size: 18px;
     color: #333;
     line-height: 2.5;
@@ -122,5 +156,4 @@ body {
     background-color: #134ef1;
     color: rgb(18, 17, 17);
 }
-
 </style>

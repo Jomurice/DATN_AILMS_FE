@@ -6,7 +6,7 @@
         <Sidebar />
 
         <main class="col-md-10 p-6 overflow-y-auto">
-            <Profile />
+            <AccountManagerment />
         </main>
     </div>
 </template>
@@ -14,7 +14,7 @@
 <script setup>
 import Sidebar from "../layout/Sidebar.vue";
 import Header from "../layout/header.vue";
-
+import AccountManagerment from "../account/AccountManagerment.vue";
 import Profile from "../account/Profile.vue";
 
 

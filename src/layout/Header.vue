@@ -7,10 +7,10 @@
         </div>
         <div class="profile  d-flex align-items-center items-center space-x-2">
             <img src="/public/z6827970432778_2b43b97a704617f03c546e5bc7bd82e8.jpg" class="img h-8 rounded-full m-3" alt="User Avatar" />
-            <div class=" d-flex align-items-center flex-column">
+            <!-- <div class=" d-flex align-items-center flex-column">
                 <p class="m-0">Michael K.</p>
                 <p class="m-0">Manager</p>
-            </div>
+            </div> -->
         </div>
     </header>
 </template>
@@ -33,7 +33,7 @@ header {
 }
 
 .profile {
-    margin-right: 50px;
+    margin-right: 20px;
     cursor: pointer;
 }
 
