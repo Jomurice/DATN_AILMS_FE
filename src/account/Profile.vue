@@ -51,7 +51,7 @@ async function load() {
     const token = localStorage.getItem("token");
 
     try {
-        const response = await fetch(`http://localhost:8080/identity/users/my-info/${userId}`, {
+        const response = await fetch(`http://localhost:8080/users/${userId}`, {
             headers: {
                 Authorization: `Bearer ${token}`,
             },
