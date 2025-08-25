@@ -34,9 +34,9 @@
             <button class="btn btn-sm btn-secondary" @click="hideUser(user.id)">Ẩn</button>
           </td>
         </tr>
-        <tr v-if="users.length === 0">
+        <!-- <tr v-if="users.length === 0">
           <td colspan="7" class="text-center">No data</td>
-        </tr>
+        </tr> -->
       </tbody>
     </table>
   </div>
@@ -44,34 +44,21 @@
 
 <script setup>
 import { ref, onMounted } from "vue";
-import axios from "axios";
+import { userService } from "../../services/UserService";
 
 const users = ref([]);
 
-const getAllUsers = async () => {
-  try {
-    const response = await axios.get("http://localhost:8080/users");
-    console.log(response.data.result);
-    users.value = response.data.result;
-  } catch (error) {
-    console.error("Error fetching users:", error);
-  }
-};
 
-const editUser = (id) => {
-  $router.push(`/users/edit/${id}`);
-};
+async function getAllUsers() {
+    try {
+        users.value = await userService.getAllUsers();
+    } catch (error) {
+        console.log("Failed to load users: ",error)
+    }
+}
 
-// const hideUser = async (id) => {
-//   if (confirm("Bạn có chắc chắn muốn ẩn người dùng này?")) {
-//     try {
-//       await axios.put(`http://localhost:8080/users/${id}/hide`, { hidden: true });
-//       users.value = users.value.filter((u) => u.id !== id); // Remove hidden user from list
-//     } catch (error) {
-//       console.error("Error hiding user:", error);
-//     }
-//   }
-// };
+
+
 
 onMounted(() => {
   getAllUsers();

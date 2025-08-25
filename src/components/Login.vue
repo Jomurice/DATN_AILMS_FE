@@ -64,8 +64,9 @@
 
 <script setup>
 import { ref } from "vue"
-import axios from "axios"
+
 import { useRouter } from "vue-router"
+import { authService } from "../services/authService";
 
 const router = useRouter();
 
@@ -99,8 +100,8 @@ const validateForm = () => {
   if (!password.value) {
     errors.value.password = "Vui lòng nhập mật khẩu";
     valid = false;
-  } else if (password.value.length < 6) {
-    errors.value.password = "Mật khẩu phải ít nhất 6 ký tự";
+  } else if (password.value.length < 4) {
+    errors.value.password = "Mật khẩu phải ít nhất 4 ký tự";
     valid = false;
   }
 
@@ -113,12 +114,11 @@ const handleLogin = async () => {
 
   loading.value = true;
   try {
-    const res = await axios.post("http://localhost:8080/identity/auth/token", {
-      username: username.value,
-      password: password.value,
-    })
+    const authData = await authService.login(username.value, password.value) 
+    console.log(authData.token)
+    // const token = res.data.token;
 
-    const token = res.data.token;
+    const token = authData.token;
 
     if (remember.value) {
       localStorage.setItem("authToken", token);
