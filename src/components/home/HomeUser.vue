@@ -13,10 +13,10 @@
 </template>
 
 <script setup>
-import Sidebar from "../layout/Sidebar.vue";
-import Header from "../layout/header.vue";
-import AccountManagerment from "../account/AccountManagerment.vue";
-import Profile from "../account/Profile.vue";
+import Header from '../common/Header.vue'
+import Sidebar from '../common/Sidebar.vue'
+import Profile from '../user/Profile.vue'
+// import AccountManagerment from '../admin/AccountManagerment.vue'
 
 
 </script>
