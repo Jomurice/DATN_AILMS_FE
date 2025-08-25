@@ -45,6 +45,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue'
+import axios from 'axios';
 
 const accounts = ref([
     { id: 1, username: 'NV001', name: 'Nguyễn Văn A', gender: true, dob: '02/02/2004', phone: '0963258741', address: '158 Tran Binh Trong, Phuong gi do, Tp Gi day', email: 'a@company.com', role: 'Admin' },

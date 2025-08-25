@@ -6,7 +6,8 @@
         <Sidebar />
 
         <main class="col-md-10 p-6 overflow-y-auto">
-            <AccountManagerment />
+            <!-- <AccountManagerment /> -->
+            <Profile />
         </main>
     </div>
 </template>

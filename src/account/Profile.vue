@@ -48,7 +48,7 @@
             <div class="col-md-4">
                 <div class="card shadow-sm p-1 text-center">
                     <div class="card-body">
-                        <img src="/public/z6827970432778_2b43b97a704617f03c546e5bc7bd82e8.jpg"
+                        <img src=""
                             class="rounded-circle img-fluid mb-3"
                             style="width: 140px; height: 140px; object-fit: cover;" alt="Ảnh nhân viên">
                         <p class="fw-bold">{{employee.name }}</p>
@@ -65,37 +65,51 @@
 
 <script setup>
 import { onMounted, ref } from "vue";
+import axios from "axios";
 
 const employee = ref({
-    username: "NV002",
-    name: "Nguyễn Văn A",
-    dob: "1995-05-15",
-    phone: "0987654321",
-    email: "nguyenvana@company.com",
-    gender: "Nam",
-    address: "KCN VSIP, Thuận An, Bình Dương",
-    role: "Warehouse Operator",
+    id: "",
+    username: "",
+    name: "",
+    dob: "",
+    phone: "",
+    email: "",
+    gender: "",
+    address: "",
+    role: "",
     avatar: ""
 });
 
-
 async function load() {
-    const userId = localStorage.getItem("userid");
+    const userId = "480fbbb1-d565-47a4-be71-1e49300f825f";
     const token = localStorage.getItem("token");
 
     try {
         const response = await axios.get(`http://localhost:8080/users/${userId}`, {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            },
+            // headers: {
+            //     Authorization: `Bearer ${token}`,
+            // },
         });
 
-        employee.value = response.data.result;
+        const data = response.data.result;
+        console.log("Employee fetched successfully:", data);
+       
+        employee.value = {
+            id: data.id,
+            username: data.username,
+            name: data.name,
+            dob: data.dob || "",
+            phone: data.phone,
+            email: data.email,
+            gender: data.gender ? "Nam" : "Nữ",
+            address: data.address || "",
+            role: data.roles?.join(", "),
+            avatar: data.avatar || ""
+        };
     } catch (error) {
-        console.log("Error fetching employee data:", error);
+        console.error("Error fetching employee data:", error);
     }
 }
-
 
 
 const formatDate = (date) => {
