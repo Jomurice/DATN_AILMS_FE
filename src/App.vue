@@ -7,8 +7,8 @@ import Profile from './components/account/Profile.vue';
 </script>
 
 <template>
-    <HomeUser />
-    <!-- <UserManagerment /> -->
+    
+<UserManagerment />
     <!-- <Login></Login> -->
     
 </template>
