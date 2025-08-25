@@ -1,6 +1,13 @@
+
+<script setup>
+import HomeUser from './home/HomeUser.vue';
+import Profile from './account/Profile.vue';
+</script>
+
 <template>
-  <router-view></router-view>
+    <HomeUser />
 </template>
 
 <script setup>
 </script>
+
