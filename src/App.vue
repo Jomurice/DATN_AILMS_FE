@@ -1,3 +1,4 @@
+
 <script setup>
 import HomeUser from './home/HomeUser.vue';
 import Profile from './account/Profile.vue';
@@ -6,4 +7,7 @@ import Profile from './account/Profile.vue';
 <template>
     <HomeUser />
 </template>
+
+<script setup>
+</script>
 
