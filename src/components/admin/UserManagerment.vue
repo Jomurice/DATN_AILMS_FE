@@ -23,7 +23,7 @@
           <td>{{ user.name }}</td>
           <td>{{ user.email }}</td>
           <td>
-            <span v-if="user.gender === 'true'" class="badge bg-primary">Nam</span>
+            <span v-if="user.gender === true" class="badge bg-primary">Nam</span>
             <span v-else class="badge bg-danger">Nữ</span>
           </td>
           <td>
@@ -46,19 +46,13 @@
 import { ref, onMounted } from "vue";
 import axios from "axios";
 
-const users = ref([
-  { id: "U001", username: "admin", name: "Nguyễn Văn A", email: "admin@example.com", gender: "true", roles: ["ADMIN", "USER"] },
-  { id: "U002", username: "user1", name: "Trần Thị B", email: "user1@example.com", gender: "false", roles: ["USER"] },
-  { id: "U003", username: "user1", name: "Trần Thị C", email: "user1@example.com", gender: "true", roles: ["USER"] },
-  { id: "U004", username: "user1", name: "Trần Thị D", email: "user1@example.com", gender: "true", roles: ["ADMIN", "USER"] },
-  { id: "U005", username: "user1", name: "Trần Thị E", email: "user1@example.com", gender: "false", roles:["ADMIN", "USER"] },
-  { id: "U006", username: "user1", name: "Trần Thị B", email: "user1@example.com", gender: "true", roles: ["USER"] }
-]);
+const users = ref([]);
 
-const fetchUsers = async () => {
+const getAllUsers = async () => {
   try {
     const response = await axios.get("http://localhost:8080/users");
-    users.value = response.data;
+    console.log(response.data.result);
+    users.value = response.data.result;
   } catch (error) {
     console.error("Error fetching users:", error);
   }
@@ -68,18 +62,20 @@ const editUser = (id) => {
   $router.push(`/users/edit/${id}`);
 };
 
-const hideUser = async (id) => {
-  if (confirm("Bạn có chắc chắn muốn ẩn người dùng này?")) {
-    try {
-      await axios.put(`http://localhost:8080/users/${id}/hide`, { hidden: true });
-      users.value = users.value.filter((u) => u.id !== id); // Remove hidden user from list
-    } catch (error) {
-      console.error("Error hiding user:", error);
-    }
-  }
-};
+// const hideUser = async (id) => {
+//   if (confirm("Bạn có chắc chắn muốn ẩn người dùng này?")) {
+//     try {
+//       await axios.put(`http://localhost:8080/users/${id}/hide`, { hidden: true });
+//       users.value = users.value.filter((u) => u.id !== id); // Remove hidden user from list
+//     } catch (error) {
+//       console.error("Error hiding user:", error);
+//     }
+//   }
+// };
 
-onMounted(fetchUsers);
+onMounted(() => {
+  getAllUsers();
+});
 </script>
 
 <style scoped>
