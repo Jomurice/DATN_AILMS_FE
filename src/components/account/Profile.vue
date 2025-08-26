@@ -18,7 +18,7 @@
                         </p>
                         <p class="profile-info">
                             <i class="fa-solid fa-venus-mars px-2"></i>
-                            <span class="fw-bold">Giới tính:</span> {{ employee.gender }} 
+                            <span class="fw-bold">Giới tính:</span> {{ employee.gender ? 'Nam' :'Nu' }} 
                         </p>
                         <p class="profile-info">
                             <i class="fa-regular fa-calendar px-2"></i>
@@ -39,7 +39,7 @@
                         <p class="profile-info">
                             <i class="fa-solid fa-briefcase px-2"></i>
                             <span class="fw-bold">Chức vụ:</span> 
-                            <span class="font-semibold text-blue-600 px-1">{{ employee.role }}</span> </p>
+                            <span class="font-semibold text-blue-600 px-1">{{ employee.roles }}</span> </p>
                     </div>
                 </div>
             </div>
@@ -110,7 +110,7 @@ const employee = ref({
     email: "",
     gender: "",
     address: "",
-    role: "",
+    roles: [],
     avatar: ""
 });
 

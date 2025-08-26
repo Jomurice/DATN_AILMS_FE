@@ -1,10 +1,12 @@
 <template>
   <div class="aisle-management">
-    <div v-if="showFrom" class="d-flex justify-content-end align-items-center mb-4">
-      <button @click="showFrom = false"> + Add Aisle</button>
-    </div>
+
 
     <div v-if="showFrom">
+      <h5 class="fw-bold mb-3">Danh sách aisle</h5>  
+      <div class="d-flex justify-content-end align-items-center mb-4">
+        <button @click="showFrom = false"> + Add Aisle</button>
+      </div>
       <div v-if="aisles.length > 0">
         <table class="table table-bordered mt-4">
           <thead>
@@ -43,6 +45,7 @@
               <div class="d-flex gap-3">
                 <button type="submit">{{ isEdit ? 'Update' : 'Add' }}</button>
                 <button v-if="isEdit" type="button" @click="showFrom = true">Cancel</button>
+                <button v-if="isEdit" type="button" @click="resetForm()">Reset</button>
               </div>
             </form>
           </div>
@@ -52,8 +55,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
+import { aisleService } from '../../services/AisleService'
 
 const route = useRoute()
 const form = ref({ id: null, name: '', code: '' })
@@ -69,13 +73,31 @@ const aisles = ref([
 ])
 
 
-function handleSubmit() {
+async function load() {
+  try {
+    aisles.value = await aisleService.getAll();
+  } catch (error) {
+    console.error("Failed ro getAll aisles", error);
+  }
+}
+
+async function handleSubmit() {
   if (isEdit.value) {
-    const idx = aisles.value.findIndex(a => a.id === form.value.id)
-    if (idx !== -1) aisles.value[idx] = { ...form.value }
+    try {
+      const resp = await aisleService.update(form.value.id,form.value);
+      console.log(resp);
+      showFrom.value = true; 
+    } catch (error) {
+      console.error('Failed to update aisle',error);
+    }
+
   } else {
-    const newId = aisles.value.length ? Math.max(...aisles.value.map(a => a.id)) + 1 : 1
-    aisles.value.push({ ...form.value, id: newId })
+    try {
+      await aisleService.create(form.value);
+      showFrom.value = true;
+    } catch (error) {
+      console.error('Failed to create aisle',error);
+    }
   }
 
   resetForm()
@@ -87,15 +109,15 @@ function editAisle(aisle) {
   showFrom.value = false
 }
 
-function deleteAisle(id) {
-  aisles.value = aisles.value.filter(a => a.id !== id)
-  resetForm()
-}
 
 function resetForm() {
   form.value = { id: null, name: '', code: '' }
   isEdit.value = false
 }
+
+onMounted(() => {
+  load();
+})
 </script>
 
 

@@ -1,7 +1,7 @@
 import axios from "axios";
 
 export const warehouseService = {
-    async getAllWarehouses() {
+    async getAll() {
         const response = await axios.get("/api/warehouses");
         return response.data.result;
     },

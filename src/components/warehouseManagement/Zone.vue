@@ -1,11 +1,12 @@
 <template>
   <div class="zone-management">
 
-    <div v-if="showFrom" class="d-flex justify-content-end align-items-center mb-4">
-      <button @click="showFrom = false"> + Add Zone</button>
-    </div>
 
-    <div v-if="showFrom" class="mb-4">
+    <div v-if="showForm" class="mb-4">
+      <h5 class="fw-bold mb-3">Danh sách zone</h5>  
+      <div class="d-flex justify-content-end align-items-center mb-4">
+        <button @click="showForm = false"> + Add Zone</button>
+      </div>
       <div v-if="zones.length > 0">
         <table class="table table-bordered mt-4">
           <thead>
@@ -34,7 +35,7 @@
     </div>
 
     <div v-else class="mb-4">
-      <div @click="showFrom = true" class="fs-4 link"> < </div>
+      <div @click="showForm = true" class="fs-4 link"> < </div>
       <div class="w-50 m-auto">
         <h2 class="text-center ">Zone Management</h2>
         <form class="d-flex flex-column gap-4 mt-4" @submit.prevent="handleSubmit">
@@ -42,7 +43,7 @@
           <input v-model="form.description" placeholder="Description" />
           <div class="d-flex gap-2">
             <button type="submit">{{ isEdit ? 'Update' : 'Add' }}</button>
-            <button v-if="isEdit" type="button" @click="showFrom = true">Cancel</button>
+            <button v-if="isEdit" type="button" @click="showForm = true">Cancel</button>
             <button v-if="isEdit" type="button" @click="resetForm()">Reset</button>
           </div>
         </form>
@@ -58,7 +59,7 @@ import { useRoute } from 'vue-router'
 import {ZoneService} from '../../services/ZoneService';
 
 const route = useRoute()
-const showFrom = ref(true)
+const showForm = ref(true)
 
 const warehouseId = route.params.id
 
@@ -73,40 +74,26 @@ const isEdit = ref(false)
 
 async function load() {
   try {
-    const resp = await ZoneService.getAllZones();
-    zones.value = resp;
+    zones.value = await ZoneService.getAllZones();
   } catch (error) {
     console.error('Failed to load zone',error);
   }
 }
 
 async function handleSubmit() {
-  if (isEdit.value) {
-    
-    try {
-      const resp = await ZoneService.updateZone(form.value.id, form.value);
-      resetForm();
-      showFrom.value = true;
-    } catch (error) {
-      console.error('Failed to update zone:', error);
-    }
-
+    if (isEdit.value) {
+    const idx = zones.value.findIndex(a => a.id === form.value.id)
+    if (idx !== -1) zones.value[idx] = { ...form.value }
   } else {
-    try {
-      const resp = await ZoneService.createZone(form.value);
-      resetForm();
-      showFrom.value = true;
-    } catch (error) {
-      console.error('Failed to create zone',error);
-    }
+    const newId = zones.value.length ? Math.max(...zones.value.map(a => a.id)) + 1 : 1
+    zones.value.push({ ...form.value, id: newId })
   }
-  resetForm()
 }
 
 function editZone(zone) {
   form.value = { ...zone }
   isEdit.value = true
-  showFrom.value = false;
+  showForm.value = false;
 }
 
 

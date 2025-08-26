@@ -1,12 +1,11 @@
 <template>
     <div class="warehouse-management gap-4">
-
-        <div v-if="showFrom" class="d-flex justify-content-end align-items-center px-4 mb-4">
-            <button @click="showFrom = false" >+ Add Warehouse</button>
-        </div>
-
             
         <div v-if="showFrom" class="px-4">
+            <h5 class="fw-bold mb-3">Danh sách warehouse</h5>  
+            <div class="d-flex justify-content-end align-items-center px-4 mb-4">
+                <button @click="showFrom = false" >+ Add Warehouse</button>
+            </div>
             <div v-if="warehouses.length > 0">
                 <table border="1" class="table table-bordered">
                     <thead>
