@@ -8,7 +8,7 @@
           <div class="card-body px-1">
             <p class="profile-info">
               <i class="fa-regular fa-user px-2"></i>
-              <span class="fw-bold">Mã NV:</span> {{ user.username }}
+              <span class="fw-bold">Username:</span> {{ user.username }}
             </p>
             <p class="profile-info">
               <i class="fa-regular fa-id-card px-2"></i>
@@ -50,7 +50,7 @@
         <div class="card shadow-sm p-1 text-center">
           <div class="card-body">
             <img
-              src=""
+              src="@/assets/attachment-3 (1).png"
               class="rounded-circle img-fluid mb-3"
               style="width: 140px; height: 140px; object-fit: cover"
               alt="Ảnh nhân viên"
@@ -68,7 +68,6 @@
 
 <script setup>
 import { onMounted, ref } from "vue";
-import axios from "axios";
 import { userService } from "../../services/UserService";
 
 const user = ref({
@@ -84,13 +83,15 @@ const user = ref({
 //   avatar: "",
 });
 
+
+
 async function loadProfile() {
-  const userId = "480fbbb1-d565-47a4-be71-1e49300f825f";
+  const userId = "312603e4-18c0-47d6-a744-3cfbe8529dc6";
   // const token = localStorage.getItem("token");
 
   try {
     const data = await userService.getUserById(userId);
-
+    console.log("dob: ", data)
     user.value = {
       id: data.id,
       username: data.username,
@@ -98,7 +99,7 @@ async function loadProfile() {
       dob: data.dob,
       phone: data.phone,
       email: data.email,
-      gender: data.gender,
+      gender: data.gender ? "Nam": "Nữ",
       address: data.address,
       role: data.roles?.join(", ")
     //   avatar: "",

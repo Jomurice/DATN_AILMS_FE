@@ -53,7 +53,7 @@ async function getAllUsers() {
     try {
         users.value = await userService.getAllUsers();
     } catch (error) {
-        console.log("Failed to load users: ",error)
+        console.log("Failed to load users: ",error);
     }
 }
 
