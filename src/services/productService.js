@@ -12,6 +12,7 @@ const sampleProducts = [
     categoryId: "465f30bd-1b64-4139-89ce-c31682bd8788",
     quantity: 8
   },
+  
   {
     id: "f9a0d2d1-1111-4c11-a0c0-111111111111",
     sku: "SKU-M15AIR",
@@ -53,7 +54,7 @@ export const productService = {
   },
   async getProductById(id) {
     try {
-      const { data } = await api.get(`/api/products/${productid}`);
+      const { data } = await api.get(`/api/products/${id}`);
       return data?.result ?? data ?? sampleProducts.find(p => p.id === id);
     } catch {
       return sampleProducts.find(p => p.id === id);
@@ -68,3 +69,5 @@ export const productService = {
     }
   }
 };
+
+
