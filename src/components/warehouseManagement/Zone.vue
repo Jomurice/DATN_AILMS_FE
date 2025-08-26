@@ -30,7 +30,7 @@
 
         </table>
       </div>
-      <div v-else>No zones available.</div>
+      <div v-else>Khong co du lieu.....</div>
     </div>
 
     <div v-else class="mb-4">

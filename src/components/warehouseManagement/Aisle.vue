@@ -28,7 +28,7 @@
           </tbody>
         </table>
       </div>
-      <div v-else>No aisles available.</div>
+      <div v-else>Khong co du lieu......</div>
     </div>
 
 
