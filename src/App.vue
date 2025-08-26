@@ -4,12 +4,14 @@ import HomeUser from './components/home/HomeUser.vue'
 import UserManagerment from './components/admin/UserManagerment.vue';
 import Login from './components/Login.vue';
 import Profile from './components/account/Profile.vue';
+import ProductManagerment from './components/Product/ProductManagerment.vue';
 </script>
 
 <template>
-    <HomeUser />
-    <!-- <UserManagerment /> -->
+    <!--<HomeUser />-->
+     <!--<UserManagerment />-->
     <!-- <Login></Login> -->
+     <ProductManagerment />
     
 </template>
 
