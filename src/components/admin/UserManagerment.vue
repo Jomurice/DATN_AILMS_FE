@@ -2,9 +2,8 @@
   <div class="container p-4">
     <h5 class="fw-bold mb-3">Danh sách</h5>
 
-    
+    <!-- Filter Bar -->
     <div class="d-flex flex-wrap align-items-end gap-3 mb-3 filter-bar">
-      
       <div class="flex-grow-1" style="max-width: 300px;">
         <label class="form-label mb-1">Tìm theo tên</label>
         <input
@@ -15,7 +14,6 @@
         />
       </div>
 
-     
       <div style="min-width: 200px;">
         <label class="form-label mb-1">Chức vụ</label>
         <select v-model="filters.role" class="form-select">
@@ -25,33 +23,18 @@
         </select>
       </div>
 
-      
-      <!--
-      <div style="min-width: 240px;">
-        <label class="form-label mb-1">Sort</label>
-        <select v-model="filters.sort" class="form-select">
-          <option value="name_desc">Tên Z → A</option>
-          <option value="name_asc">Tên A → Z</option>
-          <option value="id_asc">ID tăng dần</option>
-          <option value="id_desc">ID giảm dần</option>
-          <option value="role_desc">Số vai trò giảm dần</option>
-          <option value="role_asc">Số vai trò tăng dần</option>
-        </select>
-      </div>
-      -->
-
       <div class="ms-auto d-flex gap-2 filter-actions">
         <button class="btn btn-outline-secondary" @click="resetFilters">Reset</button>
         <button class="btn btn-primary" @click="applyFilters">Tìm kiếm</button>
       </div>
     </div>
 
-    
+    <!-- Add User Button -->
     <div class="d-flex justify-content-end mb-3">
       <button class="btn btn-primary" @click="$router.push('/users/add')">+ Thêm</button>
     </div>
 
-   
+    <!-- User Table -->
     <table class="table table-bordered table-striped user-table align-middle">
       <thead class="table-primary">
         <tr>
@@ -75,7 +58,7 @@
             <span v-else class="badge bg-danger">Nữ</span>
           </td>
           <td :data-label="'Chức vụ'">
-<span v-for="role in (user.roles || [])" :key="role" class="badge bg-info me-1">{{ role }}</span>
+            <span v-for="role in (user.roles || [])" :key="role" class="badge bg-info me-1">{{ role }}</span>
           </td>
           <td :data-label="'Hành động'" class="text-center">
             <div class="btn-group-mobile">
@@ -101,9 +84,8 @@ const users = ref([]);
 const filters = ref({
   name: "",
   role: "",
-  sort: "name_desc" 
+  sort: "name_desc"
 });
-
 
 const applied = ref({
   name: "",
@@ -111,64 +93,62 @@ const applied = ref({
   sort: "name_desc"
 });
 
+// Hàm bỏ dấu
 const unaccent = (s = "") => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
-
+// Users đã lọc và sắp xếp
 const displayedUsers = computed(() => {
   let list = [...users.value];
 
-async function getAllUsers() {
-    try {
-        users.value = await userService.getAllUsers();
-    } catch (error) {
-        console.log("Failed to load users: ",error);
-    }
-
-  
-  
+  // Filter by name
   if (applied.value.name.trim()) {
     const kw = unaccent(applied.value.name.trim().toLowerCase());
-    list = list.filter(u =>
-      unaccent((u.name || "").toLowerCase()).includes(kw)
-    );
+    list = list.filter(u => unaccent((u.name || "").toLowerCase()).includes(kw));
   }
 
-  
+  // Filter by role
   if (applied.value.role) {
     const r = applied.value.role.toLowerCase();
-    list = list.filter(u =>
-      (u.roles || []).some(role => role.toLowerCase() === r)
-    );
+    list = list.filter(u => (u.roles || []).some(role => role.toLowerCase() === r));
   }
 
-  
+  // Sort
   switch (applied.value.sort) {
     case "name_asc":
-      list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "vi", { sensitivity: "base" })); break;
+      list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "vi", { sensitivity: "base" }));
+      break;
     case "name_desc":
-      list.sort((a, b) => (b.name || "").localeCompare(a.name || "", "vi", { sensitivity: "base" })); break;
+      list.sort((a, b) => (b.name || "").localeCompare(a.name || "", "vi", { sensitivity: "base" }));
+      break;
     case "id_asc":
-      list.sort((a, b) => (a.id || "").localeCompare(b.id || "")); break;
+      list.sort((a, b) => (a.id || "").localeCompare(b.id || ""));
+      break;
     case "id_desc":
-      list.sort((a, b) => (b.id || "").localeCompare(a.id || "")); break;
+      list.sort((a, b) => (b.id || "").localeCompare(a.id || ""));
+      break;
     case "role_desc":
-      list.sort((a, b) => (b.roles?.length || 0) - (a.roles?.length || 0)); break;
+      list.sort((a, b) => (b.roles?.length || 0) - (a.roles?.length || 0));
+      break;
     case "role_asc":
-      list.sort((a, b) => (a.roles?.length || 0) - (b.roles?.length || 0)); break;
+      list.sort((a, b) => (a.roles?.length || 0) - (b.roles?.length || 0));
+      break;
   }
 
   return list;
 });
 
+// Áp dụng lọc
 const applyFilters = () => {
   applied.value = { ...filters.value };
 };
 
+// Reset filter
 const resetFilters = () => {
   filters.value = { name: "", role: "", sort: "name_desc" };
   applied.value = { name: "", role: "", sort: "name_desc" };
 };
 
+// Load users từ API
 async function getAllUsers() {
   try {
     users.value = await userService.getAllUsers();
@@ -177,13 +157,15 @@ async function getAllUsers() {
   }
 }
 
+// Sửa user
 function editUser(id) {
   window.location.href = `/users/edit/${id}`;
 }
 
+// Ẩn user
 async function hideUser(id) {
   if (confirm("Bạn có chắc chắn muốn ẩn người dùng này?")) {
-users.value = users.value.filter(u => u.id !== id);
+    users.value = users.value.filter(u => u.id !== id);
   }
 }
 
@@ -194,73 +176,34 @@ onMounted(getAllUsers);
 .container { background: #fff; }
 .user-table th, .user-table td { vertical-align: middle; }
 
-
+/* Mobile Filters */
 @media (max-width: 576px) {
-  .filter-bar {
-    gap: 12px !important;
-  }
-  .filter-bar > * {
-    width: 100% !important; 
-    max-width: 100% !important;
-  }
-  .filter-actions {
-    width: 100%;
-  }
-  .filter-actions .btn {
-    flex: 1 1 0;
-    width: 100%;
-  }
+  .filter-bar { gap: 12px !important; }
+  .filter-bar > * { width: 100% !important; max-width: 100% !important; }
+  .filter-actions { width: 100%; }
+  .filter-actions .btn { flex: 1 1 0; width: 100%; }
 }
 
-
+/* Mobile Table */
 @media (max-width: 576px) {
-  .user-table thead {
-    display: none;
-  }
-  .user-table,
-  .user-table tbody,
-  .user-table tr,
-  .user-table td {
-    display: block;
-    width: 100%;
-  }
+  .user-table thead { display: none; }
+  .user-table, .user-table tbody, .user-table tr, .user-table td { display: block; width: 100%; }
   .user-table tr {
-    background: #fff;
-    margin-bottom: 12px;
-    border: 1px solid #e5e7eb;
-    border-radius: 8px;
+    background: #fff; margin-bottom: 12px;
+    border: 1px solid #e5e7eb; border-radius: 8px;
     padding: 10px 12px;
   }
   .user-table td {
-    border: none !important;
-    border-bottom: 1px dashed #eee !important;
-    position: relative;
-    padding-left: 120px;
-    min-height: 44px;
+    border: none !important; border-bottom: 1px dashed #eee !important;
+    position: relative; padding-left: 120px; min-height: 44px;
   }
-  .user-table td:last-child {
-    border-bottom: none !important;
-    padding-bottom: 0;
-  }
+  .user-table td:last-child { border-bottom: none !important; padding-bottom: 0; }
   .user-table td::before {
-    content: attr(data-label);
-    position: absolute;
-    left: 12px;
-    top: 10px;
-    width: 100px;
-    font-weight: 600;
-    color: #6b7280;
-    white-space: nowrap;
+    content: attr(data-label); position: absolute;
+    left: 12px; top: 10px; width: 100px;
+    font-weight: 600; color: #6b7280; white-space: nowrap;
   }
-
-  
-  .btn-group-mobile {
-    display: flex;
-    gap: 8px;
-    width: 100%;
-  }
-  .btn-group-mobile .btn {
-    flex: 1 1 0;
-  }
+  .btn-group-mobile { display: flex; gap: 8px; width: 100%; }
+  .btn-group-mobile .btn { flex: 1 1 0; }
 }
 </style>
