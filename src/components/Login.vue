@@ -64,12 +64,12 @@
 
 <script setup>
 import { ref } from "vue"
-
 import { useRouter } from "vue-router"
 import { authService } from "../services/authService";
+import { tokenService } from "../services/TokenService";
 
 const router = useRouter();
-
+const auth = tokenService();
 const username = ref("");
 const password = ref("");
 const remember = ref(false);
@@ -115,17 +115,7 @@ const handleLogin = async () => {
   loading.value = true;
   try {
     const authData = await authService.login(username.value, password.value) 
-    console.log(authData.token)
-    // const token = res.data.token;
-
-    const token = authData.token;
-
-    if (remember.value) {
-      localStorage.setItem("authToken", token);
-    } else {
-      sessionStorage.setItem("authToken", token);
-    }
-
+    auth.setToken(authData.token)
     router.push("/home");
   } catch (err) {
     if (err.response) {

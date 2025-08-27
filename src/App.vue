@@ -1,10 +1,12 @@
 
 <script setup>
-import HomeUser from './components/home/HomeUser.vue'
+import HomeUser from './components/home/HomeUser.vue';
+import Home from './components/home/Home.vue';
 </script>
 
 <template>
-    <HomeUser />
+    <Home/>
+    <RouterView></RouterView>
 </template>
 
 <script setup>

@@ -45,7 +45,6 @@ const warehouses = ref([
 ])
 const form = ref({ id: null, name: '', location: '' })
 
-en
 async function load() {
     try {
         warehouses.value = await warehouseService.getAll();

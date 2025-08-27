@@ -2,7 +2,7 @@
     <div class="container m-0 p-4">
         <div class=" form col-md-8">
             <h2>Account Management</h2>
-            <form @submit.prevent="handleSubmit" class="account-form">
+            <form class="account-form">
                 <label for="txtUsername">User Name : </label>
                 <input v-model="form.username" placeholder="Username" required />
 
@@ -36,8 +36,7 @@
                 </select>
 
                 <div class="d-flex gap-3 mt-3">
-                    <button class="btn btn-success" type="submit">Create</button>
-                    <button class="btn btn-primary" @click="update(form.id)">Update</button>
+                    <button class="btn btn-primary" @click="handleSubmit(form.id)" >{{ isEdit ? 'Update' : 'Create' }}</button>
                     <button class="btn btn-danger" @click="Enbale(form.id)">Enbale</button>
                     <button class="btn btn-primary" @click="resetForm()">Reset</button>
                 </div>
@@ -53,7 +52,8 @@ import { userService } from "../../services/UserService";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
-const iduser = route.params.id
+const userId = route.params.id;
+const isEdit = ref(true);
 const form = ref({ 
     id: null, 
     username: '',
@@ -69,8 +69,14 @@ const form = ref({
 
 
 async function load() {
+    if(userId != null ){
+        isEdit.value = true;
+    }else{
+        isEdit.value = false;
+    }
+
     try {
-        const user = await userService.getUserById(iduser);
+        const user = await userService.getUserById(userId);
         form.value = { ...user, roles: [...user.roles] };
     } catch (error) {
         console.log("Failed to fetch user: ", error)
@@ -78,20 +84,24 @@ async function load() {
 }
 
 
-async function handleSubmit() {
-    try {
-        const resp = await userService.createUser(form.value);
-        console.log("User created successfully!", resp);
-        resetForm();
-    } catch (error) {
-        console.log("Failed to create user: ", error)
-    }
+async function handleSubmit(id) {
+    if(isEdit){
+        update(id);
+    }else{
+        try {
+            const resp = await userService.createUser(form.value);
+            console.log("User created successfully!", resp);
+            resetForm();
+        } catch (error) {
+            console.log("Failed to create user: ", error)
+        }
+    };
+    resetForm();
 }
 
 
 async function update(id) {
     try {
-
         const resp = await userService.updateUser(id, form.value);
         console.log("User updated successfully!", resp);
         resetForm();
