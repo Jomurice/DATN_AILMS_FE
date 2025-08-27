@@ -6,7 +6,9 @@
                 style="font-size: 0.7rem;">3</span>
         </div>
         <div class="profile  d-flex align-items-center items-center space-x-2">
-            <img src="" class="img h-8 rounded-full m-3" alt="User Avatar" />
+            <router-link to="/profile" class="text-decoration-none text-black fs-5 me-3">
+                <img src="@/assets/attachment-3 (1).png" class="img h-8 rounded-full m-3" alt="User Avatar" />
+            </router-link>
             <!-- <div class=" d-flex align-items-center flex-column">
                 <p class="m-0">Michael K.</p>
                 <p class="m-0">Manager</p>
