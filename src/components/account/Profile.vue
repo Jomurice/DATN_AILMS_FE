@@ -1,92 +1,70 @@
 <template>
-    <div class="container m-0">
-        <div class="row justify-content-center ">
-            <!-- Cột trái -->
-            <div class="col-md-8">
-                <div class="card shadow-sm">
-                    <h3 class="card-header bg-primary text-white">
-                        Thông tin cá nhân
-                    </h3>
-                    <div class="card-body px-1">
-                        <p class="profile-info">
-                            <i class="fa-regular fa-user px-2"></i>
-                            <span class="fw-bold">Mã NV:</span> {{ employee.username }}
-                        </p>
-                        <p class="profile-info">
-                            <i class="fa-regular fa-id-card px-2"></i>
-                            <span class="fw-bold">Họ tên:</span> {{ employee.name }}
-                        </p>
-                        <p class="profile-info">
-                            <i class="fa-solid fa-venus-mars px-2"></i>
-                            <span class="fw-bold">Giới tính:</span> {{ employee.gender ? 'Nam' :'Nu' }} 
-                        </p>
-                        <p class="profile-info">
-                            <i class="fa-regular fa-calendar px-2"></i>
-                            <span class="fw-bold">Ngày sinh:</span> {{ formatDate(employee.dob) }}
-                        </p>
-                        <p class="profile-info">
-                            <i class="fa-solid fa-phone px-2"></i>
-                            <span class="fw-bold">Điện thoại:</span> {{ employee.phone }}
-                        </p>
-                        <p class="profile-info">
-                            <i class="fa-regular fa-envelope px-2"></i>
-                            <span class="fw-bold">Email:</span> {{ employee.email }}
-                        </p>
-                        <p class="profile-info">
-                            <i class="fa-solid fa-location-dot px-2"></i>
-                            <span class="fw-bold">Địa chỉ:</span> {{ employee.address }}
-                        </p>
-                        <p class="profile-info">
-                            <i class="fa-solid fa-briefcase px-2"></i>
-                            <span class="fw-bold">Chức vụ:</span> 
-                            <span class="font-semibold text-blue-600 px-1">{{ employee.roles }}</span> </p>
-                    </div>
-                </div>
-            </div>
+  <div class="container mt-4">
+    <div class="row">
+      <!-- Cột trái -->
+      <div class="col-md-8">
+        <div class="card shadow-sm">
+          <h3 class="card-header bg-primary text-white">Thông tin cá nhân</h3>
+          <div class="card-body px-1">
+            <p class="profile-info">
+              <i class="fa-regular fa-user px-2"></i>
+              <span class="fw-bold">Username:</span> {{ user.username }}
+            </p>
+            <p class="profile-info">
+              <i class="fa-regular fa-id-card px-2"></i>
+              <span class="fw-bold">Họ tên:</span> {{ user.name }}
+            </p>
+            <p class="profile-info">
+              <i class="fa-solid fa-venus-mars px-2"></i>
+              <span class="fw-bold">Giới tính:</span> {{ user.gender }}
+            </p>
+            <p class="profile-info">
+              <i class="fa-regular fa-calendar px-2"></i>
+              <span class="fw-bold">Ngày sinh:</span> {{ formatDate(user.dob)||"" }}
+            </p>
+            <p class="profile-info">
+              <i class="fa-solid fa-phone px-2"></i>
+              <span class="fw-bold">Điện thoại:</span> {{ user.phone }}
+            </p>
+            <p class="profile-info">
+              <i class="fa-regular fa-envelope px-2"></i>
+              <span class="fw-bold">Email:</span> {{ user.email }}
+            </p>
+            <p class="profile-info">
+              <i class="fa-solid fa-location-dot px-2"></i>
+              <span class="fw-bold">Địa chỉ:</span> {{ user.address }}
+            </p>
+            <p class="profile-info">
+              <i class="fa-solid fa-briefcase px-2"></i>
+              <span class="fw-bold">Role:</span>
+              <span class="font-semibold text-blue-600 px-1">{{
+                user.role
+              }}</span>
+            </p>
+          </div>
+        </div>
+      </div>
 
-            <!-- Cột phải -->
-            <div class="col-md-4">
-                <div class="card shadow-sm p-1 text-center">
-                    <div class="card-body">
-                        <img src="/public/z6827970432778_2b43b97a704617f03c546e5bc7bd82e8.jpg"
-                            class="rounded-circle img-fluid mb-3"
-                            style="width: 140px; height: 140px; object-fit: cover;" alt="Ảnh nhân viên">
-                        <p class="fw-bold">{{employee.name }}</p>
-                        <p>{{ employee.email }}</p>
-                        <hr>
-                           <button class="btn btn-warning" @click="showChangePassword = true ">Đổi mật khẩu</button>
-                    </div>
-                </div>
-            </div>
-
-            <div v-if="showChangePassword" class="modal-overlay">
-            <div class="modal-container">
-                <h2 class="modal-title">Change password</h2>
-                <form @submit.prevent="submitChangePassword">
-                    <div class="modal-row">
-                        <label class="modal-label">Mật khẩu cũ:</label>
-                        <input type="password" v-model="changePasswordForm.oldPassword" class="modal-input" required />
-                    </div>
-                    <div class="modal-row">
-                        <label class="modal-label">Mật khẩu mới:</label>
-                        <input type="password" v-model="changePasswordForm.newPassword" class="modal-input" required />
-                    </div>
-                    <div class="modal-row">
-                        <label class="modal-label">Xác nhận mật khẩu:</label>
-                        <input type="password" v-model="changePasswordForm.confirmPassword" class="modal-input" required />
-                    </div>
-                    <div class="modal-actions">
-                        <button type="button" @click="exitFrom()" class="border btn-exit">Thoát</button>
-                        <button type="submit" class="border btn-update">Cập nhật</button>
-                    </div>
-                    <div v-if="changePasswordError" class="modal-error">{{ changePasswordError }}</div>
-                </form>
-            </div>
+      <!-- Cột phải -->
+      <div class="col-md-4">
+        <div class="card shadow-sm p-1 text-center">
+          <div class="card-body">
+            <img
+              src="@/assets/attachment-3 (1).png"
+              class="rounded-circle img-fluid mb-3"
+              style="width: 140px; height: 140px; object-fit: cover"
+              alt="Ảnh nhân viên"
+            />
+            <p class="fw-bold">{{ user.name }}</p>
+            <p>{{ user.email }}</p>
+            <hr />
+            <button class="btn btn-warning">Đổi mật khẩu</button>
+          </div>
         </div>
 
         </div>
     </div>
-
+</div>
 </template>
 
 <script setup>
@@ -102,7 +80,7 @@ const changePasswordForm = ref({
 })
 const changePasswordError = ref("")
 
-const employee = ref({
+const user = ref({
     username: "",
     name: "",
     dob: "",
@@ -111,21 +89,33 @@ const employee = ref({
     gender: "",
     address: "",
     roles: [],
-    avatar: ""
+    // avatar: ""
 });
 
 
-async function load() {
-    const userId = localStorage.getItem("userid");
-    const token = localStorage.getItem("token");
 
-    try {
-        const response = await userService.getUserById('3b472836-4919-45ae-b8fc-a650fc2a0bf0');
-        employee.value = response;
-        console.log("Employee data:", employee.value);
-    } catch (error) {
-        console.log("Error fetching employee data:", error);
-    }
+async function loadProfile() {
+  const userId = "312603e4-18c0-47d6-a744-3cfbe8529dc6";
+  // const token = localStorage.getItem("token");
+
+  try {
+    const data = await userService.getUserById(userId);
+    console.log("dob: ", data)
+    user.value = {
+      id: data.id,
+      username: data.username,
+      name: data.name,
+      dob: data.dob,
+      phone: data.phone,
+      email: data.email,
+      gender: data.gender ? "Nam": "Nữ",
+      address: data.address,
+      role: data.roles?.join(", ")
+    //   avatar: "",
+    };
+  } catch (error) {
+    console.log("Failed to load profile: ", error);
+  }
 }
 
 
@@ -179,7 +169,7 @@ function exitFrom(){
 
 
 onMounted(() => {
-    load();
+    loadProfile();
 });
 
 </script>

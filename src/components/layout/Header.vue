@@ -7,7 +7,7 @@
         </div>
         <div class="profile  d-flex align-items-center items-center space-x-2">
             <router-link to="/profile" class="text-decoration-none text-black fs-5 me-3">
-                <img src="/public/z6827970432778_2b43b97a704617f03c546e5bc7bd82e8.jpg" class="img h-8 rounded-full m-3" alt="User Avatar" />
+                <img src="@/assets/attachment-3 (1).png" class="img h-8 rounded-full m-3" alt="User Avatar" />
             </router-link>
             <!-- <div class=" d-flex align-items-center flex-column">
                 <p class="m-0">Michael K.</p>

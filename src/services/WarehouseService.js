@@ -21,7 +21,7 @@ export const warehouseService = {
         return response.data.result;
     },
 
-    async enbleWarehouse(warehouseId) {
+    async enableWarehouse(warehouseId) {
         const response = await api.put(`/api/warehouses/enable/${warehouseId}`);
         return response.data.result;
     }
