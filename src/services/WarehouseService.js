@@ -1,28 +1,28 @@
-import axios from "axios";
+import api from "./axios";
 
 export const warehouseService = {
     async getAll() {
-        const response = await axios.get("/api/warehouses");
+        const response = await api.get("/api/warehouses");
         return response.data.result;
     },
 
     async getWarehouseById(warehouseId) {
-        const response = await axios.get(`/api/warehouses/${warehouseId}`);
+        const response = await api.get(`/api/warehouses/${warehouseId}`);
         return response.data.result;
     },
 
     async createWarehouse(warehouseData) {
-        const response = await axios.post("/api/warehouses", warehouseData);
+        const response = await api.post("/api/warehouses", warehouseData);
         return response.data.result;
     },
 
     async updateWarehouse(warehouseId, warehouseData) {
-        const response = await axios.put(`/api/warehouses/${warehouseId}`, warehouseData);
+        const response = await api.put(`/api/warehouses/${warehouseId}`, warehouseData);
         return response.data.result;
     },
 
     async enbleWarehouse(warehouseId) {
-        const response = await axios.put(`/api/warehouses/enable/${warehouseId}`);
+        const response = await api.put(`/api/warehouses/enable/${warehouseId}`);
         return response.data.result;
     }
 }

@@ -21,7 +21,7 @@
             <i class="fa-solid fa-box px-3"></i> Inbound
           </router-link>
 
-          <router-link to="/admin/account-managerment" class="link px-1 py-2">
+          <router-link to="/admin/account" class="link px-1 py-2">
             <i class="fa-solid fa-users px-3"></i>Account
           </router-link>
 
