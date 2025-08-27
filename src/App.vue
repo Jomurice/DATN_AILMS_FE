@@ -15,7 +15,7 @@ import ProductDetail from './components/Product/ProductDetail.vue';
      <!--<UserManagerment />-->
     <!-- <Login></Login> -->
      <!--<ProductManagerment />-->
-     <ProductDetail />
+     <!-- <ProductDetail /> -->
     
 
 
