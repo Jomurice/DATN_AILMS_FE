@@ -104,6 +104,7 @@ const filters = ref({
   sort: "name_desc" 
 });
 
+
 const applied = ref({
   name: "",
   role: "",
@@ -116,6 +117,14 @@ const unaccent = (s = "") => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 const displayedUsers = computed(() => {
   let list = [...users.value];
 
+async function getAllUsers() {
+    try {
+        users.value = await userService.getAllUsers();
+    } catch (error) {
+        console.log("Failed to load users: ",error);
+    }
+
+  
   
   if (applied.value.name.trim()) {
     const kw = unaccent(applied.value.name.trim().toLowerCase());

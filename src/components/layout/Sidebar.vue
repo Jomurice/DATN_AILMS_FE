@@ -1,7 +1,7 @@
 <template>
-  <aside class="bg-white shadow-md border col-md-2 d-flex flex-column justify-content-between">
+  <aside class="bg-white shadow-md border px-2 col-md-2 d-flex flex-column">
     <div>
-      <!-- MAIN MENU -->
+
       <input type="checkbox" id="toggleMain" hidden />
       <label for="toggleMain" class="fs-5 m-1 menu fw-bold">
         MAIN MENU
@@ -9,41 +9,54 @@
       </label>
       <nav class="mt-2">
         <ul class="p-0 submenu">
-          <li class="px-4 py-2 hover:bg-light cursor-pointer">
+          <router-link to="" class="px-1 py-2 link cursor-pointer">
             <i class="fa-solid fa-house px-3"></i> Home
-          </li>
-          <li class="px-4 py-2 hover:bg-light cursor-pointer">
+          </router-link>
+
+          <router-link to="" class="px-1 py-2 link cursor-pointer">
             <i class="fa-solid fa-paper-plane px-3"></i> Outbound
-          </li>
-          <li class="px-4 py-2 hover:bg-light cursor-pointer">
+          </router-link>
+
+          <router-link to="" class="px-1 py-2 link cursor-pointer">
             <i class="fa-solid fa-box px-3"></i> Inbound
-          </li>
-          <li class="px-4 py-2 hover:bg-light cursor-pointer">
+          </router-link>
+
+          <router-link to="/admin/account-managerment" class="link px-1 py-2">
+            <i class="fa-solid fa-users px-3"></i>Account
+          </router-link>
+
+          <router-link to="/warehouse" class="link px-1 py-2">
+            <i class="fa-solid fa-warehouse px-3"></i> Warehouse
+          </router-link>
+
+          <router-link to="" class="px-1 py-2 link cursor-pointer">
             <i class="fa-solid fa-message px-3"></i> Message
-          </li>
+          </router-link>
+          
         </ul>
       </nav>
 
-      <!-- GENERAL -->
+
       <input type="checkbox" id="toggleGeneral" hidden />
       <label for="toggleGeneral" class="fs-5 mt-3 menu fw-bold">
         GENERAL
         <span class="arrow"></span>
       </label>
       <nav class="mt-2">
-        <ul class="p-0 submenu">
-          <li class="px-4 py-2 hover:bg-light cursor-pointer">
+        <ul class="p-0 submenu2">
+
+          <router-link to="" class="px-1 py-2 link cursor-pointer">
             <i class="fa-solid fa-flag px-3"></i> Report
-          </li>
-          <li class="px-4 py-2 hover:bg-light cursor-pointer">
+          </router-link>
+          <router-link to="" class="px-1 py-2 link cursor-pointer">
             <i class="fa-solid fa-headset px-3"></i> Support
-          </li>
+          </router-link>
         </ul>
       </nav>
     </div>
 
-    <!-- OTHERS -->
-    <div class="mb-4 others">
+
+    <div class="mb-3 others">
       <input type="checkbox" id="toggleOthers" hidden />
       <label for="toggleOthers" class="fs-5 menu fw-bold">
         OTHERS
@@ -51,9 +64,9 @@
       </label>
       <nav class="mt-2">
         <ul class="p-0 submenu">
-          <li class="px-4 cursor-pointer">
+          <router-link to="" class="px-1 py-2 link cursor-pointer">
             <i class="fa-solid fa-gear px-3"></i> Settings
-          </li>
+          </router-link>
         </ul>
       </nav>
     </div>
@@ -62,16 +75,19 @@
 
 <style scoped>
 aside {
-  width: 230px;
-  min-height: 100vh;
+  width: 180px;
+  min-height: calc(100vh - 1500px);
 }
 
-li {
+
+.link {
   font-size: 16px;
   color: #333;
   font-weight: 500;
   list-style: none;
-  line-height: 2;
+  line-height: 3;
+  text-decoration: none;
+  color: inherit;
 }
 
 .menu {
@@ -79,7 +95,7 @@ li {
   padding-bottom: 5px;
   cursor: pointer;
   display: flex;
-  justify-content: space-between;
+  /* justify-content: space-between; */
   align-items: center;
 }
 
@@ -88,27 +104,35 @@ li {
   margin-left: 10px;
 }
 
+.submenu2 {
+  display: none;
+  margin-left: 10px;
+}
+
 /* MAIN */
-#toggleMain:checked ~ nav .submenu {
+#toggleMain:checked~nav .submenu {
   display: block;
 }
-#toggleMain:checked + .menu .arrow {
+
+#toggleMain:checked+.menu .arrow {
   transform: rotate(180deg);
 }
 
 /* GENERAL */
-#toggleGeneral:checked ~ nav .submenu {
+#toggleGeneral:checked~nav .submenu2 {
   display: block;
 }
-#toggleGeneral:checked + .menu .arrow {
+
+#toggleGeneral:checked+.menu .arrow {
   transform: rotate(180deg);
 }
 
 /* OTHERS */
-#toggleOthers:checked ~ nav .submenu {
+#toggleOthers:checked~nav .submenu {
   display: block;
 }
-#toggleOthers:checked + .menu .arrow {
+
+#toggleOthers:checked+.menu .arrow {
   transform: rotate(180deg);
 }
 
