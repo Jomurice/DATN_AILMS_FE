@@ -1,226 +1,211 @@
 <template>
-  <div class="container m-0 p-4">
-    <p class="link fs-4" @click="showform = false">
-      < </p>
-        <div class="d-flex justify-content-end">
-          <button class="btn btn-primary" @click="showform = true">+ Thêm </button>
-        </div>
+  <div class="container p-4">
+    <h5 class="fw-bold mb-3">Danh sách</h5>
 
-        <div v-if="showform" class=" form col-md-8">
-          <h2>Account Management</h2>
-          <form @submit.prevent="handleSubmit" class="account-form">
-            <label for="txtUsername">User Name : </label>
-            <input v-model="form.username" placeholder="Username" required />
+    <!-- Filter Bar -->
+    <div class="d-flex flex-wrap align-items-end gap-3 mb-3 filter-bar">
+      <div class="flex-grow-1" style="max-width: 300px;">
+        <label class="form-label mb-1">Tìm theo tên</label>
+        <input
+          v-model="filters.name"
+          type="text"
+          class="form-control"
+          placeholder="Nhập tên cần tìm..."
+        />
+      </div>
 
-            <label for="txtFullName">Full Name : </label>
-            <input v-model="form.name" placeholder="Name" required />
+      <div style="min-width: 200px;">
+        <label class="form-label mb-1">Chức vụ</label>
+        <select v-model="filters.role" class="form-select">
+          <option value="">-- Tất cả --</option>
+          <option value="ADMIN">ADMIN</option>
+          <option value="USER">USER</option>
+        </select>
+      </div>
 
-            <label for="txtEmail">Email : </label>
-            <input type="email" v-model="form.email" placeholder="Email" required />
+      <div class="ms-auto d-flex gap-2 filter-actions">
+        <button class="btn btn-outline-secondary" @click="resetFilters">Reset</button>
+        <button class="btn btn-primary" @click="applyFilters">Tìm kiếm</button>
+      </div>
+    </div>
 
-            <label for="txtPhone">Number Phone : </label>
-            <input v-model="form.phone" placeholder="Number Phone" required />
+    <!-- Add User Button -->
+    <div class="d-flex justify-content-end mb-3">
+      <button class="btn btn-primary" @click="$router.push('/admin/account/add')">+ Thêm</button>
+    </div>
 
-            <label for="txtdob">Dob : </label>
-            <input v-model="form.dob" placeholder="Birthday" required />
-
-            <label for="txtAddress">Address : </label>
-            <textarea v-model="form.address" placeholder="Address" rows="3" required />
-
-            <div>
-              <label for="txtGender" class="gender">Gender : </label>
-              <input type="radio" v-model="form.gender" :value="true"> Male
-              <input type="radio" v-model="form.gender" :value="false"> Female
+    <!-- User Table -->
+    <table class="table table-bordered user-table align-middle">
+      <thead class="table-primary">
+        <tr>
+          <th>ID</th>
+          <th>Tên tài khoản</th>
+          <th>Họ tên</th>
+          <th>Email</th>
+          <th>Giới tính</th>
+          <th>Chức vụ</th>
+          <th class="text-center">Hành động</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="user in displayedUsers" :key="user.id">
+          <td :data-label="'ID'">{{ user.id }}</td>
+          <td :data-label="'Tên tài khoản'">{{ user.username }}</td>
+          <td :data-label="'Họ tên'">{{ user.name }}</td>
+          <td :data-label="'Email'">{{ user.email }}</td>
+          <td :data-label="'Giới tính'">{{ user.gender ? 'Male':'Female' }}</td>
+          <td :data-label="'Chức vụ'">
+            <span v-for="role in (user.roles || [])" :key="role" class="badge bg-info me-1">{{ role }}</span>
+          </td>
+          <td :data-label="'Hành động'" class="text-center">
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-warning" @click="$router.push(`/admin/account/${user.id}/detail`)">Sửa</button>
+              <button class="btn btn-sm btn-secondary" @click="hideUser(user.id)">Ẩn</button>
             </div>
-            <input type="text" v-model="form.roles">
-
-            <label for="txtRole">Roles:</label>
-            <select v-model="form.roles" multiple>
-              <option v-for="roles in form.roles" :key="roles" :value="roles">
-                {{ roles }}
-              </option>
-            </select>
-
-
-
-            <div class="d-flex gap-3 mt-3">
-              <button class="btn btn-success" type="submit">Create</button>
-              <button class="btn btn-primary" @click="update(form.id)">Update</button>
-              <button class="btn btn-danger" @click="Enbale(form.id)">Enbale</button>
-              <button class="btn btn-primary" @click="resetForm()">Reset</button>
-            </div>
-          </form>
-        </div>
-
-        <div v-else>
-          <h5 class="fw-bold mb-3">Danh sách</h5>
-
-          <table class="table table-bordered table-striped">
-            <thead class="table-primary">
-              <tr>
-                <th>ID</th>
-                <th>Tên tài khoản</th>
-                <th>Họ tên</th>
-                <th>Email</th>
-                <th>Giới tính</th>
-                <th>Chức vụ</th>
-                <th class="text-center">Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr v-for="user in users" :key="user.id">
-                <td>{{ user.id }}</td>
-                <td>{{ user.username }}</td>
-                <td>{{ user.name }}</td>
-                <td>{{ user.email }}</td>
-                <td>
-                  <span v-if="user.gender === true" class="badge bg-primary">Nam</span>
-                  <span v-else class="badge bg-danger">Nữ</span>
-                </td>
-                <td>
-                  <span v-for="role in user.roles" :key="role" class="badge bg-info me-1">{{ role }}</span>
-                </td>
-                <td class="text-center">
-                  <button class="btn btn-sm btn-warning me-2" @click="editUser(user.id)">Sửa</button>
-                  <button class="btn btn-sm btn-secondary" @click="hideUser(user.id)">Ẩn</button>
-                </td>
-              </tr>
-              <!-- <tr v-if="users.length === 0">
+          </td>
+        </tr>
+        <tr v-if="displayedUsers.length === 0">
           <td colspan="7" class="text-center">No data</td>
-        </tr> -->
-            </tbody>
-          </table>
-        </div>
-
-
+        </tr>
+      </tbody>
+    </table>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { userService } from "../../services/UserService";
 
 const users = ref([]);
-const showform = ref(false);
-const form = ref({ id: null, username: '', name: '', password: '', gender: true, phone: '', dob: null, address: '', email: '', roles: [] })
 
+const filters = ref({
+  name: "",
+  role: "",
+  sort: "name_desc"
+});
 
+const applied = ref({
+  name: "",
+  role: "",
+  sort: "name_desc"
+});
 
+// Hàm bỏ dấu
+const unaccent = (s = "") => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+// Users đã lọc và sắp xếp
+const displayedUsers = computed(() => {
+  let list = [...users.value];
+
+  // Filter by name
+  if (applied.value.name.trim()) {
+    const kw = unaccent(applied.value.name.trim().toLowerCase());
+    list = list.filter(u => unaccent((u.name || "").toLowerCase()).includes(kw));
+  }
+
+  // Filter by role
+  if (applied.value.role) {
+    const r = applied.value.role.toLowerCase();
+    list = list.filter(u => (u.roles || []).some(role => role.toLowerCase() === r));
+  }
+
+  // Sort
+  switch (applied.value.sort) {
+    case "name_asc":
+      list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "vi", { sensitivity: "base" }));
+      break;
+    case "name_desc":
+      list.sort((a, b) => (b.name || "").localeCompare(a.name || "", "vi", { sensitivity: "base" }));
+      break;
+    case "id_asc":
+      list.sort((a, b) => (a.id || "").localeCompare(b.id || ""));
+      break;
+    case "id_desc":
+      list.sort((a, b) => (b.id || "").localeCompare(a.id || ""));
+      break;
+    case "role_desc":
+      list.sort((a, b) => (b.roles?.length || 0) - (a.roles?.length || 0));
+      break;
+    case "role_asc":
+      list.sort((a, b) => (a.roles?.length || 0) - (b.roles?.length || 0));
+      break;
+  }
+
+  return list;
+});
+
+// Áp dụng lọc
+const applyFilters = () => {
+  applied.value = { ...filters.value };
+};
+
+// Reset filter
+const resetFilters = () => {
+  filters.value = { name: "", role: "", sort: "name_desc" };
+  applied.value = { name: "", role: "", sort: "name_desc" };
+};
+
+// Load users từ API
 async function getAllUsers() {
   try {
     users.value = await userService.getAllUsers();
   } catch (error) {
-    console.log("Failed to load users: ", error)
+    console.log("Failed to load users: ", error);
   }
 }
 
-async function handleSubmit() {
-  try {
-    const resp = await userService.createUser(form.value);
-    console.log("User created successfully!", resp);
-    resetForm();
-  } catch (error) {
-    console.log("Failed to create user: ", error)
+// Sửa user
+function editUser(id) {
+  window.location.href = `/users/edit/${id}`;
+}
+
+// Ẩn user
+async function hideUser(id) {
+  if (confirm("Bạn có chắc chắn muốn ẩn người dùng này?")) {
+    users.value = users.value.filter(u => u.id !== id);
   }
 }
 
-
-async function editUser(id) {
-
-  try {
-    const user = await userService.getUserById(id);
-    form.value = { ...user, roles: [...user.roles] };
-    showform.value = true;
-  } catch (error) {
-    console.log("Failed to fetch user: ", error)
-  }
-
-}
-
-async function update(id) {
-  try {
-    // if (!form.value.id) {
-    //   console.log("No user selected for update.");
-    //   return;
-    // }
-    const resp = await userService.updateUser(id, form.value);
-    console.log("User updated successfully!", resp);
-    resetForm();
-  } catch (error) {
-    console.log("Failed to update user: ", error)
-  }
-}
-
-async function Enbale(id) {
-  try {
-    const resp = await userService.enableUser(id);
-    console.log("User updated successfully!", resp);
-    resetForm();
-  } catch (error) {
-    console.log("Failed to update user: ", error)
-  }
-}
-
-function resetForm() {
-  form.value = { id: null, username: '', name: '', password: '', gender: true, phone: '', dob: null, address: '', email: '', roles: ['WO'] };
-}
-
-onMounted(() => {
-  getAllUsers();
-});
+onMounted(getAllUsers);
 </script>
 
 <style scoped>
-.container {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.container { 
+   background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 0;
+}
+.user-table th, .user-table td { vertical-align: middle; }
+
+/* Mobile Filters */
+@media (max-width: 576px) {
+  .filter-bar { gap: 12px !important; }
+  .filter-bar > * { width: 100% !important; max-width: 100% !important; }
+  .filter-actions { width: 100%; }
+  .filter-actions .btn { flex: 1 1 0; width: 100%; }
 }
 
-.link {
-  text-decoration: none;
-  color: #080808;
-  display: inline-block;
-  cursor: pointer;
-}
-
-.form {
-  position: relative;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-direction: column;
-}
-
-.form-container>h2 {
-  width: 100%;
-}
-
-form {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-input,
-textarea,
-select {
-  padding: 6px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-}
-
-.gender {
-  margin-right: 8px;
-}
-
-
-.table td,
-.table th {
-  vertical-align: middle;
+/* Mobile Table */
+@media (max-width: 576px) {
+  .user-table thead { display: none; }
+  .user-table, .user-table tbody, .user-table tr, .user-table td { display: block; width: 100%; }
+  .user-table tr {
+    background: #fff; margin-bottom: 12px;
+    border: 1px solid #e5e7eb; border-radius: 8px;
+    padding: 10px 12px;
+  }
+  .user-table td {
+    border: none !important; border-bottom: 1px dashed #eee !important;
+    position: relative; padding-left: 120px; min-height: 44px;
+  }
+  .user-table td:last-child { border-bottom: none !important; padding-bottom: 0; }
+  .user-table td::before {
+    content: attr(data-label); position: absolute;
+    left: 12px; top: 10px; width: 100px;
+    font-weight: 600; color: #6b7280; white-space: nowrap;
+  }
+  .btn-group-mobile { display: flex; gap: 8px; width: 100%; }
+  .btn-group-mobile .btn { flex: 1 1 0; }
 }
 </style>

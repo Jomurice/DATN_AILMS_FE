@@ -1,150 +1,169 @@
 <template>
-  <aside class="bg-white shadow-md border px-2 col-md-2 d-flex flex-column">
+  <aside ref="sidebarRef" class="sidebar" :class="{ active: isOpen }">
     <div>
-
       <input type="checkbox" id="toggleMain" hidden />
-      <label for="toggleMain" class="fs-5 m-1 menu fw-bold">
+      <label for="toggleMain" class="menu fw-bold">
         MAIN MENU
         <span class="arrow"></span>
       </label>
-      <nav class="mt-2">
-        <ul class="p-0 submenu">
-          <router-link to="" class="px-1 py-2 link cursor-pointer">
-            <i class="fa-solid fa-house px-3"></i> Home
-          </router-link>
-
-          <router-link to="" class="px-1 py-2 link cursor-pointer">
-            <i class="fa-solid fa-paper-plane px-3"></i> Outbound
-          </router-link>
-
-          <router-link to="" class="px-1 py-2 link cursor-pointer">
-            <i class="fa-solid fa-box px-3"></i> Inbound
-          </router-link>
-
-          <router-link to="/admin/account-managerment" class="link px-1 py-2">
-            <i class="fa-solid fa-users px-3"></i>Account
-          </router-link>
-
-          <router-link to="/warehouse" class="link px-1 py-2">
-            <i class="fa-solid fa-warehouse px-3"></i> Warehouse
-          </router-link>
-
-          <router-link to="" class="px-1 py-2 link cursor-pointer">
-            <i class="fa-solid fa-message px-3"></i> Message
-          </router-link>
-          
+      <nav>
+        <ul class="submenu">
+          <router-link to="/" class="link" @click="closeSidebar"><i class="fa-solid fa-house px-3"></i> Home</router-link>
+          <router-link to="/outbound" class="link" @click="closeSidebar"><i class="fa-solid fa-paper-plane px-3"></i> Outbound</router-link>
+          <router-link to="/products" class="link" @click="closeSidebar"><i class="fa-solid fa-box px-3"></i> Inbound</router-link>
+          <router-link to="/admin/account" class="link" @click="closeSidebar"><i class="fa-solid fa-users px-3"></i> Account</router-link>
+          <router-link to="/warehouse" class="link" @click="closeSidebar"><i class="fa-solid fa-warehouse px-3"></i> Warehouse</router-link>
+          <router-link to="/message" class="link" @click="closeSidebar"><i class="fa-solid fa-message px-3"></i> Message</router-link>
         </ul>
       </nav>
 
-
       <input type="checkbox" id="toggleGeneral" hidden />
-      <label for="toggleGeneral" class="fs-5 mt-3 menu fw-bold">
+      <label for="toggleGeneral" class="menu fw-bold">
         GENERAL
         <span class="arrow"></span>
       </label>
-      <nav class="mt-2">
-        <ul class="p-0 submenu2">
-
-          <router-link to="" class="px-1 py-2 link cursor-pointer">
-            <i class="fa-solid fa-flag px-3"></i> Report
-          </router-link>
-          <router-link to="" class="px-1 py-2 link cursor-pointer">
-            <i class="fa-solid fa-headset px-3"></i> Support
-          </router-link>
+      <nav>
+        <ul class="submenu2">
+          <router-link to="/report" class="link" @click="closeSidebar"><i class="fa-solid fa-flag px-3"></i> Report</router-link>
+          <router-link to="/support" class="link" @click="closeSidebar"><i class="fa-solid fa-headset px-3"></i> Support</router-link>
         </ul>
       </nav>
     </div>
 
-
-    <div class="mb-3 others">
+    <div class="others">
       <input type="checkbox" id="toggleOthers" hidden />
-      <label for="toggleOthers" class="fs-5 menu fw-bold">
+      <label for="toggleOthers" class="menu fw-bold">
         OTHERS
         <span class="arrow"></span>
       </label>
-      <nav class="mt-2">
-        <ul class="p-0 submenu">
-          <router-link to="" class="px-1 py-2 link cursor-pointer">
-            <i class="fa-solid fa-gear px-3"></i> Settings
-          </router-link>
+      <nav>
+        <ul class="submenu">
+          <router-link to="/settings" class="link" @click="closeSidebar"><i class="fa-solid fa-gear px-3"></i> Settings</router-link>
         </ul>
       </nav>
     </div>
   </aside>
 </template>
 
+<script  setup>
+import { ref, onMounted, onUnmounted } from "vue";
+import Sidebar from "../../JS/Sidebar.js"
+const { isOpen, sidebarRef,toggleSidebar, closeSidebar,handleClickOutside } = Sidebar;
+
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside);
+});
+onUnmounted(() => {
+  document.removeEventListener("click", handleClickOutside);
+});
+</script>
+
 <style scoped>
-aside {
-  width: 180px;
-  min-height: calc(100vh - 1500px);
+.sidebar {
+  background: #fff;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  padding: 10px;
+  width: 220px;
+  min-height: 100vh;
+  transition: all 0.3s ease;
 }
 
-
+/* Link */
 .link {
+  display: block;
+  max-width: 180px;
+  padding: 10px 5px;
   font-size: 16px;
-  color: #333;
   font-weight: 500;
-  list-style: none;
-  line-height: 3;
+  color: #333;
   text-decoration: none;
-  color: inherit;
+  border-radius: 6px;
+}
+.link:hover {
+  background: #f0f0f0;
 }
 
+/* Menu toggle */
 .menu {
-  border-bottom: 1px solid #ccc;
-  padding-bottom: 5px;
-  cursor: pointer;
+  border-bottom: 1px solid #ddd;
+  padding: 10px 5px;
   display: flex;
-  /* justify-content: space-between; */
   align-items: center;
+  cursor: pointer;
 }
 
-.submenu {
+/* Submenu ẩn mặc định */
+.submenu, .submenu2 {
   display: none;
   margin-left: 10px;
+  padding: 0;
 }
 
-.submenu2 {
-  display: none;
-  margin-left: 10px;
-}
 
-/* MAIN */
-#toggleMain:checked~nav .submenu {
+
+/* Toggle hiển thị submenu */
+#toggleMain:checked ~ nav .submenu,
+#toggleGeneral:checked ~ nav .submenu2,
+#toggleOthers:checked ~ nav .submenu {
   display: block;
 }
 
-#toggleMain:checked+.menu .arrow {
-  transform: rotate(180deg);
-}
-
-/* GENERAL */
-#toggleGeneral:checked~nav .submenu2 {
-  display: block;
-}
-
-#toggleGeneral:checked+.menu .arrow {
-  transform: rotate(180deg);
-}
-
-/* OTHERS */
-#toggleOthers:checked~nav .submenu {
-  display: block;
-}
-
-#toggleOthers:checked+.menu .arrow {
-  transform: rotate(180deg);
-}
-
-/* Mũi tên */
+/* Arrow xoay khi mở */
 .arrow {
-  display: inline-block;
+  margin-left: auto;
   width: 0;
   height: 0;
-  margin-left: 8px;
-  border-left: 5px solid transparent;
-  border-right: 5px solid transparent;
+  border-left: 6px solid transparent;
+  border-right: 6px solid transparent;
   border-top: 6px solid #333;
   transition: transform 0.3s;
+}
+#toggleMain:checked + .menu .arrow,
+#toggleGeneral:checked + .menu .arrow,
+#toggleOthers:checked + .menu .arrow {
+  transform: rotate(180deg);
+}
+
+.hamburger {
+  display: none;
+  font-size: 22px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  margin: 10px;
+}
+@media (max-width: 768px) {
+  .hamburger {
+    display: block;
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1100;
+  }
+}
+
+/* Responsive tablet */
+@media (max-width: 1024px) {
+  .sidebar {
+    width: 210px;
+  }
+  .link {
+    font-size: 14px;
+  }
+}
+
+/* Responsive mobile */
+@media (max-width: 796px) {
+  .sidebar {
+    position: fixed;
+    left: -220px;
+    top: 83px;
+    max-height: 800px;
+    z-index: 1000;
+  }
+
+  .sidebar.active {
+    left: 0;
+  }
 }
 </style>

@@ -1,9 +1,9 @@
-import axios from "axios";
+import api from "./axios";
 
 export const aisleService = {
 
     async getAll(){
-        const response = await axios.get("/api/aisles");
+        const response = await api.get("/api/aisles");
         return response.data.result;
     },
 

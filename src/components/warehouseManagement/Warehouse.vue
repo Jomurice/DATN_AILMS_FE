@@ -1,10 +1,10 @@
 <template>
     <div class="warehouse-management gap-4">
             
-        <div v-if="showFrom" class="px-4">
+        <div class="px-4">
             <h5 class="fw-bold mb-3">Danh sách warehouse</h5>  
             <div class="d-flex justify-content-end align-items-center px-4 mb-4">
-                <button @click="showFrom = false" >+ Add Warehouse</button>
+                <router-link to="/admin/warehouse/detail"><button >+ Add Warehouse</button></router-link>
             </div>
             <div v-if="warehouses.length > 0">
                 <table border="1" class="table table-bordered">
@@ -21,9 +21,8 @@
                             <td>{{ warehouse.name }}</td>
                             <td>{{ warehouse.location }}</td>
                             <td class="d-flex gap-2">
-                                <button @click="editWarehouse(warehouse.id)">Edit</button>
-                                <router-link
-                                    :to="`/warehouse/${warehouse.id}/zone`"><button>Show</button></router-link>
+                                <router-link :to="`/admin/warehouse/${warehouse.id}/detail`"><button>Edit</button></router-link>
+                                <router-link :to="`/warehouse/${warehouse.id}/zone`"><button>Show</button></router-link>
                             </td>
                         </tr>
                     </tbody>
@@ -31,23 +30,7 @@
             </div> 
             <div v-else>Khong co du lieu....</div>
         </div>
-            
-
-        <div v-else>
-            <div @click="showFrom = true" class="d-flex fs-4 link"> < </div>
-            <div class="form col-md-5">
-                <h2>Warehouse Management</h2>
-                <form class="w-100 gap-4" @submit.prevent="handleSubmit">
-                    <input v-model="form.name" placeholder="Warehouse Name" class="" required />
-                    <input v-model="form.location" placeholder="Location" required />
-
-                    <div class="d-flex gap-3 mt-3">
-                        <button type="submit">Add</button>
-                        <button @click="updated(form.id)">update</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+    
     </div>
 </template>
 
@@ -61,7 +44,6 @@ const warehouses = ref([
     { id: 2, name: 'Warehouse B', location: 'Location B'}
 ])
 const form = ref({ id: null, name: '', location: '' })
-
 
 async function load() {
     try {

@@ -64,12 +64,12 @@
 
 <script setup>
 import { ref } from "vue"
-
 import { useRouter } from "vue-router"
 import { authService } from "../services/authService";
+import { tokenService } from "../services/TokenService";
 
 const router = useRouter();
-
+const auth = tokenService();
 const username = ref("");
 const password = ref("");
 const remember = ref(false);
@@ -83,7 +83,6 @@ const clearError = (field) => {
     errors.value[field] = "";
   }
 }
-
 
 const validateForm = () => {
   errors.value = {};
@@ -115,23 +114,13 @@ const handleLogin = async () => {
   loading.value = true;
   try {
     const authData = await authService.login(username.value, password.value) 
-    console.log(authData.token)
-    // const token = res.data.token;
-
-    const token = authData.token;
-
-    if (remember.value) {
-      localStorage.setItem("authToken", token);
-    } else {
-      sessionStorage.setItem("authToken", token);
-    }
-
-    router.push("/home");
+    auth.setToken(authData.token)
+    router.push("/profile");
   } catch (err) {
     if (err.response) {
       apiError.value = err.response.data.message || "Đăng nhập thất bại";
     } else {
-      apiError.value = "Không thể kết nối đến server";
+      console.log("Không thể kết nối đến server");
     }
     console.error("Login error:", err);
   } finally {
