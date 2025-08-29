@@ -114,7 +114,8 @@ const handleLogin = async () => {
   loading.value = true;
   try {
     const authData = await authService.login(username.value, password.value) 
-    auth.setToken(authData.token)
+    console.log(authData)
+    auth.setToken(authData)
     router.push("/profile");
   } catch (err) {
     if (err.response) {

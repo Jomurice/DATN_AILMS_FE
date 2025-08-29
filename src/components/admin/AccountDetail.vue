@@ -26,19 +26,16 @@
                     <input type="radio" v-model="form.gender" :value="true"> Male
                     <input type="radio" v-model="form.gender" :value="false"> Female
                 </div>
-                <input type="text" v-model="form.roles">
-
-                <label for="txtRole">Roles:</label>
                 <select v-model="form.roles" multiple>
-                    <option v-for="roles in form.roles" :key="roles" :value="roles">
-                        {{ roles }}
-                    </option>
+                    <option disabled value="">Chọn loại</option>
+                    <option v-for="role in allRoles" :key="role" :value="role"></option>
                 </select>
 
+
                 <div class="d-flex gap-3 mt-3">
-                    <button class="btn btn-primary" @click="handleSubmit(form.id)" >{{ isEdit ? 'Update' : 'Create' }}</button>
-                    <button class="btn btn-danger" @click="Enbale(form.id)">Enbale</button>
-                    <button class="btn btn-primary" @click="resetForm()">Reset</button>
+                    <button type="button" class="btn btn-primary" @click="Submit(form.id)">{{ isEdit ? 'Update' : 'Create'}}</button>
+                    <button type="button" class="btn btn-danger" @click="Enable(form.id)">Enbale</button>
+                    <button type="button" class="btn btn-primary" @click="resetForm()">Reset</button>
                 </div>
             </form>
         </div>
@@ -49,52 +46,56 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { userService } from "../../services/UserService";
-import { useRoute } from "vue-router";
+import { useRoute,useRouter } from "vue-router";
 
 const route = useRoute();
+const router = useRouter();
 const userId = route.params.id;
 const isEdit = ref(true);
-const form = ref({ 
-    id: null, 
+const allRoles = ref(["Admin", "WO", "LM"]);
+const form = ref({
+    id: null,
     username: '',
-    name: '', 
-    password: '', 
-    gender: true, 
-    phone: '', 
-    dob: null, 
-    address: '', 
-    email: '', 
-    roles: [] 
+    name: '',
+    password: '',
+    gender: true,
+    phone: '',
+    dob: null,
+    address: '',
+    email: '',
+    roles: []
 });
 
 
 async function load() {
-    if(userId != null ){
+    if (userId != null) {
+        try {
+            const user = await userService.getUserById(userId);
+            form.value = { ...user, roles: [...user.roles] };
+        } catch (error) {
+            console.log("Failed to fetch user: ", error)
+        }
         isEdit.value = true;
-    }else{
+    } else {
         isEdit.value = false;
     }
 
-    try {
-        const user = await userService.getUserById(userId);
-        form.value = { ...user, roles: [...user.roles] };
-    } catch (error) {
-        console.log("Failed to fetch user: ", error)
-    }
 }
 
 
-async function handleSubmit(id) {
-    if(isEdit.value === true){
+async function Submit(id) {
+    if (isEdit.value === true) {
         update(id);
-    }else{
+    } else {
         try {
             const resp = await userService.createUser(form.value);
             console.log("User created successfully!", resp);
+            router.push('account');
         } catch (error) {
             console.log("Failed to create user: ", error)
         }
     };
+    console.log(isEdit.value)
     resetForm();
 }
 
@@ -104,33 +105,35 @@ async function update(id) {
         const resp = await userService.updateUser(id, form.value);
         console.log("User updated successfully!", resp);
         resetForm();
+        router.push('/admin/account');
     } catch (error) {
         console.log("Failed to update user: ", error)
     }
 }
 
-async function Enbale(id) {
+async function Enable(id) {
     try {
         const resp = await userService.enableUser(id);
         console.log("User updated successfully!", resp);
         resetForm();
+        router.push('account');
     } catch (error) {
         console.log("Failed to update user: ", error)
     }
 }
 
 function resetForm() {
-    form.value = { 
-        id: null, 
+    form.value = {
+        id: null,
         username: '',
-        name: '', 
-        password: '', 
-        gender: true, 
-        phone: '', 
-        dob: null, 
-        address: '', 
-        email: '', 
-        roles: ['WO'] 
+        name: '',
+        password: '',
+        gender: true,
+        phone: '',
+        dob: null,
+        address: '',
+        email: '',
+        roles: ['WO']
     };
 }
 

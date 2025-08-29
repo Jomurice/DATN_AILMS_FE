@@ -2,8 +2,7 @@
   <div class="container py-5">
 
     
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4">
-      <h4 class="fw-bold text-dark mb-0">Danh sách sản phẩm</h4>
+    <div class="d-flex align-items-center justify-content-end flex-wrap gap-3 mb-4">
       <div class="d-flex gap-3">
         <div class="card border-0 shadow-sm bg-white rounded-3">
           <div class="card-body py-2 px-4 text-center">
@@ -27,15 +26,16 @@
     </div>
 
     
-    <div class="card border-0 shadow-sm bg-white rounded-3 p-4 mb-4">
+    <div class="card border-0 bg-white rounded-3 p-4 mb-4">
+      <h4 class="fw-bold text-dark mt-0">Tìm kiếm</h4>
       <div class="row g-3 align-items-end">
         <div class="col-md-3 col-12">
-          <label class="form-label fw-semibold text-dark">Tìm theo tên</label>
+          <label class="form-label fw-semibold text-dark">Tên sản phẩm</label>
           <input v-model="filters.keyword" type="text" class="form-control" placeholder="Nhập tên sản phẩm..." />
         </div>
 
         <div class="col-md-3 col-12">
-          <label class="form-label fw-semibold text-dark">Lọc theo loại</label>
+          <label class="form-label fw-semibold text-dark">Loại sản phẩm</label>
           <select v-model="filters.category" class="form-select">
             <option value="">-- Tất cả --</option>
             <option v-for="c in categoryOptions" :key="c.id" :value="c.id">{{ c.name }}</option>
@@ -43,7 +43,7 @@
         </div>
 
         <div class="col-md-3 col-12">
-          <label class="form-label fw-semibold text-dark">Tìm theo số lượng</label>
+          <label class="form-label fw-semibold text-dark">Số lượng</label>
           <input v-model.number="filters.quantity" type="number" class="form-control" placeholder="Nhập số lượng..." min="0" />
         </div>
 
@@ -74,7 +74,8 @@
     </div>
 
     
-    <div class="card border-0 shadow-sm bg-white rounded-3">
+    <div class="card border-0  bg-white rounded-3">
+      <h4 class="fw-bold text-dark m-4">Danh sách sản phẩm</h4>
       <div class="table-responsive">
         <table class="table table-hover mb-0">
           <thead class="bg-light">
@@ -214,9 +215,10 @@ onMounted(async () => {
 <style scoped>
 .card {
   transition: transform 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 .card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-5px);
 }
 
 .table th, .table td {

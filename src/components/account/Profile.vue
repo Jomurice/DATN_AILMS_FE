@@ -131,12 +131,10 @@ async function loadProfile() {
   try {
     const response = await userService.getUserById(userId);
     const data = response;
-    console.log('dd',data)
     user.value = {
       ...data,
       roles: Array.isArray(data.roles) ? data.roles.join(", ") : "",
     };
-    console.log('user',user.value)
     
   } catch (error) {
     console.log("Failed to load profile: ", error);

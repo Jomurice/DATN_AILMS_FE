@@ -8,9 +8,10 @@ import Warehouse from "../components/warehouseManagement/Warehouse.vue";
 import WarehouseDetail from "../components/warehouseManagement/detail/Warehouse-Detail.vue";
 import Zone from "../components/warehouseManagement/Zone.vue";
 import Aisle from "../components/warehouseManagement/Aisle.vue";
-import Login from '../components/Login.vue'
-import ProductManagerment from "../components/Product/ProductManagerment.vue"
-import ProductDetail from "../components/Product/ProductDetail.vue"
+import Login from '../components/Login.vue';
+import ProductManagerment from "../components/Product/ProductManagerment.vue";
+import ProductDetail from "../components/Product/ProductDetail.vue";
+import Inbound from "../components/Product/Inbound.vue";
 
 
 
@@ -24,6 +25,7 @@ const routes = [
     component: HomeView,
     children: [
       { path: "profile", component: ProfileView },
+      { path: "inbound", component: Inbound},
       { path: "products", component: ProductManagerment },
       { path: "products/:id", component: ProductDetail, props: true },
       { path: "warehouse", component: Warehouse },

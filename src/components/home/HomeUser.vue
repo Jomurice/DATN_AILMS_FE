@@ -1,5 +1,5 @@
 <template>
-  <div v-if="token != null">
+  <div>
     <div class="flex-1 flex flex-col">
       <Header />
     </div>
@@ -7,7 +7,7 @@
       <Sidebar />
 
       <div class="w-100 m-3">
-        <nav class="breadcrumb flex items-center gap-2 text-gray-600 mb-6">
+        <nav class="breadcrumb flex items-center gap-2 mb-6">
           <RouterLink class="link" to="/">
             <i class="fas fa-home"></i>
           </RouterLink>
@@ -39,7 +39,6 @@ const route = useRoute();
 const auth = tokenService();
 auth.loadToken();
 const {token} = storeToRefs(auth)
-console.log("tokeHerder",token.value);
 
 function formatTitle(segment) {
   if (!segment) return "";
@@ -72,6 +71,7 @@ const breadcrumbs = computed(() => {
 
 <style scoped>
 .breadcrumb {
+  width: fit-content;
   font-size: 14px;
 }
 
