@@ -116,12 +116,12 @@ const handleLogin = async () => {
   try {
     const authData = await authService.login(username.value, password.value) 
     auth.setToken(authData.token)
-    router.push("/home");
+    router.push("/profile");
   } catch (err) {
     if (err.response) {
       apiError.value = err.response.data.message || "Đăng nhập thất bại";
     } else {
-      apiError.value = "Không thể kết nối đến server";
+      console.log("Không thể kết nối đến server");
     }
     console.error("Login error:", err);
   } finally {

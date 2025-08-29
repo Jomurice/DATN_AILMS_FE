@@ -1,8 +1,8 @@
 <template>
   <div v-if="token != null">
-    <!-- <div class="flex-1 flex flex-col">
+    <div class="flex-1 flex flex-col">
       <Header />
-    </div> -->
+    </div>
     <div class="d-flex gap-3">
       <Sidebar />
 

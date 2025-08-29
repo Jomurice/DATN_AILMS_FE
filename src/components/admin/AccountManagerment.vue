@@ -35,7 +35,7 @@
     </div>
 
     <!-- User Table -->
-    <table class="table table-bordered table-striped user-table align-middle">
+    <table class="table table-bordered user-table align-middle">
       <thead class="table-primary">
         <tr>
           <th>ID</th>
@@ -53,10 +53,7 @@
           <td :data-label="'Tên tài khoản'">{{ user.username }}</td>
           <td :data-label="'Họ tên'">{{ user.name }}</td>
           <td :data-label="'Email'">{{ user.email }}</td>
-          <td :data-label="'Giới tính'">
-            <span v-if="user.gender === true || user.gender === 'true'" class="badge bg-primary">Nam</span>
-            <span v-else class="badge bg-danger">Nữ</span>
-          </td>
+          <td :data-label="'Giới tính'">{{ user.gender ? 'Male':'Female' }}</td>
           <td :data-label="'Chức vụ'">
             <span v-for="role in (user.roles || [])" :key="role" class="badge bg-info me-1">{{ role }}</span>
           </td>
@@ -173,7 +170,12 @@ onMounted(getAllUsers);
 </script>
 
 <style scoped>
-.container { background: #fff; }
+.container { 
+   background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin: 0;
+}
 .user-table th, .user-table td { vertical-align: middle; }
 
 /* Mobile Filters */

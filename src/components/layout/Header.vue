@@ -1,31 +1,43 @@
 <template>
-    <header v-if="token != null" class="h-14  d-flex align-items-center justify-content-end px-6 border-bottom">
-            <div class="notion text-decoration-none text-black fs-4 position-relative ">
-                <i class="fa-solid fa-bell"></i>
+    <header class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom bg-white">
+
+        <button ref="buttonRef" class="hamburger" @click="toggleSidebar">☰</button>
+
+        <div class="d-flex align-items-center ms-auto">
+            <div class="notion position-relative me-3">
+                <i class="fa-solid fa-bell fs-4"></i>
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger p-1"
                     style="font-size: 0.7rem;">3</span>
             </div>
-            <div class="profile  d-flex align-items-center items-center space-x-2">
-                <router-link to="/profile" class="text-decoration-none text-black fs-5 me-3">
-                    <img src="@/assets/attachment-3 (1).png" class="img h-8 rounded-full m-3" alt="User Avatar" />
-                </router-link>
-                <!-- <div class=" d-flex align-items-center flex-column">
-                    <p class="m-0">Michael K.</p>
-                    <p class="m-0">Manager</p>
-                </div> -->
-            </div>
+            <router-link to="/profile">
+                <img src="@/assets/attachment-3 (1).png" class="img" alt="User img" />
+            </router-link>
+        </div>
     </header>
+
 </template>
 
 <script setup>
 import { storeToRefs } from 'pinia';
 import { tokenService } from '../../services/TokenService';
+import { ref, onMounted, onUnmounted } from "vue";
+
+import Sidebar from "../../JS/Sidebar.js"
+const { isOpen,buttonRef,toggleSidebar, handleClickOutside } = Sidebar;
 
 const auth = tokenService();
 auth.loadToken();
-const {token} = storeToRefs(auth)
-console.log("tokeHerder",token.value);
+const { token } = storeToRefs(auth)
+console.log("tokeHerder", token.value);
 
+
+
+onMounted(() => {
+  document.addEventListener("click", handleClickOutside);
+});
+onUnmounted(() => {
+  document.removeEventListener("click", handleClickOutside);
+});
 </script>
 
 <style scoped>
@@ -43,7 +55,6 @@ header {
 }
 
 .profile {
-    margin-right: 20px;
     cursor: pointer;
 }
 
@@ -53,6 +64,26 @@ header {
     width: 50px;
     height: 50px;
     object-fit: cover;
+}
+
+.hamburger {
+  font-size: 22px;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+@media (min-width: 769px) {
+  .hamburger {
+    display: none;
+  }
+
+  .img {
+    border-radius: 30px 30px 30px 30px;
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+}
 }
 
 </style>

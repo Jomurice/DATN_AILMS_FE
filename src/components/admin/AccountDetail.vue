@@ -16,7 +16,7 @@
                 <input v-model="form.phone" placeholder="Number Phone" required />
 
                 <label for="txtdob">Dob : </label>
-                <input v-model="form.dob" placeholder="Birthday" required />
+                <input type="date" v-model="form.dob" placeholder="Birthday" required />
 
                 <label for="txtAddress">Address : </label>
                 <textarea v-model="form.address" placeholder="Address" rows="3" required />
@@ -85,13 +85,12 @@ async function load() {
 
 
 async function handleSubmit(id) {
-    if(isEdit){
+    if(isEdit.value === true){
         update(id);
     }else{
         try {
             const resp = await userService.createUser(form.value);
             console.log("User created successfully!", resp);
-            resetForm();
         } catch (error) {
             console.log("Failed to create user: ", error)
         }
