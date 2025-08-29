@@ -84,7 +84,6 @@ const clearError = (field) => {
   }
 }
 
-
 const validateForm = () => {
   errors.value = {};
   let valid = true;
