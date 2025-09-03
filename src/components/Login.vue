@@ -42,12 +42,7 @@
             <div class="invalid-feedback">{{ errors.password }}</div>
           </div>
 
-          
-          <div class="form-check mb-3">
-            <input type="checkbox" id="remember" v-model="remember" class="form-check-input" />
-            <label class="form-check-label" for="remember">Remember me</label>
-          </div>
-
+          <router-link to="/forgot-password" class="link">Quên mật khẩu ?</router-link>
           
           <div v-if="apiError" class="alert alert-danger py-2">{{ apiError }}</div>
 
@@ -136,6 +131,21 @@ const handleLogin = async () => {
   padding: 0 !important;
   margin: 0 !important;
 }
+
+.link {
+  display: block;
+  max-width: fit-content;
+  padding: 10px 5px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  text-decoration: none;
+  border-radius: 6px;
+}
+.link:hover {
+  color: rgb(47, 47, 243);
+}
+
 h2 {
   font-size: 2rem;
 }

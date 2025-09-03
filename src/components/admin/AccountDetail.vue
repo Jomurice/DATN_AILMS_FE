@@ -12,6 +12,10 @@
                 <label for="txtEmail">Email : </label>
                 <input type="email" v-model="form.email" placeholder="Email" required />
 
+                <label for="txtPassword">Password : </label>
+                <input type="password" v-model="form.password" placeholder="Password" required />
+
+
                 <label for="txtPhone">Number Phone : </label>
                 <input v-model="form.phone" placeholder="Number Phone" required />
 
@@ -90,7 +94,7 @@ async function Submit(id) {
         try {
             const resp = await userService.createUser(form.value);
             console.log("User created successfully!", resp);
-            router.push('account');
+            router.push('/admin/account');
         } catch (error) {
             console.log("Failed to create user: ", error)
         }

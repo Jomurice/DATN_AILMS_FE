@@ -94,22 +94,15 @@ import { onMounted, ref } from "vue";
 import { userService } from "../../services/UserService";
 import { storeToRefs } from 'pinia';
 import { tokenService } from '../../services/TokenService';
+import { useRouter } from "vue-router";
 
 
+const router = useRouter();
 const auth = tokenService();
 auth.loadToken();
 storeToRefs(auth);
 
-//Phần modal
-const showChangePassword = ref(false)
-const changePasswordForm = ref({
-  oldPassword: '',
-  newPassword: '',
-  confirmPassword: ''
-})
-const changePasswordError = ref("")
-
-
+const userId = auth.user.id;
 const user = ref({
   username: "",
   name: "",
@@ -122,12 +115,19 @@ const user = ref({
   // avatar: ""
 });
 
+//Phần modal
+const showChangePassword = ref(false);
+const changePasswordForm = ref({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+});
+const changePasswordError = ref("");
+
+
 
 
 async function loadProfile() {
-
-  
-  const userId = auth.user.id
   try {
     const response = await userService.getUserById(userId);
     const data = response;
@@ -149,25 +149,34 @@ const formatDate = (date) => {
 };
 
 async function submitChangePassword() {
+  
   changePasswordError.value = "";
+
+  // if (changePasswordForm.value.newPassword !== changePasswordForm.value.confirmPassword) {
+  //   changePasswordError.value = "Mật khẩu mới không khớp.";
+  //   return;
+  // }
 
   if (changePasswordForm.value.newPassword.length < 6) {
     changePasswordError.value = "Mật khẩu mới phải có ít nhất 6 ký tự.";
     return;
   }
 
-  if (changePasswordForm.value.newPassword !== changePasswordForm.value.confirmPassword) {
-    changePasswordError.value = "Mật khẩu mới không khớp.";
+    if (changePasswordForm.value.newPassword !== changePasswordForm.value.confirmPassword) {
+    changePasswordError.value = "Mật khẩu mới phải không giống mật khẩu comform.";
     return;
   }
 
-  try {
-    await userService.updateUser(changePasswordForm.value)
 
+
+  try {
+    await userService.updateUser(userId,changePasswordForm.value)
     changePasswordError.value = "Đổi mật khẩu thành công!";
+    localStorage.removeItem("accessToken");
+    router.push('/');
     resetFrom();
   } catch (error) {
-    changePasswordError.value = error.response?.data?.message || "Đổi mật khẩu thất bại.";
+    changePasswordError.value = "Đổi mật khẩu thất bại.";
     console.error("Error changing password:", error);
   }
   // showChangePassword.value = false;
@@ -291,7 +300,7 @@ body {
 }
 
 .modal-error {
-  color: red;
+  color:#f3f4f6;
   margin-top: 1rem;
   font-weight: bold;
 }

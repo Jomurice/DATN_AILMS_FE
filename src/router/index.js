@@ -1,6 +1,9 @@
 
 import { createRouter, createWebHistory } from "vue-router";
 import HomeView from "../components/home/HomeUser.vue";
+import Forgotpass from "../components/account/Forgotpass.vue";
+import ChangePassword from "../components/account/Change-password.vue";
+import Login from '../components/Login.vue';
 import ProfileView from "../components/account/Profile.vue";
 import AccountManagerment from "../components/admin/AccountManagerment.vue";
 import AccountDetail from "../components/admin/AccountDetail.vue";
@@ -8,7 +11,6 @@ import Warehouse from "../components/warehouseManagement/Warehouse.vue";
 import WarehouseDetail from "../components/warehouseManagement/detail/Warehouse-Detail.vue";
 import Zone from "../components/warehouseManagement/Zone.vue";
 import Aisle from "../components/warehouseManagement/Aisle.vue";
-import Login from '../components/Login.vue';
 import ProductManagerment from "../components/Product/ProductManagerment.vue";
 import ProductDetail from "../components/Product/ProductDetail.vue";
 import Inbound from "../components/Product/Inbound.vue";
@@ -19,6 +21,8 @@ import Inbound from "../components/Product/Inbound.vue";
 const routes = [
   { path: "/", redirect: "/login" },
   { path: "/login", component: Login },
+  { path: "/forgot-password", component: Forgotpass},
+  { path: "/change-password", component: ChangePassword},
 
   {
     path: "/",
