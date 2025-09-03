@@ -51,6 +51,17 @@ import { ref, onMounted, onUnmounted } from "vue";
 import Sidebar from "../../JS/Sidebar.js"
 const { isOpen, sidebarRef,toggleSidebar, closeSidebar,handleClickOutside } = Sidebar;
 
+
+async function loadProfile() {
+  try {
+    const response = await userService.getUserById(userId);
+    
+  } catch (error) {
+    console.log("Failed to load profile: ", error);
+  }
+}
+
+
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
 });

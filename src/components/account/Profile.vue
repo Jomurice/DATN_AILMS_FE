@@ -16,7 +16,7 @@
             </p>
             <p class="profile-info">
               <i class="fa-solid fa-venus-mars px-2"></i>
-              <span class="fw-bold">Giới tính:</span> {{ user.gender ? 'Mane':'Female' }}
+              <span class="fw-bold">Giới tính:</span> {{ user.gender ? 'Male':'Female' }}
             </p>
             <p class="profile-info">
               <i class="fa-regular fa-calendar px-2"></i>
@@ -54,13 +54,13 @@
             <p class="fw-bold">{{ user.name }}</p>
             <p>{{ user.email }}</p>
             <hr />
-            <button @click="showChangePassword = true" class="btn btn-warning">Đổi mật khẩu</button>
+            <button @click="isChangePassword = true" class="btn btn-warning">Đổi mật khẩu</button>
           </div>
         </div>
       </div>
 
 
-      <div v-if="showChangePassword" class="modal-overlay">
+      <div v-if="isChangePassword" class="modal-overlay">
             <div class="modal-container">
                 <h2 class="modal-title">Change password</h2>
                 <form @submit.prevent="submitChangePassword">
@@ -76,11 +76,11 @@
                         <label class="modal-label">Xác nhận mật khẩu:</label>
                         <input type="password" v-model="changePasswordForm.confirmPassword" class="modal-input" required />
                     </div>
+                    <nav v-if="changePasswordError" class="modal-error">{{ changePasswordError }}</nav>
                     <div class="modal-actions">
-                        <button type="button" @click="showChangePassword = false" class="border btn-exit">Thoát</button>
+                        <button type="button" @click="exitModal()" class="border btn-exit">Thoát</button>
                         <button type="submit" class="border btn-update">Cập nhật</button>
                     </div>
-                    <div v-if="changePasswordError" class="modal-error">{{ changePasswordError }}</div>
                 </form>
             </div>
         </div>
@@ -116,7 +116,7 @@ const user = ref({
 });
 
 //Phần modal
-const showChangePassword = ref(false);
+const isChangePassword = ref(false);
 const changePasswordForm = ref({
   oldPassword: '',
   newPassword: '',
@@ -152,17 +152,12 @@ async function submitChangePassword() {
   
   changePasswordError.value = "";
 
-  // if (changePasswordForm.value.newPassword !== changePasswordForm.value.confirmPassword) {
-  //   changePasswordError.value = "Mật khẩu mới không khớp.";
-  //   return;
-  // }
-
   if (changePasswordForm.value.newPassword.length < 6) {
     changePasswordError.value = "Mật khẩu mới phải có ít nhất 6 ký tự.";
     return;
   }
 
-    if (changePasswordForm.value.newPassword !== changePasswordForm.value.confirmPassword) {
+  if (changePasswordForm.value.newPassword !== changePasswordForm.value.confirmPassword) {
     changePasswordError.value = "Mật khẩu mới phải không giống mật khẩu comform.";
     return;
   }
@@ -174,26 +169,25 @@ async function submitChangePassword() {
     changePasswordError.value = "Đổi mật khẩu thành công!";
     localStorage.removeItem("accessToken");
     router.push('/');
-    resetFrom();
+    resetForm();
   } catch (error) {
     changePasswordError.value = "Đổi mật khẩu thất bại.";
     console.error("Error changing password:", error);
   }
-  // showChangePassword.value = false;
+   isChangePassword.value = false;
 }
 
-function resetFrom() {
+function resetForm() {
   changePasswordForm.value.oldPassword = ''
   changePasswordForm.value.newPassword = ''
   changePasswordForm.value.confirmPassword = ''
 }
 
-function exitFrom() {
-  resetFrom()
-  changePasswordError.value = ""
-  showChangePassword.value = false
+function exitModal(){
+  resetForm();
+  changePasswordError.value ='';
+  isChangePassword.value = false;
 }
-
 
 onMounted(() => {
   loadProfile();
@@ -300,7 +294,7 @@ body {
 }
 
 .modal-error {
-  color:#f3f4f6;
+  color:#fa610f;
   margin-top: 1rem;
   font-weight: bold;
 }

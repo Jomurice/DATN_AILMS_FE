@@ -14,6 +14,7 @@ import Aisle from "../components/warehouseManagement/Aisle.vue";
 import ProductManagerment from "../components/Product/ProductManagerment.vue";
 import ProductDetail from "../components/Product/ProductDetail.vue";
 import Inbound from "../components/Product/Inbound.vue";
+import GoodsReceipt from "../services/GoodsReceipt";
 
 
 
@@ -35,7 +36,7 @@ const routes = [
       { path: "warehouse", component: Warehouse },
       { path: "warehouse/:id/zone", component: Zone, props: true },
       { path: "warehouse/:id/zone/:id/aisle", component: Aisle, props: true },
-
+      { path: "goods-receipt", component: GoodsReceipt},
       // Admin
       {
         path: "admin/account",

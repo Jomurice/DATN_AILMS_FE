@@ -1,8 +1,8 @@
 <template>
     <div class="container m-0 p-4">
-        <div class=" form col-md-8">
+        <div class=" account-form col-md-8">
             <h2>Account Management</h2>
-            <form class="account-form">
+            <form>
                 <label for="txtUsername">User Name : </label>
                 <input v-model="form.username" placeholder="Username" required />
 
@@ -153,14 +153,7 @@ onMounted(() => {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.link {
-    text-decoration: none;
-    color: #080808;
-    display: inline-block;
-    cursor: pointer;
-}
-
-.form {
+.account-form {
     position: relative;
     left: 50%;
     transform: translateX(-50%);
@@ -170,7 +163,7 @@ onMounted(() => {
     flex-direction: column;
 }
 
-.form-container>h2 {
+.account-form>h2 {
     width: 100%;
 }
 
