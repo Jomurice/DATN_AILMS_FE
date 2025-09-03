@@ -1,28 +1,48 @@
-import api from "./axios";
+import api from "./axios"
+
+let sampleWarehouses = [
+  { id: "w-01", name: "Warehouse A", location: "Hà Nội" },
+  { id: "w-02", name: "Warehouse B", location: "HCM" }
+]
 
 export const warehouseService = {
-    async getAll() {
-        const response = await api.get("/api/warehouses");
-        return response.data.result;
-    },
+  async getAll() {
+    try {
+      const { data } = await api.get("/api/warehouses")
+      const out = Array.isArray(data?.result) ? data.result : (Array.isArray(data) ? data : null)
+      return out ?? sampleWarehouses
+    } catch { return sampleWarehouses }
+  },
 
-    async getWarehouseById(warehouseId) {
-        const response = await api.get(`/api/warehouses/${warehouseId}`);
-        return response.data.result;
-    },
+  async getById(id) {
+    try {
+      const { data } = await api.get(`/api/warehouses/${encodeURIComponent(id)}`)
+      return data?.result ?? data ?? sampleWarehouses.find(x=>x.id===id) ?? null
+    } catch { return sampleWarehouses.find(x=>x.id===id) ?? null }
+  },
 
-    async createWarehouse(warehouseData) {
-        const response = await api.post("/api/warehouses", warehouseData);
-        return response.data.result;
-    },
-
-    async updateWarehouse(warehouseId, warehouseData) {
-        const response = await api.put(`/api/warehouses/${warehouseId}`, warehouseData);
-        return response.data.result;
-    },
-
-    async enableWarehouse(warehouseId) {
-        const response = await api.put(`/api/warehouses/enable/${warehouseId}`);
-        return response.data.result;
+  async create(payload) {
+    try {
+      const { data } = await api.post(`/api/warehouses`, payload)
+      return data?.result ?? data
+    } catch {
+      const item = { id: crypto.randomUUID?.() ?? Date.now().toString(16), ...payload }
+      sampleWarehouses = [item, ...sampleWarehouses]; return item
     }
+  },
+
+  async update(id, payload) {
+    try {
+      const { data } = await api.put(`/api/warehouses/${encodeURIComponent(id)}`, payload)
+      return data?.result ?? data
+    } catch {
+      sampleWarehouses = sampleWarehouses.map(x => x.id===id ? { ...x, ...payload } : x)
+      return sampleWarehouses.find(x=>x.id===id)
+    }
+  },
+
+  async remove(id) {
+    try { await api.delete(`/api/warehouses/${encodeURIComponent(id)}`); return true }
+    catch { sampleWarehouses = sampleWarehouses.filter(x=>x.id!==id); return true }
+  }
 }

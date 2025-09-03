@@ -45,7 +45,7 @@
           
           <div class="form-check mb-3">
             <input type="checkbox" id="remember" v-model="remember" class="form-check-input" />
-            <label class="form-check-label" for="remember">Remember me</label>
+            <label class="form-check-label" for="remember">Quên mật khẩu</label>
           </div>
 
           

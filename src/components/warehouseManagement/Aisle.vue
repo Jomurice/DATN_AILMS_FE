@@ -1,184 +1,143 @@
 <template>
   <div class="aisle-management">
-
-
-    <div v-if="showFrom">
-      <h5 class="fw-bold mb-3">Danh sách aisle</h5>  
-      <div class="d-flex justify-content-end align-items-center mb-4">
-        <button @click="showFrom = false"> + Add Aisle</button>
+    <!-- LIST -->
+    <div v-if="ui==='list'">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold m-0">Danh sách Aisle (W: {{ wid }} • Z: {{ zid }})</h5>
+        <button class="btn btn-primary" @click="openAdd">+ Add Aisle</button>
       </div>
-      <div v-if="aisles.length > 0">
-        <table class="table table-bordered mt-4">
+
+      <div v-if="items.length">
+        <table class="table table-bordered">
           <thead>
             <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Code</th>
+              <th style="width:260px">ID</th>
+              <th>Tên</th>
+              <th>Mã</th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="aisle in aisles" :key="aisle.id">
-              <td>{{ aisle.id }}</td>
-              <td>{{ aisle.name }}</td>
-              <td>{{ aisle.code }}</td>
-              <td class="d-flex gap-2">
-                <button @click="editAisle(aisle)">Edit</button>
-                <button @click="deleteAisle(aisle.id)">Delete</button>
+            <tr v-for="a in items" :key="a.id">
+              <td class="text-monospace small">{{ a.id }}</td>
+              <td>{{ a.name }}</td>
+              <td>{{ a.code }}</td>
+              <td class="d-flex gap-2 flex-wrap">
+                <button class="btn btn-sm btn-outline-warning" @click="openEdit(a)">Edit</button>
+                <button class="btn btn-sm btn-outline-info" @click="openDetail(a.id)">Detail</button>
+                <router-link :to="`/warehouse/${wid}/zone/${zid}/aisle/${a.id}/shelf`" class="btn btn-sm btn-outline-secondary">Show Shelves</router-link>
+                <button class="btn btn-sm btn-outline-danger" @click="remove(a.id)">Delete</button>
               </td>
             </tr>
           </tbody>
         </table>
       </div>
-      <div v-else>Khong co du lieu......</div>
+      <div v-else class="text-muted">Không có dữ liệu…</div>
     </div>
 
-
-    <div v-else class="mb-4">
-      <div @click="showFrom = true" class="fs-4 link">
-        < </div>
-          <div class="w-50 m-auto">
-            <h2 class="text-center">Aisle Management</h2>
-            <form class="d-flex flex-column gap-3 mt-3" @submit.prevent="handleSubmit">
-              <input v-model="form.name" placeholder="Aisle Name" required />
-              <input v-model="form.code" placeholder="Aisle Code" required />
-              <div class="d-flex gap-3">
-                <button type="submit">{{ isEdit ? 'Update' : 'Add' }}</button>
-                <button v-if="isEdit" type="button" @click="showFrom = true">Cancel</button>
-                <button v-if="isEdit" type="button" @click="resetForm()">Reset</button>
-              </div>
-            </form>
-          </div>
+    <!-- FORM -->
+    <div v-else-if="ui==='form'">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold m-0">{{ isEdit ? 'Cập nhật Aisle' : 'Thêm Aisle' }}</h5>
+        <button class="btn btn-outline-secondary" @click="back">← Quay lại</button>
       </div>
-
+      <div class="card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <form class="row g-3" @submit.prevent="submit" novalidate>
+            <div class="col-md-6">
+              <label class="form-label">Tên Aisle <span class="text-danger">*</span></label>
+              <input v-model.trim="form.name" class="form-control" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Mã <span class="text-danger">*</span></label>
+              <input v-model.trim="form.code" class="form-control" required />
+            </div>
+            <div class="col-12 small text-muted">Context: wid={{ wid }}, zid={{ zid }}</div>
+            <div class="col-12">
+              <button class="btn btn-primary">{{ isEdit ? 'Cập nhật' : 'Thêm mới' }}</button>
+              <button type="button" class="btn btn-outline-secondary ms-2" @click="back">Huỷ</button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
+
+    <!-- DETAIL -->
+    <div v-else-if="ui==='detail'">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold m-0">Chi tiết Aisle</h5>
+        <button class="btn btn-outline-secondary" @click="back">← Quay lại</button>
+      </div>
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="mb-2"><small class="text-muted">ID</small><div class="fw-medium">{{ detail?.id }}</div></div>
+          <div class="mb-2"><small class="text-muted">Tên</small><div>{{ detail?.name }}</div></div>
+          <div class="mb-2"><small class="text-muted">Mã</small><div>{{ detail?.code }}</div></div>
+          <div class="mb-2"><small class="text-muted">Zone</small><div>{{ detail?.zone?.name || '—' }}</div></div>
+
+          <h6 class="fw-bold mt-4">Shelves ({{ shelves.length }})</h6>
+          <div class="table-responsive">
+            <table class="table table-sm">
+              <thead><tr><th style="width:220px">ID</th><th>Tên</th><th>Mã</th><th>#Bin</th><th></th></tr></thead>
+              <tbody>
+                <tr v-for="s in shelves" :key="s.id">
+                  <td class="text-monospace small">{{ s.id }}</td>
+                  <td>{{ s.name }}</td>
+                  <td>{{ s.code }}</td>
+                  <td>{{ s.bins?.length ?? 0 }}</td>
+                  <td>
+                    <router-link class="btn btn-sm btn-outline-primary" :to="`/warehouse/${wid}/zone/${zid}/aisle/${detail.id}/shelf/${s.id}/bin`">Manage Bins</router-link>
+                  </td>
+                </tr>
+                <tr v-if="shelves.length===0">
+                  <td colspan="5" class="text-center text-muted">Chưa có Shelf</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+      </div>
+    </div>
+
+  </div>
 </template>
 
 <script setup>
-import { onMounted, ref } from 'vue'
-import { useRoute } from 'vue-router'
-import { aisleService } from '../../services/AisleService'
+import { ref, onMounted } from "vue"
+import { useRoute } from "vue-router"
+import { aisleService } from "../../services/AisleService"
+import { shelfService } from "../../services/ShelfService"
 
 const route = useRoute()
-const form = ref({ id: null, name: '', code: '' })
+const wid = route.params.wid || route.params.id
+const zid = route.params.zid || route.params.id
+
+const ui = ref("list")
+const items = ref([])
+const shelves = ref([])
 const isEdit = ref(false)
-const showFrom = ref(true)
-const warehouseId = route.params.id
-const zoneId = route.params.id
+const editingId = ref(null)
+const detail = ref(null)
+const form = ref({ name:"", code:"" })
 
+async function load(){ items.value = await aisleService.getAll(String(zid)) }
 
-const aisles = ref([
-  { id: 1, name: 'Aisle 1', code: 'A1' },
-  { id: 2, name: 'Aisle 2', code: 'A2' }
-])
+function openAdd(){ isEdit.value=false; editingId.value=null; form.value={name:"",code:""}; ui.value="form" }
+function openEdit(a){ isEdit.value=true; editingId.value=a.id; form.value={name:a.name, code:a.code}; ui.value="form" }
+async function openDetail(id){ detail.value = await aisleService.getById(String(id)); shelves.value = await shelfService.getAll(String(id)); ui.value="detail" }
+function back(){ ui.value="list" }
 
-
-async function load() {
-  try {
-    aisles.value = await aisleService.getAll();
-  } catch (error) {
-    console.error("Failed ro getAll aisles", error);
-  }
+async function submit(){
+  if (isEdit.value) await aisleService.update(String(editingId.value), form.value)
+  else await aisleService.create(String(zid), form.value)
+  await load(); back()
 }
+async function remove(id){ if(confirm("Xoá aisle?")){ await aisleService.remove(String(id)); await load() } }
 
-async function handleSubmit() {
-  if (isEdit.value) {
-    try {
-      const resp = await aisleService.update(form.value.id,form.value);
-      console.log(resp);
-      showFrom.value = true; 
-    } catch (error) {
-      console.error('Failed to update aisle',error);
-    }
-
-  } else {
-    try {
-      await aisleService.create(form.value);
-      showFrom.value = true;
-    } catch (error) {
-      console.error('Failed to create aisle',error);
-    }
-  }
-
-  resetForm()
-}
-
-function editAisle(aisle) {
-  form.value = { ...aisle }
-  isEdit.value = true
-  showFrom.value = false
-}
-
-
-function resetForm() {
-  form.value = { id: null, name: '', code: '' }
-  isEdit.value = false
-}
-
-onMounted(() => {
-  load();
-})
+onMounted(load)
 </script>
 
-
 <style scoped>
-.aisle-management {
-  width: 100%;
-  min-height: calc(100vh - 80px);
-  margin: 0 auto;
-  padding: 24px;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.link {
-  width: 15px;
-  text-decoration: none;
-  color: #080808;
-  display: inline-block;
-  cursor: pointer;
-}
-
-.link:hover {
-  color: #3f20f0;
-}
-
-
-form {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 16px;
-}
-
-input {
-  padding: 6px;
-  border-radius: 4px;
-  border: 1px solid #ccc;
-}
-
-button {
-  padding: 6px 12px;
-  border-radius: 4px;
-  border: none;
-  background: #2563eb;
-  color: #fff;
-  cursor: pointer;
-}
-
-button[type="button"] {
-  background: #f59e0b;
-}
-
-ul {
-  list-style: none;
-  padding: 0;
-}
-
-li {
-  margin-bottom: 8px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
+.aisle-management{ padding:24px; background:#fff; border-radius:8px; box-shadow:0 2px 8px rgba(0,0,0,.1) }
 </style>
