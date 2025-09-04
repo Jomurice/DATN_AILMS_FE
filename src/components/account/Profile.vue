@@ -175,6 +175,7 @@ async function submitChangePassword() {
     changePasswordError.value = "Đổi mật khẩu thất bại.";
     console.error("Error changing password:", error);
   }
+  
   isChangePassword.value = false;
 }
 
