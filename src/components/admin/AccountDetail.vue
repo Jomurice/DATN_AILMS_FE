@@ -2,7 +2,7 @@
     <div class="container m-0 p-4">
         <div class=" account-form col-md-8">
             <h2>Account Management</h2>
-            <form>
+            <form @submit.prevent="submit()">
                 <label for="txtUsername">User Name : </label>
                 <input v-model="form.username" placeholder="Username" required />
 
@@ -37,7 +37,7 @@
 
 
                 <div class="d-flex gap-3 mt-3">
-                    <button type="button" class="btn btn-primary" @click="Submit(form.id)">{{ isEdit ? 'Update' : 'Create'}}</button>
+                    <button type="submit" class="btn btn-primary">{{ isEdit ? 'Update' : 'Create'}}</button>
                     <button type="button" class="btn btn-danger" @click="Enable(form.id)">Enbale</button>
                     <button type="button" class="btn btn-primary" @click="resetForm()">Reset</button>
                 </div>
@@ -87,7 +87,7 @@ async function load() {
 }
 
 
-async function Submit() {
+async function submit() {
     if (isEdit.value === true) {
         update();
     } else {

@@ -112,13 +112,8 @@ const handleLogin = async () => {
     console.log(authData)
     auth.setToken(authData)
     router.push("/profile");
-  } catch (err) {
-    if (err.response) {
-      apiError.value = err.response.data.message || "Đăng nhập thất bại";
-    } else {
-      console.log("Không thể kết nối đến server");
-    }
-    console.error("Login error:", err);
+  } catch (error) {
+      apiError.value = "Tên đăng nhập hoặc mật khẩu không đúng !";
   } finally {
     loading.value = false;
   }
