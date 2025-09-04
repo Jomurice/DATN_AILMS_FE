@@ -23,12 +23,11 @@ import { tokenService } from '../../services/TokenService';
 import { ref, onMounted, onUnmounted } from "vue";
 
 import Sidebar from "../../JS/Sidebar.js"
-const { isOpen,buttonRef,toggleSidebar, handleClickOutside } = Sidebar;
+const { buttonRef,toggleSidebar, handleClickOutside } = Sidebar;
 
 const auth = tokenService();
 auth.loadToken();
 const { token } = storeToRefs(auth)
-console.log("tokeHerder", token.value);
 
 
 

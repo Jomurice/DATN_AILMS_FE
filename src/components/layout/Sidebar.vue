@@ -9,10 +9,12 @@
       <nav>
         <ul class="submenu">
           <router-link to="/" class="link" @click="closeSidebar"><i class="fa-solid fa-house px-3"></i> Home</router-link>
-          <router-link to="/outbound" class="link" @click="closeSidebar"><i class="fa-solid fa-paper-plane px-3"></i> Outbound</router-link>
-          <router-link to="/products" class="link" @click="closeSidebar"><i class="fa-solid fa-box px-3"></i> Inbound</router-link>
-          <router-link to="/admin/account" class="link" @click="closeSidebar"><i class="fa-solid fa-users px-3"></i> Account</router-link>
-          <router-link to="/warehouse" class="link" @click="closeSidebar"><i class="fa-solid fa-warehouse px-3"></i> Warehouse</router-link>
+          <router-link to="/outbound" class="link" @click="closeSidebar"><i class="fa-solid fa-box-open px-3"></i> Outbound</router-link>
+          <router-link to="/inbound" class="link" @click="closeSidebar"><i class="fa-solid fa-truck-ramp-box px-3"></i> Inbound</router-link>
+          <router-link to="/product" class="link" @click="closeSidebar"><i class="fa-solid fa-boxes-stacked px-3"></i> Products</router-link>
+          <router-link to="/category" class="link" @click="closeSidebar"><i class="fa-solid fa-tags px-3"></i> Category</router-link>
+          <router-link to="/admin/account" class="link" @click="closeSidebar"><i class="fa-solid fa-users px-3"></i> Accounts</router-link>
+          <router-link to="/warehouse" class="link" @click="closeSidebar"><i class="fa-solid fa-warehouse px-3"></i> Warehouses</router-link>
           <router-link to="/message" class="link" @click="closeSidebar"><i class="fa-solid fa-message px-3"></i> Message</router-link>
         </ul>
       </nav>
@@ -49,6 +51,17 @@
 import { ref, onMounted, onUnmounted } from "vue";
 import Sidebar from "../../JS/Sidebar.js"
 const { isOpen, sidebarRef,toggleSidebar, closeSidebar,handleClickOutside } = Sidebar;
+
+
+async function loadProfile() {
+  try {
+    const response = await userService.getUserById(userId);
+    
+  } catch (error) {
+    console.log("Failed to load profile: ", error);
+  }
+}
+
 
 onMounted(() => {
   document.addEventListener("click", handleClickOutside);
@@ -124,23 +137,6 @@ onUnmounted(() => {
   transform: rotate(180deg);
 }
 
-.hamburger {
-  display: none;
-  font-size: 22px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  margin: 10px;
-}
-@media (max-width: 768px) {
-  .hamburger {
-    display: block;
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    z-index: 1100;
-  }
-}
 
 /* Responsive tablet */
 @media (max-width: 1024px) {

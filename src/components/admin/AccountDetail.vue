@@ -1,8 +1,8 @@
 <template>
     <div class="container m-0 p-4">
-        <div class=" form col-md-8">
+        <div class=" account-form col-md-8">
             <h2>Account Management</h2>
-            <form class="account-form">
+            <form @submit.prevent="submit()">
                 <label for="txtUsername">User Name : </label>
                 <input v-model="form.username" placeholder="Username" required />
 
@@ -11,6 +11,10 @@
 
                 <label for="txtEmail">Email : </label>
                 <input type="email" v-model="form.email" placeholder="Email" required />
+
+                <label for="txtPassword">Password : </label>
+                <input type="password" v-model="form.password" placeholder="Password" required />
+
 
                 <label for="txtPhone">Number Phone : </label>
                 <input v-model="form.phone" placeholder="Number Phone" required />
@@ -26,19 +30,16 @@
                     <input type="radio" v-model="form.gender" :value="true"> Male
                     <input type="radio" v-model="form.gender" :value="false"> Female
                 </div>
-                <input type="text" v-model="form.roles">
-
-                <label for="txtRole">Roles:</label>
                 <select v-model="form.roles" multiple>
-                    <option v-for="roles in form.roles" :key="roles" :value="roles">
-                        {{ roles }}
-                    </option>
+                    <option disabled value="">Chọn loại</option>
+                    <option v-for="role in allRoles" :key="role" :value="role"></option>
                 </select>
 
+
                 <div class="d-flex gap-3 mt-3">
-                    <button class="btn btn-primary" @click="handleSubmit(form.id)" >{{ isEdit ? 'Update' : 'Create' }}</button>
-                    <button class="btn btn-danger" @click="Enbale(form.id)">Enbale</button>
-                    <button class="btn btn-primary" @click="resetForm()">Reset</button>
+                    <button type="submit" class="btn btn-primary">{{ isEdit ? 'Update' : 'Create'}}</button>
+                    <button type="button" class="btn btn-danger" @click="Enable(form.id)">Enbale</button>
+                    <button type="button" class="btn btn-primary" @click="resetForm()">Reset</button>
                 </div>
             </form>
         </div>
@@ -49,88 +50,94 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { userService } from "../../services/UserService";
-import { useRoute } from "vue-router";
+import { useRoute,useRouter } from "vue-router";
 
 const route = useRoute();
+const router = useRouter();
 const userId = route.params.id;
 const isEdit = ref(true);
-const form = ref({ 
-    id: null, 
+const allRoles = ref(["Admin", "WO", "LM"]);
+const form = ref({
+    id: null,
     username: '',
-    name: '', 
-    password: '', 
-    gender: true, 
-    phone: '', 
-    dob: null, 
-    address: '', 
-    email: '', 
-    roles: [] 
+    name: '',
+    password: '',
+    gender: true,
+    phone: '',
+    dob: null,
+    address: '',
+    email: '',
+    roles: []
 });
 
 
 async function load() {
-    if(userId != null ){
+    if (userId != null) {
+        try {
+            const user = await userService.getUserById(userId);
+            form.value = { ...user, roles: [...user.roles] };
+        } catch (error) {
+            console.log("Failed to fetch user: ", error)
+        }
         isEdit.value = true;
-    }else{
+    } else {
         isEdit.value = false;
     }
 
-    try {
-        const user = await userService.getUserById(userId);
-        form.value = { ...user, roles: [...user.roles] };
-    } catch (error) {
-        console.log("Failed to fetch user: ", error)
-    }
 }
 
 
-async function handleSubmit(id) {
-    if(isEdit.value === true){
-        update(id);
-    }else{
+async function submit() {
+    if (isEdit.value === true) {
+        update();
+    } else {
         try {
             const resp = await userService.createUser(form.value);
-            console.log("User created successfully!", resp);
+            console.log("Thêm mới người dùng thành công!", resp);
+            router.push('/admin/account');
         } catch (error) {
-            console.log("Failed to create user: ", error)
+            console.log("Thêm mới người dùng thất bại: ", error)
         }
     };
+    console.log(isEdit.value)
     resetForm();
 }
 
 
-async function update(id) {
+async function update() {
     try {
-        const resp = await userService.updateUser(id, form.value);
+        const resp = await userService.updateUser(form.value.id, form.value);
         console.log("User updated successfully!", resp);
         resetForm();
+        router.push('/admin/account');
     } catch (error) {
         console.log("Failed to update user: ", error)
     }
 }
 
-async function Enbale(id) {
+async function Enable(id) {
     try {
         const resp = await userService.enableUser(id);
         console.log("User updated successfully!", resp);
         resetForm();
+        router.push('account');
     } catch (error) {
         console.log("Failed to update user: ", error)
     }
 }
 
 function resetForm() {
-    form.value = { 
-        id: null, 
+    form.value = {
+        id: null,
         username: '',
-        name: '', 
-        password: '', 
-        gender: true, 
-        phone: '', 
-        dob: null, 
-        address: '', 
-        email: '', 
-        roles: ['WO'] 
+        name: '',
+        password: '',
+        gender: true,
+        phone: '',
+        dob: null,
+        address: '',
+        email: '',
+        roles: ['WO']
     };
 }
 
@@ -146,14 +153,7 @@ onMounted(() => {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.link {
-    text-decoration: none;
-    color: #080808;
-    display: inline-block;
-    cursor: pointer;
-}
-
-.form {
+.account-form {
     position: relative;
     left: 50%;
     transform: translateX(-50%);
@@ -163,7 +163,7 @@ onMounted(() => {
     flex-direction: column;
 }
 
-.form-container>h2 {
+.account-form>h2 {
     width: 100%;
 }
 

@@ -1,7 +1,7 @@
 <template>
   <div class="container mt-4">
     <div class="row">
-      
+
       <div class="col-md-8">
         <div class="card shadow-sm">
           <h3 class="card-header bg-primary text-white">Thông tin cá nhân</h3>
@@ -16,7 +16,7 @@
             </p>
             <p class="profile-info">
               <i class="fa-solid fa-venus-mars px-2"></i>
-              <span class="fw-bold">Giới tính:</span> {{ user.gender ? 'Mane':'Female' }}
+              <span class="fw-bold">Giới tính:</span> {{ user.gender ? 'Male' : 'Female' }}
             </p>
             <p class="profile-info">
               <i class="fa-regular fa-calendar px-2"></i>
@@ -45,7 +45,7 @@
         </div>
       </div>
 
-      
+
       <div class="col-md-4">
         <div class="card shadow-sm p-1 text-center">
           <div class="card-body">
@@ -54,36 +54,36 @@
             <p class="fw-bold">{{ user.name }}</p>
             <p>{{ user.email }}</p>
             <hr />
-            <button @click="showChangePassword = true" class="btn btn-warning">Đổi mật khẩu</button>
+            <button @click="isChangePassword = true" class="btn btn-warning">Đổi mật khẩu</button>
           </div>
         </div>
       </div>
 
 
-      <div v-if="showChangePassword" class="modal-overlay">
-            <div class="modal-container">
-                <h2 class="modal-title">Change password</h2>
-                <form @submit.prevent="submitChangePassword">
-                    <div class="modal-row">
-                        <label class="modal-label">Mật khẩu cũ:</label>
-                        <input type="password" v-model="changePasswordForm.oldPassword" class="modal-input" required />
-                    </div>
-                    <div class="modal-row">
-                        <label class="modal-label">Mật khẩu mới:</label>
-                        <input type="password" v-model="changePasswordForm.newPassword" class="modal-input" required />
-                    </div>
-                    <div class="modal-row">
-                        <label class="modal-label">Xác nhận mật khẩu:</label>
-                        <input type="password" v-model="changePasswordForm.confirmPassword" class="modal-input" required />
-                    </div>
-                    <div class="modal-actions">
-                        <button type="button" @click="showChangePassword = false" class="border btn-exit">Thoát</button>
-                        <button type="submit" class="border btn-update">Cập nhật</button>
-                    </div>
-                    <div v-if="changePasswordError" class="modal-error">{{ changePasswordError }}</div>
-                </form>
+      <div v-if="isChangePassword" class="modal-overlay">
+        <div class="modal-container">
+          <h2 class="modal-title">Change password</h2>
+          <form @submit.prevent="submitChangePassword">
+            <div class="modal-row">
+              <label class="modal-label">Mật khẩu cũ:</label>
+              <input type="password" v-model="changePasswordForm.oldPassword" class="modal-input" required />
             </div>
+            <div class="modal-row">
+              <label class="modal-label">Mật khẩu mới:</label>
+              <input type="password" v-model="changePasswordForm.newPassword" class="modal-input" required />
+            </div>
+            <div class="modal-row">
+              <label class="modal-label">Xác nhận mật khẩu:</label>
+              <input type="password" v-model="changePasswordForm.confirmPassword" class="modal-input" required />
+            </div>
+            <nav v-if="changePasswordError" class="modal-error">{{ changePasswordError }}</nav>
+            <div class="modal-actions">
+              <button type="button" @click="exitModal()" class="border btn-exit">Thoát</button>
+              <button type="submit" class="border btn-update">Cập nhật</button>
+            </div>
+          </form>
         </div>
+      </div>
 
     </div>
   </div>
@@ -91,25 +91,19 @@
 
 <script setup>
 import { onMounted, ref } from "vue";
-import { userService } from "../../services/UserService";
 import { storeToRefs } from 'pinia';
+import { userService } from "../../services/UserService";
 import { tokenService } from '../../services/TokenService';
+import { passwordService } from "../../services/PasswordService";
+import { useRouter } from "vue-router";
 
 
+const router = useRouter();
 const auth = tokenService();
 auth.loadToken();
 storeToRefs(auth);
 
-//Phần modal
-const showChangePassword = ref(false)
-const changePasswordForm = ref({
-  oldPassword: '',
-  newPassword: '',
-  confirmPassword: ''
-})
-const changePasswordError = ref("")
-
-
+const userId = auth.user.id;
 const user = ref({
   username: "",
   name: "",
@@ -122,22 +116,27 @@ const user = ref({
   // avatar: ""
 });
 
+//Phần modal
+const isChangePassword = ref(false);
+const changePasswordForm = ref({
+  oldPassword: "",
+  newPassword: "",
+  confirmPassword: ""
+});
+const changePasswordError = ref("");
+
+
 
 
 async function loadProfile() {
-
-  
-  const userId = auth.user.id
   try {
     const response = await userService.getUserById(userId);
     const data = response;
-    console.log('dd',data)
     user.value = {
       ...data,
       roles: Array.isArray(data.roles) ? data.roles.join(", ") : "",
     };
-    console.log('user',user.value)
-    
+
   } catch (error) {
     console.log("Failed to load profile: ", error);
   }
@@ -151,6 +150,7 @@ const formatDate = (date) => {
 };
 
 async function submitChangePassword() {
+
   changePasswordError.value = "";
 
   if (changePasswordForm.value.newPassword.length < 6) {
@@ -159,34 +159,36 @@ async function submitChangePassword() {
   }
 
   if (changePasswordForm.value.newPassword !== changePasswordForm.value.confirmPassword) {
-    changePasswordError.value = "Mật khẩu mới không khớp.";
+    changePasswordError.value = "Mật khẩu mới phải không giống mật khẩu confirm.";
     return;
   }
 
   try {
-    await userService.updateUser(changePasswordForm.value)
-
+    console.log(changePasswordForm.value)
+    console.log(auth.token)
+    await passwordService.update(changePasswordForm.value,auth.token);
     changePasswordError.value = "Đổi mật khẩu thành công!";
-    resetFrom();
+    localStorage.removeItem("accessToken");
+    router.push('/');
+    resetForm();
   } catch (error) {
-    changePasswordError.value = error.response?.data?.message || "Đổi mật khẩu thất bại.";
+    changePasswordError.value = "Đổi mật khẩu thất bại.";
     console.error("Error changing password:", error);
   }
-  // showChangePassword.value = false;
+  isChangePassword.value = false;
 }
 
-function resetFrom() {
+function resetForm() {
   changePasswordForm.value.oldPassword = ''
   changePasswordForm.value.newPassword = ''
   changePasswordForm.value.confirmPassword = ''
 }
 
-function exitFrom() {
-  resetFrom()
-  changePasswordError.value = ""
-  showChangePassword.value = false
+function exitModal() {
+  resetForm();
+  changePasswordError.value = '';
+  isChangePassword.value = false;
 }
-
 
 onMounted(() => {
   loadProfile();
@@ -293,7 +295,7 @@ body {
 }
 
 .modal-error {
-  color: red;
+  color: #fa610f;
   margin-top: 1rem;
   font-weight: bold;
 }

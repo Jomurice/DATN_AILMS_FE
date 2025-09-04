@@ -42,12 +42,7 @@
             <div class="invalid-feedback">{{ errors.password }}</div>
           </div>
 
-          
-          <div class="form-check mb-3">
-            <input type="checkbox" id="remember" v-model="remember" class="form-check-input" />
-            <label class="form-check-label" for="remember">Remember me</label>
-          </div>
-
+          <router-link to="/forgot-password" class="link">Quên mật khẩu ?</router-link>
           
           <div v-if="apiError" class="alert alert-danger py-2">{{ apiError }}</div>
 
@@ -114,15 +109,11 @@ const handleLogin = async () => {
   loading.value = true;
   try {
     const authData = await authService.login(username.value, password.value) 
-    auth.setToken(authData.token)
+    console.log(authData)
+    auth.setToken(authData)
     router.push("/profile");
-  } catch (err) {
-    if (err.response) {
-      apiError.value = err.response.data.message || "Đăng nhập thất bại";
-    } else {
-      console.log("Không thể kết nối đến server");
-    }
-    console.error("Login error:", err);
+  } catch (error) {
+      apiError.value = "Tên đăng nhập hoặc mật khẩu không đúng !";
   } finally {
     loading.value = false;
   }
@@ -135,6 +126,21 @@ const handleLogin = async () => {
   padding: 0 !important;
   margin: 0 !important;
 }
+
+.link {
+  display: block;
+  max-width: fit-content;
+  padding: 10px 5px;
+  font-size: 16px;
+  font-weight: 500;
+  color: #333;
+  text-decoration: none;
+  border-radius: 6px;
+}
+.link:hover {
+  color: rgb(47, 47, 243);
+}
+
 h2 {
   font-size: 2rem;
 }

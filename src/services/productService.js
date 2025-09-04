@@ -1,73 +1,79 @@
-import api from "./axios";
+// src/services/productService.js
+import api from "./axios"
 
-const sampleProducts = [
-  {
-    id: "379230b1-879e-4148-b5d3-285127d615de",
-    sku: "SKU-DXPS13",
-    name: "Laptop Dell XPS 13",
-    brand: null,
-    specifications: null,
-    color: null,
-    storage: null,
-    categoryId: "465f30bd-1b64-4139-89ce-c31682bd8788",
-    quantity: 8
-  },
-  
-  {
-    id: "f9a0d2d1-1111-4c11-a0c0-111111111111",
-    sku: "SKU-M15AIR",
-    name: "MacBook Air 15”",
-    brand: "Apple",
-    specifications: "M2, 8GB, 256GB",
-    color: "Midnight",
-    storage: "256GB",
-    categoryId: "cat-laptop",
-    quantity: 3
-  },
-  {
-    id: "a2b3c4d5-2222-4c22-a0c0-222222222222",
-    sku: "SKU-UDOCK",
-    name: "Ugreen USB-C Dock",
-    brand: "Ugreen",
-    specifications: "8-in-1",
-    color: "Gray",
-    storage: null,
-    categoryId: "cat-accessory",
-    quantity: 0
+
+function quantityOf(p) {
+  if (typeof p?.quantity === "number") return p.quantity
+  return Array.isArray(p?.productDetails) ? p.productDetails.length : 0
+}
+
+function normalizeProduct(p) {
+  if (!p) return p
+  return {
+    images: [],
+    ...p,
+    // đảm bảo luôn có object category (nếu BE chỉ trả id, FE vẫn dùng được)
+    category: p.category
+      ? (typeof p.category === "object" ? p.category : { id: p.category })
+      : (p.categoryId ? { id: p.categoryId } : null),
   }
-];
+}
 
-const sampleCategories = [
-  { id: "465f30bd-1b64-4139-89ce-c31682bd8788", name: "Ultrabook" },
-  { id: "cat-laptop", name: "Laptop" },
-  { id: "cat-accessory", name: "Phụ kiện" }
-];
+function toCreatePayload(p) {
+  const { sku, name, brand, specifications, color, storage, categoryId } = p
+  return {
+    sku, name, brand, specifications, color, storage,
+    category: categoryId ? { id: categoryId } : null,
+  }
+}
+const toUpdatePayload = toCreatePayload
+
+// === APIs phụ trợ ===
+// lấy danh sách serial theo productId (nếu backend không expand kèm product)
+async function fetchDetailsByProductId(productId) {
+  try {
+    const { data } = await api.get(`/api/product-details`, { params: { productId } })
+    return Array.isArray(data?.result) ? data.result : (Array.isArray(data) ? data : [])
+  } catch {
+    const sp = sampleProducts.find(x => x.id === productId)
+    return Array.isArray(sp?.productDetails) ? sp.productDetails : []
+  }
+}
+
 
 export const productService = {
-  async getAllProducts() {
-    try {
-      const { data } = await api.get("/api/products");
-      return (Array.isArray(data?.result) ? data.result : data) ?? sampleProducts;
-    } catch {
-      return sampleProducts;
-    }
+
+  async getAll() {
+    const response = await api.get('/api/products');
+    return response.data?.result;
   },
-  async getProductById(id) {
-    try {
-      const { data } = await api.get(`/api/products/${id}`);
-      return data?.result ?? data ?? sampleProducts.find(p => p.id === id);
-    } catch {
-      return sampleProducts.find(p => p.id === id);
-    }
+
+
+ async getById(id) {
+  const response = await api.get(`/api/products/${id}`);
+  return response.data?.result;
+},
+
+  // CREATE
+  async create(payload) {
+    await api.post('/api/products',payload);
+    return;
   },
-  async getCategories() {
+
+  // UPDATE
+  async update(id, payload) {
+    await api.put(`api/products/${id}`,payload);
+    return;
+  },
+
+  // DELETE
+  async removeProduct(id) {
     try {
-      const { data } = await api.get("/api/categories");
-      return Array.isArray(data?.result) ? data.result : (Array.isArray(data) ? data : sampleCategories);
+      await api.delete(`/api/products/${encodeURIComponent(id)}`)
+      return true
     } catch {
-      return sampleCategories;
+      sampleProducts = sampleProducts.filter(p => p.id !== id)
+      return true
     }
   }
-};
-
-
+}
