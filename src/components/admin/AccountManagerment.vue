@@ -27,9 +27,9 @@
       </div>
     </div>
 
-    <div class="card border-0 p-2 mb-3">
+    <div class="card border-0 p-3 mb-3">
       <h3 class="fw-bold mb-3">Tìm kiếm</h3>
-      <div class=" d-flex align-items-center justify-content-end gap-3 ">
+      <div class=" d-flex align-items-end justify-content-end gap-3 ">
         <div class="col-md-3">
           <label class="form-label mb-1">Tìm theo tên</label>
           <input v-model="filters.name" type="text" class="form-control" placeholder="Nhập tên cần tìm..." />
@@ -228,7 +228,9 @@ onMounted(getAllUsers);
 }
 
 /* Mobile Table */
-@media (max-width: 576px) {
+@media (max-width: 1000px) {
+
+
   .user-table thead {
     display: none;
   }

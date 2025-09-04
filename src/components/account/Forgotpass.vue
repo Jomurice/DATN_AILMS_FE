@@ -50,7 +50,7 @@ const RESEND_TIME = 60;
 const showMessage = (msg, type) => {
     message.value = msg;
     messageType.value = type === 'success' ? 'text-success fw-bold' : 'text-danger fw-bold';
-    // Tự động xóa thông báo sau vài giây
+
     setTimeout(() => {
         message.value = '';
     }, 5000);

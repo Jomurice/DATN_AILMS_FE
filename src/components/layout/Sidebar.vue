@@ -11,7 +11,8 @@
           <router-link to="/" class="link" @click="closeSidebar"><i class="fa-solid fa-house px-3"></i> Home</router-link>
           <router-link to="/outbound" class="link" @click="closeSidebar"><i class="fa-solid fa-box-open px-3"></i> Outbound</router-link>
           <router-link to="/inbound" class="link" @click="closeSidebar"><i class="fa-solid fa-truck-ramp-box px-3"></i> Inbound</router-link>
-          <router-link to="/products" class="link" @click="closeSidebar"><i class="fa-solid fa-boxes-stacked px-3"></i> Products</router-link>
+          <router-link to="/product" class="link" @click="closeSidebar"><i class="fa-solid fa-boxes-stacked px-3"></i> Products</router-link>
+          <router-link to="/category" class="link" @click="closeSidebar"><i class="fa-solid fa-tags px-3"></i> Category</router-link>
           <router-link to="/admin/account" class="link" @click="closeSidebar"><i class="fa-solid fa-users px-3"></i> Accounts</router-link>
           <router-link to="/warehouse" class="link" @click="closeSidebar"><i class="fa-solid fa-warehouse px-3"></i> Warehouses</router-link>
           <router-link to="/message" class="link" @click="closeSidebar"><i class="fa-solid fa-message px-3"></i> Message</router-link>

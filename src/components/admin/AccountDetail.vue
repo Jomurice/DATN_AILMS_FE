@@ -87,16 +87,16 @@ async function load() {
 }
 
 
-async function Submit(id) {
+async function Submit() {
     if (isEdit.value === true) {
-        update(id);
+        update();
     } else {
         try {
             const resp = await userService.createUser(form.value);
-            console.log("User created successfully!", resp);
+            console.log("Thêm mới người dùng thành công!", resp);
             router.push('/admin/account');
         } catch (error) {
-            console.log("Failed to create user: ", error)
+            console.log("Thêm mới người dùng thất bại: ", error)
         }
     };
     console.log(isEdit.value)
@@ -104,9 +104,9 @@ async function Submit(id) {
 }
 
 
-async function update(id) {
+async function update() {
     try {
-        const resp = await userService.updateUser(id, form.value);
+        const resp = await userService.updateUser(form.value.id, form.value);
         console.log("User updated successfully!", resp);
         resetForm();
         router.push('/admin/account');
