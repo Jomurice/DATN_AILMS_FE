@@ -159,7 +159,7 @@ async function submitChangePassword() {
   }
 
   if (changePasswordForm.value.newPassword !== changePasswordForm.value.confirmPassword) {
-    changePasswordError.value = "Mật khẩu mới phải không giống mật khẩu comform.";
+    changePasswordError.value = "Mật khẩu mới phải không giống mật khẩu confirm.";
     return;
   }
 
