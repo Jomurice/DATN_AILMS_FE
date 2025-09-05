@@ -5,20 +5,22 @@
             <form action="" class="m-4" @submit.prevent="handleChangePass">
                 <div>
                     <label for="txtEmail">Mật khẩu mới :</label>
-                    <input type="password" v-model="passwordNew" class="form-control mt-2" placeholder="Mật khẩu mới" required>
+                    <input type="password" v-model="formPassword.newPassword" class="form-control mt-2"
+                        placeholder="Mật khẩu mới" required>
                 </div>
 
                 <div>
                     <label for="txtEmail">Xác nhận mật khẩu :</label>
-                    <input type="password" v-model="passwordConfirm" class="form-control mt-2" placeholder="Xác nhận mật khẩu" required>
+                    <input type="password" v-model="formPassword.confirmPassword" class="form-control mt-2"
+                        placeholder="Xác nhận mật khẩu" required>
                 </div>
-                
+
                 <span v-if="message" :class="messageType">{{ message }}</span>
 
                 <div class="d-flex justify-content-end mt-3 gap-3">
-                    <button class="btn btn-primary" type="submit">{{ isLoading ? 'Đang xử lý...':'Xác nhận' }}</button>
+                    <button class="btn btn-primary" type="submit">{{ isLoading ? 'Đang xử lý...' : 'Xác nhận' }}</button>
                 </div>
-                
+
             </form>
         </div>
     </div>
@@ -28,48 +30,53 @@
 import { ref } from 'vue';
 import { authService } from '../../services/authService';
 import { useRouter } from 'vue-router';
+import { passwordService } from '../../services/PasswordService';
 
 const router = useRouter();
-const passwordNew = ref('');
-const passwordConfirm = ref('');
+const formPassword = ref({
+    email: '',
+    newPassword: '',
+    confirmPassword: ''
+})
 
 const message = ref('');
 const messageType = ref('');
 
 const isLoading = ref(false);
 
-const showMessage = (msg,type) =>{
+const showMessage = (msg, type) => {
     message.value = msg;
     messageType.value = type === 'success' ? 'text-success fw-bold' : 'text-danger fw-bold';
-    setTimeout(() =>{
+    setTimeout(() => {
         message.value = '';
-    },5000);
+    }, 5000);
 }
 
 
 async function handleChangePass() {
     isLoading.value = true;
 
-    if(passwordNew.value.length < 6){
-        showMessage('Mật khẩu phải có ít nhất 6 ký tự !','error');
+    if (formPassword.value.newPassword.length < 6) {
+        showMessage('Mật khẩu phải có ít nhất 6 ký tự !', 'error');
         isLoading.value = false;
         return;
     }
 
-    if(passwordNew.value !== passwordConfirm.value){
-        showMessage('Mật khẩu xác nhận phải giống mật khẩu mới !','error');
+    if (formPassword.value.newPassword !== formPassword.value.confirmPassword) {
+        showMessage('Mật khẩu xác nhận phải giống mật khẩu mới !', 'error');
         isLoading.value = false;
         return;
     }
 
+    formPassword.value.email = localStorage.getItem('email');
     try {
-        await authService.forgotpass(email);
+        await passwordService.resetPassword(formPassword.value);
         router.push('/');
     } catch (error) {
-        console.log("error",error);
-        const errorMsg = error.response?.data?.message || "Đã xảy ra lỗi. Vui lòng thử lại sau.";
-        showMessage(errorMsg,'error');
-    }finally{
+        console.log("error", error);
+        const errorMsg = "Đã xảy ra lỗi. Vui lòng thử lại sau.";
+        showMessage(errorMsg, 'error');
+    } finally {
         isLoading.value = false;
     }
 }
@@ -78,10 +85,10 @@ async function handleChangePass() {
 </script>
 
 <style>
-
-html, body {
-  height: 100%;
-  margin: 0;
+html,
+body {
+    height: 100%;
+    margin: 0;
 }
 
 .container-fluid {

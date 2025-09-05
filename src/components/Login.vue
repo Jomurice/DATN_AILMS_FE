@@ -62,12 +62,12 @@ import { ref } from "vue"
 import { useRouter } from "vue-router"
 import { authService } from "../services/authService";
 import { tokenService } from "../services/TokenService";
+import { passwordService } from "../services/PasswordService";
 
 const router = useRouter();
 const auth = tokenService();
 const username = ref("");
 const password = ref("");
-const remember = ref(false);
 const errors = ref({});
 const apiError = ref("");
 const loading = ref(false);
@@ -116,6 +116,14 @@ const handleLogin = async () => {
       apiError.value = "Tên đăng nhập hoặc mật khẩu không đúng !";
   } finally {
     loading.value = false;
+  }
+}
+
+async function forgotPassword() {
+  try {
+    await passwordService.forgotPass()
+  } catch (error) {
+    
   }
 }
 </script>

@@ -1,8 +1,8 @@
 import api from "./axios"
 
 let sampleAisles = [
-  { id: "a-01", name: "Aisle 1", code: "A1", zone: { id: "z-01", name: "Zone A" } },
-  { id: "a-02", name: "Aisle 2", code: "A2", zone: { id: "z-01", name: "Zone A" } },
+  { id: "01", name: "Aisle 1", code: "A1", zone: { id: "01", name: "Zone A" } },
+  { id: "02", name: "Aisle 2", code: "A2", zone: { id: "01", name: "Zone A" } },
 ]
 
 export const aisleService = {

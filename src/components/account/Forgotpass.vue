@@ -5,12 +5,12 @@
             <form action="" class="m-4" @submit.prevent="isOtp ? handleVerify() : handleForgot()">
                 <div>
                     <label for="txtEmail">Email :</label>
-                    <input type="email" v-model="email" class="form-control mt-2" placeholder="Email" required>
+                    <input type="email" v-model="forgotPassword.email" class="form-control mt-2" placeholder="Email" required>
                 </div>
 
                 <div v-if="isOtp">
                     <label for="txtOtp">Mã OTP :</label>
-                    <input type="text" v-model="otp" class="form-control mt-2" placeholder="Nhập mã OTP" required>
+                    <input type="text" v-model="forgotPassword.otpCode" class="form-control mt-2" placeholder="Nhập mã OTP" required>
                 </div>
 
                 <span v-if="message" :class="messageType">{{ message }}</span>
@@ -31,12 +31,14 @@
 
 <script setup>
 import { ref } from 'vue';
-import { authService } from '../../services/authService';
 import { useRouter } from 'vue-router';
+import { passwordService } from '../../services/PasswordService';
 
 const router = useRouter();
-const email = ref('');
-const otp = ref('');
+const forgotPassword = ref({
+    email:'',
+    otpCode:''    
+})
 const isOtp = ref(false);
 const isLoading = ref(false);
 
@@ -74,12 +76,14 @@ const startResendTimer = () => {
 async function handleForgot() {
     isLoading.value = true;
     try {
-        await authService.forgotPass(email);
+        await passwordService.forgotPass(forgotPassword.value);
+        localStorage.setItem('email',forgotPassword.value.email);
         isOtp.value = true;
         showMessage("Mã OTP đã được gửi đến email của bạn, vui lòng kiểm tra!", 'success');
         startResendTimer();
     } catch (error) {
-        const errorMsg = error.response?.data?.message || "Đã xảy ra lỗi. Vui lòng thử lại sau.";
+        const errorMsg = "Đã xảy ra lỗi. Vui lòng thử lại sau.";
+        console.log("error",error);
         showMessage(errorMsg, 'error');
     } finally {
         isLoading.value = false;
@@ -87,17 +91,18 @@ async function handleForgot() {
 }
 
 async function handleVerify() {
-    if (otp.value.length < 6) {
+    if (forgotPassword.value.otpCode.length < 6) {
         showMessage("OTP phải có ít nhất 6 ký tự!", 'error');
         return;
     }
 
     isLoading.value = true;
     try {
-        await authService.verifyOTP(otp.value);
+        await passwordService.verifyOTP(forgotPassword.value);
         router.push('change-password');
     } catch (error) {
-        const errorMsg = error.response?.data?.message || "Mã OTP không hợp lệ!";
+        const errorMsg = "Mã OTP không hợp lệ!";
+        console.log("error",error);
         showMessage(errorMsg, 'error');
     } finally {
         isLoading.value = false;
@@ -108,11 +113,13 @@ async function handleResendOtp() {
     if (resendDisabled.value) return;
     isLoading.value = true;
     try {
-        await authService.forgotPass(email);
+         await passwordService.forgotPass(forgotPassword.value);
+        localStorage.setItem('email',forgotPassword.value.email);
         showMessage("Đã gửi lại mã OTP mới. Vui lòng kiểm tra email!", 'success');
         startResendTimer();
     } catch (error) {
-        const errorMsg = error.response?.data?.message || "Đã xảy ra lỗi khi gửi lại OTP.";
+        const errorMsg = "Đã xảy ra lỗi khi gửi lại OTP.";
+        console.log("error",error);
         showMessage(errorMsg, 'error');
     } finally {
         isLoading.value = false;

@@ -1,8 +1,8 @@
 import api from "./axios"
 
 let sampleWarehouses = [
-  { id: "w-01", name: "Warehouse A", location: "Hà Nội" },
-  { id: "w-02", name: "Warehouse B", location: "HCM" }
+  { id: "01", name: "Warehouse A", location: "Hà Nội" },
+  { id: "02", name: "Warehouse B", location: "HCM" }
 ]
 
 export const warehouseService = {

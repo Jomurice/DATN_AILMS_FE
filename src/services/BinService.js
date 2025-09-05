@@ -10,7 +10,7 @@ let sampleBins = [
     capacity: 100,
     currentQty: 20,
     preferredProductId: null,
-    shelf: { id: "s-01", name: "Shelf A1" }, // <— CHÚ Ý: s-01
+    shelf: { id: "01", name: "Shelf A1" }, // <— CHÚ Ý: s-01
     productDetails: [
       { id: "pd-1", serialNumber: "DXPS13-0001", status: "AVAILABLE", product: { sku: "SKU-DXPS13", name: "Dell XPS 13" } },
       { id: "pd-2", serialNumber: "DXPS13-0002", status: "RESERVED",  product: { sku: "SKU-DXPS13", name: "Dell XPS 13" } }
@@ -23,7 +23,7 @@ let sampleBins = [
     capacity: 50,
     currentQty: 10,
     preferredProductId: null,
-    shelf: { id: "s-01", name: "Shelf A1" },
+    shelf: { id: "01", name: "Shelf A1" },
     productDetails: []
   }
 ]
