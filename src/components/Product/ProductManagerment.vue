@@ -99,9 +99,7 @@
                   <td :data-label="'Loại'">{{ categories.find(c => c.id === p.categoryId)?.name }}</td>
                   <td :data-label="'Lưu trữ'" class="text-center">{{ p.storage ?? 0 }}</td>
                   <td :data-label="'Hành động'" class="text-center">
-                    <button class="btn btn-sm btn-outline-primary me-1" 
-                    @click="$router.push(`/product/${p.id}/detail`)">Chi tiết</button>
-                    <button class="btn btn-sm btn-outline-warning me-1" @click="$router.push(`/product/${p.id}/detail`)">Sửa</button>
+                    <button class="btn btn-sm btn-outline-primary me-1" @click="$router.push(`/product/${p.id}/detail`)">Sửa</button>
                     <button class="btn btn-sm btn-outline-danger" @click="removeProduct(p.id)">Xoá</button>
                   </td>
                 </tr>

@@ -149,9 +149,10 @@ const formatDate = (date) => {
   return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 };
 
+
 async function submitChangePassword() {
 
-  changePasswordError.value = "";
+    changePasswordError.value = "";
 
   if (changePasswordForm.value.newPassword.length < 6) {
     changePasswordError.value = "Mật khẩu mới phải có ít nhất 6 ký tự.";

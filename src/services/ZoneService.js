@@ -1,8 +1,8 @@
 import api from "./axios"
 
 let sampleZones = [
-  { id: "z-01", name: "Zone A", description: "Khu A", warehouse: { id: "w-01", name: "Warehouse A" } },
-  { id: "z-02", name: "Zone B", description: "Khu B", warehouse: { id: "w-01", name: "Warehouse A" } },
+  { id: "01", name: "Zone A", description: "Khu A", warehouse: { id: "01", name: "Warehouse A" } },
+  { id: "02", name: "Zone B", description: "Khu B", warehouse: { id: "01", name: "Warehouse A" } },
 ]
 
 export const zoneService = {

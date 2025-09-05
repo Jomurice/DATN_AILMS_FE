@@ -1,10 +1,10 @@
 import api from "./axios"
 
 let sampleShelves = [
-  { id: "s-01", name: "Shelf A1", code: "SHELF-A1", aisle:{ id:"a-01", name:"Aisle 1" }, bins: [
-    { id: "b-01", name: "Bin A1-01", code: "BIN-A1-S1", capacity: 100, currentQty: 20 }
+  { id: "01", name: "Shelf A1", code: "SHELF-A1", aisle:{ id:"01", name:"Aisle 1" }, bins: [
+    { id: "01", name: "Bin A1-01", code: "BIN-A1-S1", capacity: 100, currentQty: 20 }
   ]},
-  { id: "s-02", name: "Shelf A2", code: "SHELF-A2", aisle:{ id:"a-01", name:"Aisle 1" }, bins: [] },
+  { id: "02", name: "Shelf A2", code: "SHELF-A2", aisle:{ id:"01", name:"Aisle 1" }, bins: [] },
 ]
 
 export const shelfService = {

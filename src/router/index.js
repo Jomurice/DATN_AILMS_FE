@@ -12,9 +12,10 @@ import WarehouseDetail from "../components/warehouseManagement/detail/Warehouse-
 import Zone from "../components/warehouseManagement/Zone.vue";
 import Aisle from "../components/warehouseManagement/Aisle.vue";
 import Bin from "../components/warehouseManagement/Bin.vue";
+import Shelf from "../components/warehouseManagement/Shelf.vue";
 import Products from "../components/Product/ProductManagerment.vue";
 import ProductDetail from "../components/Product/ProductDetail.vue";
-import Categorys from "../components/category/CategoryList.vue";
+import Category from "../components/category/CategoryList.vue";
 import CategoryDetail from "../components/category/CategoryForm.vue";
 
 
@@ -37,7 +38,9 @@ const routes = [
       { path: "warehouse", component: Warehouse },
       { path: "warehouse/:id/zone", component: Zone, props: true },
       { path: "warehouse/:id/zone/:id/aisle", component: Aisle, props: true },
-      { path: "category", component: Categorys },
+      { path: "warehouse/:id/zone/:id/aisle/:id/shelf", component: Shelf, props: true },
+      { path: "warehouse/:id/zone/:id/aisle//:id/shelf/:id/bin", component: Bin, props: true },
+      { path: "category", component: Category },
       { path: "category/add", component: CategoryDetail },
       { path: "category/:id/detail", component: CategoryDetail, props: true },
 
