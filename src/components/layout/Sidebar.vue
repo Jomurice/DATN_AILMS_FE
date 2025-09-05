@@ -8,14 +8,14 @@
       </label>
       <nav>
         <ul class="submenu">
-          <router-link to="/" class="link" @click="closeSidebar"><i class="fa-solid fa-house px-3"></i> Home</router-link>
-          <router-link to="/outbound" class="link" @click="closeSidebar"><i class="fa-solid fa-box-open px-3"></i> Outbound</router-link>
-          <router-link to="/inbound" class="link" @click="closeSidebar"><i class="fa-solid fa-truck-ramp-box px-3"></i> Inbound</router-link>
-          <router-link to="/category" class="link" @click="closeSidebar"><i class="fa-solid fa-tags px-3"></i> Category</router-link>
-          <router-link to="/product" class="link" @click="closeSidebar"><i class="fa-solid fa-boxes-stacked px-3"></i> Products</router-link>
-          <router-link to="/admin/account" class="link" @click="closeSidebar"><i class="fa-solid fa-users px-3"></i> Accounts</router-link>
-          <router-link to="/warehouse" class="link" @click="closeSidebar"><i class="fa-solid fa-warehouse px-3"></i> Warehouses</router-link>
-          <router-link to="/message" class="link" @click="closeSidebar"><i class="fa-solid fa-message px-3"></i> Message</router-link>
+          <router-link to="/" class="link" @click="closeSidebar"><i class="fa-solid fa-house px-3"></i> Trang chủ</router-link>
+          <router-link to="/inbound" class="link" @click="closeSidebar"><i class="fa-solid fa-truck-ramp-box px-3"></i> Nhập hàng</router-link>
+          <router-link to="/outbound" class="link" @click="closeSidebar"><i class="fa-solid fa-box-open px-3"></i> Xuất hàng</router-link>
+          <router-link to="/category" class="link" @click="closeSidebar"><i class="fa-solid fa-tags px-3"></i> Loại hàng</router-link>
+          <router-link to="/product" class="link" @click="closeSidebar"><i class="fa-solid fa-boxes-stacked px-3"></i> Sản phẩm</router-link>
+          <router-link to="/admin/account" class="link" @click="closeSidebar"><i class="fa-solid fa-users px-3"></i> Tài khoản</router-link>
+          <router-link to="/warehouse" class="link" @click="closeSidebar"><i class="fa-solid fa-warehouse px-3"></i> Kho</router-link>
+          <!-- <router-link to="/message" class="link" @click="closeSidebar"><i class="fa-solid fa-message px-3"></i> Nhăn</router-link> -->
         </ul>
       </nav>
 
@@ -26,8 +26,8 @@
       </label>
       <nav>
         <ul class="submenu2">
-          <router-link to="/report" class="link" @click="closeSidebar"><i class="fa-solid fa-flag px-3"></i> Report</router-link>
-          <router-link to="/support" class="link" @click="closeSidebar"><i class="fa-solid fa-headset px-3"></i> Support</router-link>
+          <router-link to="/report" class="link" @click="closeSidebar"><i class="fa-solid fa-flag px-3"></i> Báo cáo</router-link>
+          <router-link to="/support" class="link" @click="closeSidebar"><i class="fa-solid fa-headset px-3"></i> Trợ giúp</router-link>
         </ul>
       </nav>
     </div>
@@ -40,7 +40,7 @@
       </label>
       <nav>
         <ul class="submenu">
-          <router-link to="/settings" class="link" @click="closeSidebar"><i class="fa-solid fa-gear px-3"></i> Settings</router-link>
+          <router-link to="/settings" class="link" @click="closeSidebar"><i class="fa-solid fa-gear px-3"></i> Cài đặt</router-link>
         </ul>
       </nav>
     </div>

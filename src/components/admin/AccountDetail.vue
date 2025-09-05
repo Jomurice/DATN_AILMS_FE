@@ -21,7 +21,8 @@
 
                 <div v-if="isEdit === false">
                     <label for="txtPassword">Mật khẩu : </label>
-                    <input type="password" v-model="form.password" class="form-control" placeholder="Mật khẩu " required />
+                    <input type="password" v-model="form.password" class="form-control" placeholder="Mật khẩu "
+                        required />
                 </div>
 
 
@@ -46,13 +47,14 @@
                     <input type="radio" v-model="form.gender" :value="false"> Nữ
                 </div>
 
-                <div>
+                <!-- <div>
                     <label for="">Quyền hạn :</label>
+                    <input type="text" class="form-control mb-2" v-model="form.roles" disabled>
                     <select class="form-select" v-model="form.roles">
-                        <option disabled  value="">----- Chọn quyền hạn ------</option>
-                        <option v-for="role in roles" :key="role.id" :value="role">{{ role.name }}</option>
+                        <option hidden>----- Chọn quyền hạn ------</option>
+                        <option v-for="r in roles" :key="r.name" :value="r.name">{{ r.name }}</option>
                     </select>
-                </div>
+                </div> -->
 
 
                 <div class="d-flex gap-3 mt-3">
@@ -92,12 +94,18 @@ const form = ref({
 
 
 async function load() {
+    roles.value = await roleService.getAll();
+
     if (userId != null) {
         try {
-            form.value = await userService.getUserById(userId);
-            roles.value = await roleService.getRoleById(form.value.roles);
-            console.log(roles.value);
-            form.value.roles = {...roles.value};
+            const user = await userService.getUserById(userId);
+            console.log(user.roles);
+            // roles.value = await roleService.getRoleById(form.value.roles);
+            form.value = {
+                ...user, roles: user.roles && user.roles.length > 0
+                    ? user.roles[0] : ""
+            };
+            console.log(form.value);
 
         } catch (error) {
             console.log("Failed to fetch user: ", error)
@@ -105,7 +113,7 @@ async function load() {
         isEdit.value = true;
     } else {
         isEdit.value = false;
-        roles.value = await roleService.getAll();
+
     }
 
 }
