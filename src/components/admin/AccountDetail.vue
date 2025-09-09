@@ -4,9 +4,11 @@
             <h2>{{ isEdit ? 'Sửa thông tin người dùng' : 'Thêm người dùng' }}</h2>
             <form @submit.prevent="submit()">
 
-                <div>
+                <div v-if="isEdit === false">
                     <label for="txtUsername">Tên đăng nhập : </label>
-                    <input v-model="form.username" class="form-control" placeholder="Tên đăng nhập" required />
+                    <input v-model="form.username" class="form-control"
+                    :class="{ 'is-invalid': touched.name && usernameError }" placeholder="Tên đăng nhập" required />
+                    <span class="invalid-feedback" v-if="touched.name && usernameError">{{ usernameError }}</span>
                 </div>
 
                 <div>
@@ -21,8 +23,10 @@
 
                 <div v-if="isEdit === false">
                     <label for="txtPassword">Mật khẩu : </label>
-                    <input type="password" v-model="form.password" class="form-control" placeholder="Mật khẩu "
-                        required />
+                    <input type="password" v-model="form.password" class="form-control"
+                    :class="{ 'is-invalid': touched.name && message }" placeholder="Mật khẩu " min="" required />
+                    <span class="invalid-feedback" v-if="touched.name && message">{{ message }}</span>
+
                 </div>
 
 
@@ -33,7 +37,7 @@
 
                 <div>
                     <label for="txtdob">Ngày sinh : </label>
-                    <input type="date" v-model="form.dob" class="form-control" required />
+                    <input type="date" v-model="form.dob" class="form-control" required  />
                 </div>
 
                 <div>
@@ -47,20 +51,20 @@
                     <input type="radio" v-model="form.gender" :value="false"> Nữ
                 </div>
 
-                <!-- <div>
-                    <label for="">Quyền hạn :</label>
-                    <input type="text" class="form-control mb-2" v-model="form.roles" disabled>
-                    <select class="form-select" v-model="form.roles">
-                        <option hidden>----- Chọn quyền hạn ------</option>
-                        <option v-for="r in roles" :key="r.name" :value="r.name">{{ r.name }}</option>
-                    </select>
-                </div> -->
+                <div class="d-flex gap-3">
+                    <label for="txtRole">Quyền hạn :</label>
+                    <nav v-for="r in roles" :key="r.name" >
+                    <input type="checkbox" v-model="form.roles" :value="r.name">
+                    <span class="mx-1">{{ r.name }}</span>
+                    </nav>
+                    
+                </div>
 
 
                 <div class="d-flex gap-3 mt-3">
                     <button type="submit" class="btn btn-primary">{{ isEdit ? 'Sửa' : 'Thêm' }}</button>
                     <button type="button" class="btn btn-danger" @click="Enable(form.id)">Khóa</button>
-                    <button type="button" class="btn btn-primary" @click="resetForm()">Làm mới</button>
+                    <button v-if="isEdit === false" type="button" class="btn btn-primary" @click="resetForm()">Làm mới</button>
                 </div>
             </form>
         </div>
@@ -69,7 +73,7 @@
 
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed } from "vue";
 import { userService } from "../../services/UserService";
 import { roleService } from "../../services/RoleService";
 import { useRoute, useRouter } from "vue-router";
@@ -77,7 +81,10 @@ import { useRoute, useRouter } from "vue-router";
 const route = useRoute();
 const router = useRouter();
 const userId = route.params.id;
-const isEdit = ref(true);
+const isEdit = ref(false);
+const message = ref('');
+const existing = ref([]);
+const touched = ref({ name: false });
 const roles = ref([]);
 const form = ref({
     id: null,
@@ -93,37 +100,57 @@ const form = ref({
 });
 
 
+const usernameError = computed(() =>{
+
+     if(form.value.username.includes(" ")) return "Tên đăng nhập k được có khoảng trắng";
+
+    const usernameCheck = form.value.username?.trim();
+    const dup = existing.value.find(n => n.username?.trim().toLowerCase() === usernameCheck.trim().toLowerCase() &&
+    (!isEdit || n.id !== userId));
+    if(dup) return "Tên tài khoản đã tồn tại. Vui lòng nhập tên khác !";
+    return "";
+})
+
+const showMessage = (msg) =>{
+    message.value = msg;
+    setTimeout(() => {
+        message.value = "";
+    },10000);
+}
+
+
+
 async function load() {
     roles.value = await roleService.getAll();
 
     if (userId != null) {
+        isEdit.value = true;
         try {
             const user = await userService.getUserById(userId);
-            console.log(user.roles);
-            // roles.value = await roleService.getRoleById(form.value.roles);
-            form.value = {
-                ...user, roles: user.roles && user.roles.length > 0
-                    ? user.roles[0] : ""
-            };
-            console.log(form.value);
+            form.value = { ...user, };
 
         } catch (error) {
             console.log("Failed to fetch user: ", error)
         }
-        isEdit.value = true;
     } else {
-        isEdit.value = false;
-
+        const cats = await userService.getAllUsers();
+        existing.value = cats;
     }
 
 }
 
 
 async function submit() {
-    if (isEdit.value === true) {
+    touched.value.name = true;
+    if(usernameError.value) return;
+
+    if (userId) {
         update();
     } else {
         try {
+            if(form.value.password.length < 6 ){
+               return showMessage('Mật khẩu phải có độ dài ít nhất 6 ký tự !');
+            }
             const resp = await userService.createUser(form.value);
             console.log("Thêm mới người dùng thành công!", resp);
             router.push('/admin/account');
@@ -169,7 +196,7 @@ function resetForm() {
         dob: null,
         address: '',
         email: '',
-        roles: ['WO']
+        roles: ['']
     };
 }
 
@@ -207,12 +234,8 @@ form {
     margin-bottom: 16px;
 }
 
-input,
-textarea,
-select {
-    padding: 6px;
-    border-radius: 4px;
-    border: 1px solid #ccc;
+nav{
+    width: fit-content;
 }
 
 .gender {

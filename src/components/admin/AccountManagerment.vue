@@ -1,5 +1,5 @@
 <template>
-  <div class="container  p-4">
+  <div class="container">
 
     <div class="d-flex align-items-center justify-content-end flex-wrap gap-3 mb-4">
       <div class="d-flex gap-3">
@@ -45,7 +45,7 @@
         </div>
 
         <div class="ms-auto d-flex gap-2 filter-actions">
-          <button class="btn btn-outline-secondary" @click="resetFilters">Reset</button>
+          <button class="btn btn-outline-secondary" @click="resetFilters">Làm mới</button>
           <button class="btn btn-primary" @click="applyFilters">Tìm kiếm</button>
         </div>
       </div>
@@ -60,7 +60,7 @@
       <table class="table table-bordered user-table align-middle">
         <thead class="table-primary">
           <tr>
-            <th>ID</th>
+            <!-- <th>ID</th> -->
             <th>Tên tài khoản</th>
             <th>Họ tên</th>
             <th>Email</th>
@@ -71,19 +71,19 @@
         </thead>
         <tbody>
           <tr v-for="user in displayedUsers" :key="user.id">
-            <td :data-label="'ID'">{{ user.id }}</td>
+            <!-- <td :data-label="'ID'">{{ user.id }}</td> -->
             <td :data-label="'Tên tài khoản'">{{ user.username }}</td>
             <td :data-label="'Họ tên'">{{ user.name }}</td>
             <td :data-label="'Email'">{{ user.email }}</td>
-            <td :data-label="'Giới tính'">{{ user.gender ? 'Male' : 'Female' }}</td>
+            <td :data-label="'Giới tính'">{{ user.gender ? 'Nam' : 'Nữ' }}</td>
             <td :data-label="'Chức vụ'">
               <span v-for="role in (user.roles || [])" :key="role" class="badge bg-info me-1">{{ role }}</span>
             </td>
             <td :data-label="'Hành động'" class="text-center">
               <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-warning"
+                <button class="btn btn-sm btn-outline-primary"
                   @click="$router.push(`/admin/account/${user.id}/detail`)">Sửa</button>
-                <button class="btn btn-sm btn-secondary" @click="hideUser(user.id)">Ẩn</button>
+                <button class="btn btn-sm btn-outline-danger" @click="hideUser(user.id)">Khóa</button>
               </div>
             </td>
           </tr>

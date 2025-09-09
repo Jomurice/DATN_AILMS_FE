@@ -14,14 +14,13 @@
         <div class="card border-0 shadow-sm bg-white rounded-3">
           <div class="card-body py-2 px-4 text-center">
             <div class="text-muted small">Hết hàng</div>
-            <div class="fw-bold fs-5 text-dark">{{displayed.filter(x => (x.quantity ?? 0) === 0).length}}</div>
+            <div class="fw-bold fs-5 text-dark">{{displayed.filter(x => x.quantity === 0).length}}</div>
           </div>
         </div>
         <div class="card border-0 shadow-sm bg-white rounded-3">
           <div class="card-body py-2 px-4 text-center">
             <div class="text-muted small">Sắp hết (&lt;5)</div>
-            <div class="fw-bold fs-5 text-dark">{{displayed.filter(x => (x.quantity ?? 0) > 0 && (x.quantity ?? 0) <
-                5).length }}</div>
+            <div class="fw-bold fs-5 text-dark">{{displayed.filter(x => x.quantity  < 5 ).length }}</div>
             </div>
           </div>
         </div>
@@ -223,7 +222,7 @@ const displayed = computed(() => {
 
 function applyFilters() { applied.value = { ...filters.value }; }
 function resetFilters() {
-  filters.value = { keyword: "", category: "", quantity: null, sort: "name_asc" };
+  filters.value = { keyword: "", category: "", quantity: null, sort: "cat_asc" };
   applied.value = { ...filters.value };
 }
 

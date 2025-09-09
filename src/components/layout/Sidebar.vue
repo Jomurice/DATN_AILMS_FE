@@ -13,7 +13,8 @@
           <router-link to="/outbound" class="link" @click="closeSidebar"><i class="fa-solid fa-box-open px-3"></i> Xuất hàng</router-link>
           <router-link to="/category" class="link" @click="closeSidebar"><i class="fa-solid fa-tags px-3"></i> Loại hàng</router-link>
           <router-link to="/product" class="link" @click="closeSidebar"><i class="fa-solid fa-boxes-stacked px-3"></i> Sản phẩm</router-link>
-          <router-link to="/admin/account" class="link" @click="closeSidebar"><i class="fa-solid fa-users px-3"></i> Tài khoản</router-link>
+          <router-link to="/admin/account" class="link" @click="closeSidebar" v-if="hasRole('ADMIN')">
+            <i class="fa-solid fa-users px-3"></i> Tài khoản</router-link>
           <router-link to="/warehouse" class="link" @click="closeSidebar"><i class="fa-solid fa-warehouse px-3"></i> Kho</router-link>
           <!-- <router-link to="/message" class="link" @click="closeSidebar"><i class="fa-solid fa-message px-3"></i> Nhăn</router-link> -->
         </ul>
@@ -30,33 +31,44 @@
           <router-link to="/support" class="link" @click="closeSidebar"><i class="fa-solid fa-headset px-3"></i> Trợ giúp</router-link>
         </ul>
       </nav>
-    </div>
 
-    <div class="others">
       <input type="checkbox" id="toggleOthers" hidden />
       <label for="toggleOthers" class="menu fw-bold">
         OTHERS
         <span class="arrow"></span>
       </label>
       <nav>
-        <ul class="submenu">
+        <ul class="submenu3">
           <router-link to="/settings" class="link" @click="closeSidebar"><i class="fa-solid fa-gear px-3"></i> Cài đặt</router-link>
         </ul>
       </nav>
     </div>
+
   </aside>
 </template>
 
 <script  setup>
 import { ref, onMounted, onUnmounted } from "vue";
 import Sidebar from "../../JS/Sidebar.js"
+import { tokenService } from "../../services/TokenService.js";
+import { storeToRefs } from "pinia";
+import { userService } from "../../services/UserService.js";
+
+
+const auth = tokenService();
+auth.loadToken();
+storeToRefs(auth);
+const userId = auth.user.id;
+const roles = ref([]);
 const { isOpen, sidebarRef,toggleSidebar, closeSidebar,handleClickOutside } = Sidebar;
 
 
 async function loadProfile() {
+  console.log(userId)
   try {
     const response = await userService.getUserById(userId);
-    
+    roles.value = response.roles || [];
+    console.log(roles.value[0]);
   } catch (error) {
     console.log("Failed to load profile: ", error);
   }
@@ -64,11 +76,15 @@ async function loadProfile() {
 
 
 onMounted(() => {
+  loadProfile();
   document.addEventListener("click", handleClickOutside);
 });
 onUnmounted(() => {
   document.removeEventListener("click", handleClickOutside);
 });
+
+const hasRole = (roleName) => roles.value.includes(roleName);
+
 </script>
 
 <style scoped>
@@ -106,7 +122,7 @@ onUnmounted(() => {
 }
 
 /* Submenu ẩn mặc định */
-.submenu, .submenu2 {
+.submenu, .submenu2, .submenu3 {
   display: none;
   margin-left: 10px;
   padding: 0;
@@ -117,7 +133,7 @@ onUnmounted(() => {
 /* Toggle hiển thị submenu */
 #toggleMain:checked ~ nav .submenu,
 #toggleGeneral:checked ~ nav .submenu2,
-#toggleOthers:checked ~ nav .submenu {
+#toggleOthers:checked ~ nav .submenu3 {
   display: block;
 }
 
@@ -139,9 +155,9 @@ onUnmounted(() => {
 
 
 /* Responsive tablet */
-@media (max-width: 1024px) {
+@media (min-width: 1024px) {
   .sidebar {
-    width: 210px;
+    width: 220px;
   }
   .link {
     font-size: 14px;
