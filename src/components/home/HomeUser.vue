@@ -1,28 +1,28 @@
 <template>
   <div>
-    <div class="flex-1 flex flex-col">
-      <Header />
+    <Header />
+    <TopNav />
+    <div class="header-offset" aria-hidden="true">
     </div>
-    <div class="d-flex gap-3">
-      <Sidebar />
 
-      <div class="w-100 m-3">
-        <nav class="breadcrumb flex items-center gap-2 mb-6">
-          <RouterLink class="link" to="/">
-            <i class="fas fa-home"></i>
+    <div class="crumb-bar">
+      <nav class="breadcrumb-custom flex items-center gap-2 m-0 px-3">
+        <RouterLink class="link" to="/" aria-label="Trang chủ">
+          <i class="fas fa-home"></i>
+        </RouterLink>
+        <template v-for="(crumb, index) in breadcrumbs" :key="index">
+          <span v-if="crumb.title" class="mx-1">/</span>
+          <RouterLink v-if="crumb.title && index < breadcrumbs.length - 1" class="link" :to="crumb.path">
+            {{ crumb.title }}
           </RouterLink>
-          <template v-for="(crumb, index) in breadcrumbs" :key="index">
-            <span v-if="crumb.title">/</span>
-            <RouterLink v-if="crumb.title && index < breadcrumbs.length - 1" class="link" :to="crumb.path">
-              {{ crumb.title }}
-            </RouterLink>
-            <span v-else-if="crumb.title" class="font-medium">{{ crumb.title }}</span>
-          </template>
-        </nav>
+          <span v-else-if="crumb.title" class="fw-medium">{{ crumb.title }}</span>
+        </template>
+      </nav>
+    </div>
 
-        <RouterView></RouterView>
-      </div>
-
+    <!-- Nội dung trang con -->
+    <div class="px-3">
+      <RouterView />
     </div>
   </div>
 </template>
@@ -30,59 +30,49 @@
 <script setup>
 import { useRoute } from "vue-router";
 import { computed } from "vue";
-import { storeToRefs } from 'pinia';
-import { tokenService } from '../../services/TokenService';
 import Header from "../layout/Header.vue";
-import Sidebar from "../layout/Sidebar.vue";
+import TopNav from "../layout/TopNav.vue";
 
 const route = useRoute();
-const auth = tokenService();
-auth.loadToken();
-const {token} = storeToRefs(auth)
 
 function formatTitle(segment) {
   if (!segment) return "";
   return segment.charAt(0).toUpperCase() + segment.slice(1);
 }
-
 const breadcrumbs = computed(() => {
-  const segments = route.path.split("/").filter(s => s !== "");
+  const segs = route.path.split("/").filter(s => s !== "");
   let path = "";
-
-  return segments
-    .map(seg => {
-      path += "/" + seg;
-
-      //kiem tra  xem seg co phai la id khong
-      const isParam = Object.values(route.params).includes(seg);
-      return {
-        path,
-        //neu isParam la id thi title se la null
-        title: isParam ? null : formatTitle(seg)
-      };
-    })
-    // neu breadcrumb la id thi se ko hiển thị
-    .filter(bc => bc.title !== null);
+  return segs.map(seg => {
+    path += "/" + seg;
+    const isParam = Object.values(route.params).includes(seg);
+    return { path, title: isParam ? null : formatTitle(seg) };
+  }).filter(b => b.title !== null);
 });
 </script>
 
-
-
-
 <style scoped>
-.breadcrumb {
-  width: fit-content;
-  font-size: 14px;
+/* Khớp chiều cao Header trong Header.vue */
+.header-offset {
+  height: 108px;
+}
+
+.crumb-bar {
+  /* position: fixed; */
+  max-width: fit-content;
+}
+
+.breadcrumb-custom {
+  font-size: 12px;
+  padding: 6px 0;
 }
 
 .link {
   color: #333;
   text-decoration: none;
-  color: inherit;
 }
 
 .link:hover {
-  color: rgb(44, 44, 233);
+  color: #2c2ce9;
   text-decoration: underline;
 }
 </style>

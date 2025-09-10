@@ -7,7 +7,7 @@
                 <div v-if="isEdit === false">
                     <label for="txtUsername">Tên đăng nhập : </label>
                     <input v-model="form.username" class="form-control"
-                    :class="{ 'is-invalid': touched.name && usernameError }" placeholder="Tên đăng nhập" required />
+                        :class="{ 'is-invalid': touched.name && usernameError }" placeholder="Tên đăng nhập" required />
                     <span class="invalid-feedback" v-if="touched.name && usernameError">{{ usernameError }}</span>
                 </div>
 
@@ -24,7 +24,7 @@
                 <div v-if="isEdit === false">
                     <label for="txtPassword">Mật khẩu : </label>
                     <input type="password" v-model="form.password" class="form-control"
-                    :class="{ 'is-invalid': touched.name && message }" placeholder="Mật khẩu " min="" required />
+                        :class="{ 'is-invalid': touched.name && message }" placeholder="Mật khẩu " min="" required />
                     <span class="invalid-feedback" v-if="touched.name && message">{{ message }}</span>
 
                 </div>
@@ -37,7 +37,7 @@
 
                 <div>
                     <label for="txtdob">Ngày sinh : </label>
-                    <input type="date" v-model="form.dob" class="form-control" required  />
+                    <input type="date" v-model="form.dob" class="form-control" required />
                 </div>
 
                 <div>
@@ -53,24 +53,58 @@
 
                 <div class="d-flex gap-3">
                     <label for="txtRole">Quyền hạn :</label>
-                    <nav v-for="r in roles" :key="r.name" >
-                    <input type="checkbox" v-model="form.roles" :value="r.name">
-                    <span class="mx-1">{{ r.name }}</span>
+                    <nav v-for="r in roles" :key="r.name">
+                        <input type="checkbox" v-model="form.roles" :value="r.name">
+                        <span class="mx-1">{{ r.name }}</span>
                     </nav>
-                    
+
                 </div>
 
 
                 <div class="d-flex gap-3 mt-3">
                     <button type="submit" class="btn btn-primary">{{ isEdit ? 'Sửa' : 'Thêm' }}</button>
                     <button type="button" class="btn btn-danger" @click="Enable(form.id)">Khóa</button>
-                    <button v-if="isEdit === false" type="button" class="btn btn-primary" @click="resetForm()">Làm mới</button>
+                    <button v-if="isEdit === false" type="button" class="btn btn-primary" @click="resetForm()">Làm
+                        mới</button>
                 </div>
             </form>
         </div>
+        <div class="container py-4" style="max-width: 900px;">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="fw-bold mb-0">Chi tiết tài khoản</h4>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-primary"
+                        @click="$router.push(`/admin/account/${id}/edit`)">Sửa</button>
+                    <button class="btn btn-outline-secondary" @click="$router.push('/admin/account')">← Quay
+                        lại</button>
+                </div>
+            </div>
+
+            <div v-if="loading" class="text-center py-5">
+                <div class="spinner-border"></div>
+            </div>
+
+            <div v-else class="card section-card">
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6"><b>ID:</b> {{ u.id }}</div>
+                        <div class="col-md-6"><b>Tên đăng nhập:</b> {{ u.username }}</div>
+                        <div class="col-md-6"><b>Họ tên:</b> {{ u.name }}</div>
+                        <div class="col-md-6"><b>Email:</b> {{ u.email }}</div>
+                        <div class="col-md-6"><b>Giới tính:</b> {{ u.gender ? 'Nam' : 'Nữ' }}</div>
+                        <div class="col-md-6"><b>Số điện thoại:</b> {{ u.phone || '—' }}</div>
+                        <div class="col-md-6"><b>Ngày sinh:</b> {{ u.dob || '—' }}</div>
+                        <div class="col-md-6"><b>Trạng thái:</b> <span
+                                :class="u.enabled ? 'badge bg-success' : 'badge bg-secondary'">{{ u.enabled ? 'Đang hoạt động' : 'Đã khoá' }}</span></div>
+                        <div class="col-12"><b>Địa chỉ:</b> {{ u.address || '—' }}</div>
+                        <div class="col-12"><b>Chức vụ:</b> <span v-for="r in (u.roles || [])" :key="r"
+                                class="badge bg-info me-1">{{ r }}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </template>
-
 
 <script setup>
 import { ref, onMounted, computed } from "vue";
@@ -100,22 +134,22 @@ const form = ref({
 });
 
 
-const usernameError = computed(() =>{
+const usernameError = computed(() => {
 
-     if(form.value.username.includes(" ")) return "Tên đăng nhập k được có khoảng trắng";
+    if (form.value.username.includes(" ")) return "Tên đăng nhập k được có khoảng trắng";
 
     const usernameCheck = form.value.username?.trim();
     const dup = existing.value.find(n => n.username?.trim().toLowerCase() === usernameCheck.trim().toLowerCase() &&
-    (!isEdit || n.id !== userId));
-    if(dup) return "Tên tài khoản đã tồn tại. Vui lòng nhập tên khác !";
+        (!isEdit || n.id !== userId));
+    if (dup) return "Tên tài khoản đã tồn tại. Vui lòng nhập tên khác !";
     return "";
 })
 
-const showMessage = (msg) =>{
+const showMessage = (msg) => {
     message.value = msg;
     setTimeout(() => {
         message.value = "";
-    },10000);
+    }, 10000);
 }
 
 
@@ -142,14 +176,14 @@ async function load() {
 
 async function submit() {
     touched.value.name = true;
-    if(usernameError.value) return;
+    if (usernameError.value) return;
 
     if (userId) {
         update();
     } else {
         try {
-            if(form.value.password.length < 6 ){
-               return showMessage('Mật khẩu phải có độ dài ít nhất 6 ký tự !');
+            if (form.value.password.length < 6) {
+                return showMessage('Mật khẩu phải có độ dài ít nhất 6 ký tự !');
             }
             const resp = await userService.createUser(form.value);
             console.log("Thêm mới người dùng thành công!", resp);
@@ -234,11 +268,18 @@ form {
     margin-bottom: 16px;
 }
 
-nav{
+nav {
     width: fit-content;
 }
 
 .gender {
     margin-right: 8px;
+}
+
+.section-card {
+    background: #fff;
+    border: 1px solid #eef2f7;
+    border-radius: 12px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .03);
 }
 </style>

@@ -1,249 +1,291 @@
 <template>
-  <div class="container">
+  <div>
 
-    <div class="d-flex align-items-center justify-content-end flex-wrap gap-3 mb-4">
-      <div class="d-flex gap-3">
+    <div class="d-flex mb-2 align-items-center justify-content-between ">
 
-        <div class="card border-0 shadow-sm bg-white rounded-3">
-          <div class="card-body py-2 px-4 text-center">
-            <div class="text-muted small">Tổng nhân viên</div>
-            <div class="fw-bold fs-5 text-dark">{{ displayedUsers.length }}</div>
-          </div>
+      <div class="col-md-3 p-0">
+        <input v-model="filters.name" type="text" class="form-control" placeholder="Nhập tên nhân viên cần tìm" />
+      </div>
+
+      <h2>Nhân sự</h2>
+
+
+      <div class="d-flex gap-2">
+        <div class="badge-card">
+          <div class="text-muted small">Tổng nhân viên: <span class="num">{{ displayed.length }}</span></div>
         </div>
-
-        <div class="card border-0 shadow-sm bg-white rounded-3">
-          <div class="card-body py-2 px-4 text-center">
-            <div class="text-muted small">Nhân viên nam</div>
-            <div class="fw-bold fs-5 text-dark">{{ displayedUsers.filter(user => user.gender === true).length }}</div>
-          </div>
+        <div class="badge-card">
+          <div class="text-muted small">Nhân viên nam: <span class="num">{{displayed.filter(user => user.gender ===
+            true).length}}</span></div>
         </div>
-
-        <div class="card border-0 shadow-sm bg-white rounded-3">
-          <div class="card-body py-2 px-4 text-center">
-            <div class="text-muted small">Nhân viên nữ</div>
-            <div class="fw-bold fs-5 text-dark">{{ displayedUsers.filter(user => user.gender === false).length }}</div>
-          </div>
+        <div class="badge-card">
+          <div class="text-muted small">Nhân viên nữ: <span class="num">{{displayed.filter(user => user.gender ===
+            false).length}}</span></div>
         </div>
       </div>
+
     </div>
 
-    <div class="card border-0 p-3 mb-3">
-      <h3 class="fw-bold mb-3">Tìm kiếm</h3>
-      <div class=" d-flex align-items-end justify-content-end gap-3 ">
-        <div class="col-md-3">
-          <label class="form-label mb-1">Tìm theo tên</label>
-          <input v-model="filters.name" type="text" class="form-control" placeholder="Nhập tên cần tìm..." />
-        </div>
 
-        <div class="col-md-3">
-          <label class="form-label mb-1">Chức vụ</label>
-          <select v-model="filters.role" class="form-select">
-            <option value="">-- Tất cả --</option>
-            <option value="ADMIN">ADMIN</option>
-            <option value="USER">USER</option>
+    <div class="d-flex gap-4">
+
+      <aside class="card d-flex gap-3 border-0 p-2 shadow-sm rounded-3 side">
+
+        <div class="asideChildren">
+          <h5>Chức vụ</h5>
+          <select name="" id="" class="form-select">
+            <option value="all">Tất cả</option>
+            <option v-for="r in roles">{{ r.name }}</option>
           </select>
         </div>
 
-        <div class="ms-auto d-flex gap-2 filter-actions">
-          <button class="btn btn-outline-secondary" @click="resetFilters">Làm mới</button>
-          <button class="btn btn-primary" @click="applyFilters">Tìm kiếm</button>
+        <div class="asideChildren ">
+          <h5>Giới tính</h5>
+          <input type="radio" checked >Nam
+          <input type="radio">Nữ
         </div>
+
+      </aside>
+      <!-- <div class="d-flex align-items-center gap-2">
+
+          <select v-model="sortKey" class="form-select w-auto">
+            <optgroup label="Theo tên">
+              <option value="name_asc">Tên A → Z</option>
+              <option value="name_desc">Tên Z → A</option>
+            </optgroup>
+            <optgroup label="Theo ID">
+              <option value="id_asc">ID ↑</option>
+              <option value="id_desc">ID ↓</option>
+            </optgroup>
+          </select>
+          <button class="btn btn-success btn-cta" @click="$router.push('/admin/account/add')">
+            + Thêm
+          </button>
+        </div> -->
+
+
+      <div class="card border-0 shadow-sm rounded-3 main">
+
+        <div class="m-2 d-flex justify-content-end">
+          <button class="btn btn-success btn-sm col-md-1 " @click="$router.push('/product/add')">+ Thêm</button>
+        </div>
+
+        <div class="table-responsive">
+          <table class="table table-striped table-hover mb-0">
+            <thead class="">
+              <tr class="text-uppercase table-primary small fw-bold">
+                <th class="ps-4">Tên đăng nhập</th>
+                <th>Họ tên</th>
+                <th>Email</th>
+                <th>Giới tính</th>
+                <th>Chức vụ</th>
+                <th>Trạng thái</th>
+                <th class="text-center">Hành động</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr v-for="u in displayed" :key="u.id">
+                <td class="ps-4" :data-label="'Tên đăng nhập'">{{ u.username }}</td>
+                <td :data-label="'Họ tên'">{{ u.name }}</td>
+                <td :data-label="'Email'">{{ u.email }}</td>
+                <td :data-label="'Giới tính'">{{ u.gender ? 'Nam' : 'Nữ' }}</td>
+                <td :data-label="'Chức vụ'">
+                  <span v-for="r in (u.roles || [])" :key="r" class="badge bg-info me-1">{{ r }}</span>
+                </td>
+                <td :data-label="'Trạng thái'">
+                  <span :class="u.enabled ? 'badge bg-success' : 'badge bg-secondary'">
+                    {{ u.enabled ? 'Đang hoạt động' : 'Đã khoá' }}
+                  </span>
+                </td>
+                <td class="text-center" :data-label="'Hành động'">
+                  <div class="d-flex justify-content-center gap-2 flex-nowrap">
+                    <button class="btn btn-sm btn-outline-info me-1"
+                      @click="$router.push(`/admin/account/${u.id}/detail`)">Chi tiết
+                    </button>
+                    <button class="btn btn-outline-warning"
+                      @click="$router.push(`/admin/account/${u.id}/edit`)">Sửa</button>
+                    <button class="btn" :class="u.enabled ? 'btn-outline-danger' : 'btn-outline-success'"
+                      @click="toggleEnable(u)">
+                      {{ u.enabled ? 'Khoá' : 'Mở khoá' }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+
+              <tr v-if="!loading && displayed.length === 0">
+                <td colspan="7" class="text-center text-muted py-4">Không có dữ liệu</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div v-if="loading" class="text-center py-5">
+          <div class="spinner-border text-dark" role="status"></div>
+          <div class="small text-muted mt-2">Đang tải...</div>
+        </div>
+
+        <p v-if="error" class="text-danger small p-3">{{ error }}</p>
       </div>
     </div>
-
-    <div class="card p-3 border-0 rounded-3">
-      <div class="d-flex justify-content-between mb-3">
-        <h3 class="fw-bold mb-3">Danh sách</h3>
-        <button class="btn btn-primary" @click="$router.push('/admin/account/add')">+ Thêm</button>
-      </div>
-
-      <table class="table table-bordered user-table align-middle">
-        <thead class="table-primary">
-          <tr>
-            <!-- <th>ID</th> -->
-            <th>Tên tài khoản</th>
-            <th>Họ tên</th>
-            <th>Email</th>
-            <th>Giới tính</th>
-            <th>Chức vụ</th>
-            <th class="text-center">Hành động</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr v-for="user in displayedUsers" :key="user.id">
-            <!-- <td :data-label="'ID'">{{ user.id }}</td> -->
-            <td :data-label="'Tên tài khoản'">{{ user.username }}</td>
-            <td :data-label="'Họ tên'">{{ user.name }}</td>
-            <td :data-label="'Email'">{{ user.email }}</td>
-            <td :data-label="'Giới tính'">{{ user.gender ? 'Nam' : 'Nữ' }}</td>
-            <td :data-label="'Chức vụ'">
-              <span v-for="role in (user.roles || [])" :key="role" class="badge bg-info me-1">{{ role }}</span>
-            </td>
-            <td :data-label="'Hành động'" class="text-center">
-              <div class="d-flex gap-2">
-                <button class="btn btn-sm btn-outline-primary"
-                  @click="$router.push(`/admin/account/${user.id}/detail`)">Sửa</button>
-                <button class="btn btn-sm btn-outline-danger" @click="hideUser(user.id)">Khóa</button>
-              </div>
-            </td>
-          </tr>
-          <tr v-if="displayedUsers.length === 0">
-            <td colspan="7" class="text-center">No data</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import { userService } from "../../services/UserService";
+import { ref, computed, onMounted } from 'vue'
+
+import { userService } from '../../services/userService'
+import { roleService } from '../../services/RoleService'
 
 const users = ref([]);
+const roles = ref([]);
+const loading = ref(false);
+const error = ref('');
 
-const filters = ref({
-  name: "",
-  role: "",
-  sort: "name_desc"
-});
+const roleOptions = ['ADMIN', 'USER']
 
-const applied = ref({
-  name: "",
-  role: "",
-  sort: "name_desc"
-});
 
-// Hàm bỏ dấu
-const unaccent = (s = "") => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const filters = ref({ name: '', role: '' })
+const applied = ref({ ...filters.value })
 
-// Users đã lọc và sắp xếp
-const displayedUsers = computed(() => {
-  let list = [...users.value];
 
-  // Filter by name
+const sortKey = ref('name_asc')
+
+const unaccent = (s = '') => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+
+const displayed = computed(() => {
+  let list = [...users.value]
+
+
   if (applied.value.name.trim()) {
-    const kw = unaccent(applied.value.name.trim().toLowerCase());
-    list = list.filter(u => unaccent((u.name || "").toLowerCase()).includes(kw));
+    const kw = unaccent(applied.value.name.trim().toLowerCase())
+    list = list.filter(u => unaccent((u.name || '').toLowerCase()).includes(kw))
   }
-
-  // Filter by role
   if (applied.value.role) {
-    const r = applied.value.role.toLowerCase();
-    list = list.filter(u => (u.roles || []).some(role => role.toLowerCase() === r));
+    const r = applied.value.role.toLowerCase()
+    list = list.filter(u => (u.roles || []).some(x => String(x).toLowerCase() === r))
   }
 
-  // Sort
-  switch (applied.value.sort) {
-    case "name_asc":
-      list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "vi", { sensitivity: "base" }));
-      break;
-    case "name_desc":
-      list.sort((a, b) => (b.name || "").localeCompare(a.name || "", "vi", { sensitivity: "base" }));
-      break;
-    case "id_asc":
-      list.sort((a, b) => (a.id || "").localeCompare(b.id || ""));
-      break;
-    case "id_desc":
-      list.sort((a, b) => (b.id || "").localeCompare(a.id || ""));
-      break;
-    case "role_desc":
-      list.sort((a, b) => (b.roles?.length || 0) - (a.roles?.length || 0));
-      break;
-    case "role_asc":
-      list.sort((a, b) => (a.roles?.length || 0) - (b.roles?.length || 0));
-      break;
+
+  switch (sortKey.value) {
+    case 'name_asc': list.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi', { sensitivity: 'base' })); break
+    case 'name_desc': list.sort((a, b) => (b.name || '').localeCompare(a.name || '', 'vi', { sensitivity: 'base' })); break
+    case 'id_asc': list.sort((a, b) => String(a.id || '').localeCompare(String(b.id || ''))); break
+    case 'id_desc': list.sort((a, b) => String(b.id || '').localeCompare(String(a.id || ''))); break
   }
+  return list
+})
 
-  return list;
-});
+function applyFilters() {
+  applied.value = { ...filters.value }
+}
+function resetFilters() {
+  filters.value = { name: '', role: '' }
+  applied.value = { ...filters.value }
+  sortKey.value = 'name_asc'
+}
 
-// Áp dụng lọc
-const applyFilters = () => {
-  applied.value = { ...filters.value };
-};
-
-// Reset filter
-const resetFilters = () => {
-  filters.value = { name: "", role: "", sort: "name_desc" };
-  applied.value = { name: "", role: "", sort: "name_desc" };
-};
-
-// Load users từ API
-async function getAllUsers() {
+async function load() {
+  loading.value = true
+  error.value = ''
   try {
-    users.value = await userService.getAllUsers();
-  } catch (error) {
-    console.log("Failed to load users: ", error);
+    users.value = await userService.getAllUsers()
+    roles.value = await roleService.getAll();
+    console.log(roles.value)
+  } catch (e) {
+    error.value = e?.message || 'Lỗi tải danh sách.'
+  } finally {
+    loading.value = false
+  }
+}
+async function toggleEnable(u) {
+  try {
+    await userService.enableUser(u.id)
+    u.enabled = !u.enabled
+  } catch (e) {
+
   }
 }
 
-// Sửa user
-function editUser(id) {
-  window.location.href = `/users/edit/${id}`;
-}
-
-// Ẩn user
-async function hideUser(id) {
-  if (confirm("Bạn có chắc chắn muốn ẩn người dùng này?")) {
-    users.value = users.value.filter(u => u.id !== id);
-  }
-}
-
-onMounted(getAllUsers);
+onMounted(load)
 </script>
 
 <style scoped>
-.card,
-.search {
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+.page-tight {
+  padding-top: 12px !important;
 }
 
-.user-table th,
-.user-table td {
+
+.side {
+  width: 18%;
+  height: calc(100vh - 200px);
+  overflow: auto;
+}
+
+.main {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: calc(100vh - 200px);
+  overflow: auto;
+}
+
+.asideChildren{
+  min-width: 200px;
+}
+.asideChildren>h5{
+  margin-bottom: 8px;
+}
+
+
+.badge-card {
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
+  padding: 8px 14px;
+  max-width: 170px;
+  max-height: 40px;
+  text-align: center;
+}
+
+.form-control {
+  width: 270px;
+  border: none;
+  border-radius: 10px;
+}
+
+.badge-card .num {
+  font-weight: 700;
+  color: #1f2937;
+}
+
+
+.btn-cta {
+  padding: .55rem 1rem;
+  font-weight: 600;
+}
+
+.table th,
+.table td {
+  min-width: fit-content;
   vertical-align: middle;
+  white-space: nowrap;
 }
 
-/* Mobile Filters */
+
 @media (max-width: 576px) {
-  .filter-bar {
-    gap: 12px !important;
-  }
-
-  .filter-bar>* {
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-
-  .filter-actions {
-    width: 100%;
-  }
-
-  .filter-actions .btn {
-    flex: 1 1 0;
-    width: 100%;
-  }
-}
-
-/* Mobile Table */
-@media (max-width: 1000px) {
-
-
-  .user-table thead {
+  .table thead {
     display: none;
   }
 
-  .user-table,
-  .user-table tbody,
-  .user-table tr,
-  .user-table td {
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
     display: block;
     width: 100%;
   }
 
-  .user-table tr {
+  .table tr {
     background: #fff;
     margin-bottom: 12px;
     border: 1px solid #e5e7eb;
@@ -251,38 +293,16 @@ onMounted(getAllUsers);
     padding: 10px 12px;
   }
 
-  .user-table td {
+  .table td {
     border: none !important;
     border-bottom: 1px dashed #eee !important;
-    position: relative;
-    padding-left: 120px;
-    min-height: 44px;
-  }
-
-  .user-table td:last-child {
-    border-bottom: none !important;
-    padding-bottom: 0;
-  }
-
-  .user-table td::before {
-    content: attr(data-label);
-    position: absolute;
-    left: 12px;
-    top: 10px;
-    width: 100px;
-    font-weight: 600;
-    color: #6b7280;
-    white-space: nowrap;
-  }
-
-  .btn-group-mobile {
     display: flex;
-    gap: 8px;
-    width: 100%;
+    justify-content: space-between;
+    align-items: center;
   }
 
-  .btn-group-mobile .btn {
-    flex: 1 1 0;
+  .table td:last-child {
+    border-bottom: none !important;
   }
 }
 </style>

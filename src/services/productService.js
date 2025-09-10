@@ -1,79 +1,75 @@
-// src/services/productService.js
-import api from "./axios"
+import api from "./axios";
 
+// /* Đọc mảng từ nhiều kiểu response khác nhau */
+// function extractArray(payload) {
+//   if (Array.isArray(payload?.result)) return payload.result;
+//   if (Array.isArray(payload?.data))   return payload.data;
+//   if (Array.isArray(payload?.content))return payload.content;
+//   if (Array.isArray(payload))         return payload;
+//   return null;
+// }
 
-function quantityOf(p) {
-  if (typeof p?.quantity === "number") return p.quantity
-  return Array.isArray(p?.productDetails) ? p.productDetails.length : 0
-}
+/* Chuẩn hoá một product để FE dùng thống nhất */
+// function normalize(p) {
+//   if (!p) return p;
+//   // brand có thể là object {name}, hoặc string
+//   const brand =
+//     typeof p.brand === "string" ? p.brand
+//     : (p.brand?.name ?? p.brandName ?? "");
+//   // category có thể là object {id}, hoặc id rời
+//   const categoryId = String(p.category?.id ?? p.categoryId ?? "");
+//   return {
+//     images: [],
+//     sku: "", name: "", color: "", storage: "", // default
+//     ...p,
+//     brand,
+//     categoryId,
+//   };
+// }
 
-function normalizeProduct(p) {
-  if (!p) return p
-  return {
-    images: [],
-    ...p,
-    // đảm bảo luôn có object category (nếu BE chỉ trả id, FE vẫn dùng được)
-    category: p.category
-      ? (typeof p.category === "object" ? p.category : { id: p.category })
-      : (p.categoryId ? { id: p.categoryId } : null),
-  }
-}
-
-function toCreatePayload(p) {
-  const { sku, name, brand, specifications, color, storage, categoryId } = p
-  return {
-    sku, name, brand, specifications, color, storage,
-    category: categoryId ? { id: categoryId } : null,
-  }
-}
-const toUpdatePayload = toCreatePayload
-
-// === APIs phụ trợ ===
-// lấy danh sách serial theo productId (nếu backend không expand kèm product)
-async function fetchDetailsByProductId(productId) {
-  try {
-    const { data } = await api.get(`/api/product-details`, { params: { productId } })
-    return Array.isArray(data?.result) ? data.result : (Array.isArray(data) ? data : [])
-  } catch {
-    const sp = sampleProducts.find(x => x.id === productId)
-    return Array.isArray(sp?.productDetails) ? sp.productDetails : []
-  }
-}
-
+/* Tạo payload gửi lên BE */
+// function toPayload(p) {
+//   const out = { ...p };
+//   // nhiều BE cần object category
+//   if (!out.category && p.categoryId) out.category = { id: p.categoryId };
+//   return out;
+// }
 
 export const productService = {
-
   async getAll() {
-    const response = await api.get('/api/products');
-    return response.data?.result;
+      const response = await api.get("/api/products");
+      return response.data?.result;
   },
 
+  async getById(id) {
+      const response = await api.get(`/api/products/${id}`);
+      return response.data?.result; 
+  },
 
- async getById(id) {
-  const response = await api.get(`/api/products/${id}`);
-  return response.data?.result;
-},
-
-  // CREATE
   async create(payload) {
-    await api.post('/api/products',payload);
-    return;
+    try {
+      await api.post("/api/products", toPayload(payload));
+    } catch {
+      // thêm vào mock để UI vẫn chạy
+      sampleProducts = [{ id: crypto.randomUUID?.() ?? Date.now().toString(16), ...payload }, ...sampleProducts];
+    }
   },
 
-  // UPDATE
   async update(id, payload) {
-    await api.put(`api/products/${id}`,payload);
-    return;
+    try {
+      await api.put(`/api/products/${encodeURIComponent(id)}`, toPayload(payload)); // <-- đã sửa thêm '/'
+    } catch {
+      sampleProducts = sampleProducts.map(p => p.id === id ? { ...p, ...payload } : p);
+    }
   },
 
-  // DELETE
   async removeProduct(id) {
     try {
-      await api.delete(`/api/products/${encodeURIComponent(id)}`)
-      return true
+      await api.delete(`/api/products/${encodeURIComponent(id)}`);
+      return true;
     } catch {
-      sampleProducts = sampleProducts.filter(p => p.id !== id)
-      return true
+      sampleProducts = sampleProducts.filter(p => p.id !== id);
+      return true;
     }
-  }
-}
+  },
+};

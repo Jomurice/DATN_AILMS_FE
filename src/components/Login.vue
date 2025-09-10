@@ -4,7 +4,7 @@
       
       
       <div class="col-lg-8 d-none d-lg-flex bg-light justify-content-center align-items-center p-0 m-0">
-        <img src="@/assets/hinh2.png" class="img-fluid h-100 w-100" alt="illustration" />
+        <img src="/src/assets/hinh2.png" class="img-fluid h-100 w-100" alt="illustration" />
       </div>
 
       

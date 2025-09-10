@@ -130,7 +130,7 @@ async function handleResendOtp() {
 <style>
 /* CSS không thay đổi */
 .container-fluid {
-    background-image: url("../../assets/hinh2.png");
+    /* background-image: url("../../assets/hinh2.png"); */
     display: flex;
     justify-content: center;
     align-items: center;
