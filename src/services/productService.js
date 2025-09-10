@@ -51,27 +51,27 @@ export const productService = {
  
   // giữ nguyên khi category bên BE có dữ liệu và khi có dữ liệu thì xóa hoặc comment getAll bên dưới 
 
-  async getAll() {
-    try {
-      const { data } = await api.get("/api/products");
-      const arr = extractArray(data);
-      if (!arr) throw new Error("Bad product shape");
-      return arr.map(normalize);
-    } catch (e) {
-      // fallback mock
-      return sampleProducts.map(normalize);
-    }
-  },
-//     async getAll() {
-//   try {
-//     const { data } = await api.get("/api/products");
-//     const arr = extractArray(data);
-//     const base = (arr && arr.length ? arr : sampleProducts); // ← dùng sample nếu rỗng
-//     return base.map(normalize);
-//   } catch {
-//     return sampleProducts.map(normalize);
-//   }
-// },
+  // async getAll() {
+  //   try {
+  //     const { data } = await api.get("/api/products");
+  //     const arr = extractArray(data);
+  //     if (!arr) throw new Error("Bad product shape");
+  //     return arr.map(normalize);
+  //   } catch (e) {
+  //     // fallback mock
+  //     return sampleProducts.map(normalize);
+  //   }
+  // },
+    async getAll() {
+  try {
+    const { data } = await api.get("/api/products");
+    const arr = extractArray(data);
+    const base = (arr && arr.length ? arr : sampleProducts); // ← dùng sample nếu rỗng
+    return base.map(normalize);
+  } catch {
+    return sampleProducts.map(normalize);
+  }
+},
   async getById(id) {
     try {
       const { data } = await api.get(`/api/products/${encodeURIComponent(id)}`);

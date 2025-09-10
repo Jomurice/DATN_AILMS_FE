@@ -1,13 +1,14 @@
-<!-- src/components/Product/ProductManagement.vue -->
 <template>
   <div class="container-fluid py-4">
     <div class="pbox">
+      <!-- SIDEBAR -->
       <aside class="side">
         <div class="brand"><i class="fa-solid fa-box-archive me-2"></i><span>Danh mục</span></div>
         <nav class="tree">
           <div class="tree-item" :class="{ active: isSelected({ type:'all' }) }" @click="selectNode({ type:'all' })">
             <i class="fa-solid fa-layer-group me-2"></i> Tất cả sản phẩm
           </div>
+
           <div v-for="cat in treeData" :key="cat.id" class="tree-cat">
             <div class="tree-item" :class="{ active: isSelected(cat) }">
               <button class="toggle" v-if="cat.children.length" @click.stop="toggle(cat.id)">
@@ -17,6 +18,7 @@
                 <i class="fa-solid fa-folder me-2"></i>{{ cat.label }}
               </span>
             </div>
+
             <div v-show="isOpen(cat.id)" class="tree-children">
               <div v-for="br in cat.children" :key="br.id" class="tree-brand">
                 <div class="tree-item" :class="{ active: isSelected(br) }">
@@ -41,14 +43,14 @@
         </nav>
       </aside>
 
- 
+      <!-- MAIN -->
       <main class="main">
-        
+        <!-- FILTERS + KPI (nhỏ, đều nhau) -->
         <div class="card border-0 shadow-sm rounded-3 mb-3">
           <div class="card-body py-3">
             <div class="row g-3 align-items-end">
               <div class="col-lg-4 col-md-5">
-                <label class="form-label fw-semibold">Tìm sản phẩm</label>
+                <label class="form-label fw-semibold">Tìm kiếm sản phẩm</label>
                 <input v-model="filters.keyword" type="text" class="form-control" placeholder="Nhập tên sản phẩm..." />
               </div>
 
@@ -62,46 +64,58 @@
 
               <div class="col-lg-5 col-md-12">
                 <div class="d-flex gap-2 flex-wrap justify-content-lg-end">
-                  <div class="badge-card"><div class="text-muted small">Tổng SP</div><div class="num">{{ totalDisplayed }}</div></div>
+                  <div class="badge-card"><div class="text-muted small">Tổng sản phẩm</div><div class="num">{{ totalDisplayed }}</div></div>
                   <div class="badge-card"><div class="text-muted small">Hết hàng</div><div class="num">{{ outOfStock }}</div></div>
                   <div class="badge-card"><div class="text-muted small">Sắp hết (&lt;5)</div><div class="num">{{ nearlyOut }}</div></div>
                 </div>
               </div>
 
               <div class="col-12 d-flex flex-wrap gap-2 justify-content-end mt-2">
-                <button class="btn btn-sm btn-secondary" @click="resetFilters"><i class="fa-solid fa-rotate me-1"></i> Làm mới</button>
-                <button class="btn btn-sm btn-primary"   @click="applyFilters"><i class="fa-solid fa-magnifying-glass me-1"></i> Tìm kiếm</button>
+                <button class="btn btn-sm btn-secondary btn-ctl-slim" @click="resetFilters">
+                  <i class="fa-solid fa-rotate me-1"></i> Làm mới
+                </button>
+                <button class="btn btn-sm btn-primary btn-ctl-slim" @click="applyFilters">
+                  <i class="fa-solid fa-magnifying-glass me-1"></i> Tìm kiếm
+                </button>
               </div>
             </div>
           </div>
         </div>
 
-        
+        <!-- LIST HEADER: +Thêm bên trái, kế dropdown Sắp xếp -->
         <div class="card border-0 shadow-sm rounded-3">
           <div class="d-flex align-items-center justify-content-between px-4 pt-4 flex-wrap gap-2">
             <h4 class="fw-bold mb-0">{{ tableTitle }}</h4>
-            <div class="d-flex align-items-center gap-2">
-              <select v-model="tableSort" class="form-select form-select-sm w-auto">
-                <optgroup label="Theo tên">
-                  <option value="name_asc">Tên A → Z</option>
-                  <option value="name_desc">Tên Z → A</option>
-                </optgroup>
-                <optgroup label="Theo loại">
-                  <option value="cat_asc">Loại A → Z</option>
-                  <option value="cat_desc">Loại Z → A</option>
-                </optgroup>
-                <optgroup label="Theo dung lượng">
-                  <option value="storage_desc">Dung lượng ↓</option>
-                  <option value="storage_asc">Dung lượng ↑</option>
-                </optgroup>
-              </select>
-              <button class="btn btn-success btn-sm" @click="$router.push('/product/add')">+ Thêm</button>
+
+            <div class="d-flex align-items-end gap-2 ms-auto flex-wrap">
+              <button class="btn btn-success btn-sm btn-ctl-slim" @click="$router.push('/product/add')">
+                + Thêm
+              </button>
+
+              <div class="d-flex flex-column">
+                <label class="form-label mb-1 small fw-semibold">Sắp xếp</label>
+                <select v-model="tableSort" class="form-select form-select-sm w-auto">
+                  <optgroup label="Theo tên">
+                    <option value="name_asc">Tên A → Z</option>
+                    <option value="name_desc">Tên Z → A</option>
+                  </optgroup>
+                  <optgroup label="Theo loại">
+                    <option value="cat_asc"> A → Z</option>
+                    <option value="cat_desc"> Z → A</option>
+                  </optgroup>
+                  <optgroup label="Theo dung lượng">
+                    <option value="storage_desc">Dung lượng ↓</option>
+                    <option value="storage_asc">Dung lượng ↑</option>
+                  </optgroup>
+                </select>
+              </div>
             </div>
           </div>
 
+          <!-- TABLE -->
           <div class="table-responsive">
             <table class="table table-hover mb-0">
-             
+              <!-- Hãng -->
               <template v-if="tableMode==='brand'">
                 <thead>
                   <tr class="text-uppercase small fw-bold">
@@ -125,7 +139,7 @@
                 </tbody>
               </template>
 
-              
+              <!-- Sản phẩm -->
               <template v-else>
                 <thead>
                   <tr class="text-uppercase small fw-bold">
@@ -145,9 +159,11 @@
                     <td>{{ p.brand || '—' }}</td>
                     <td class="text-center">{{ p.storage ?? '—' }}</td>
                     <td class="text-center">
-                      <button class="btn btn-sm btn-outline-info me-1"    @click="$router.push(`/product/${p.id}`)">Chi tiết</button>
-                      <button class="btn btn-sm btn-outline-primary me-1" @click="$router.push(`/product/${p.id}/edit`)">Sửa</button>
-                      <button class="btn btn-sm btn-outline-danger"       @click="removeProduct(p.id)">Xoá</button>
+                      <button class="btn btn-sm btn-outline-info me-1" @click="handleDetailClick(p)">Chi tiết</button>
+                      <button class="btn btn-sm btn-outline-warning me-1" @click="$router.push(`/product/${p.id}/edit`)">Sửa</button>
+                      <button class="btn btn-sm btn-outline-danger" @click="toggleHidden(p)">
+                        {{ p.hidden ? 'Hiện' : 'Ẩn' }}
+                      </button>
                     </td>
                   </tr>
                   <tr v-if="!loading && productRows.length===0">
@@ -172,8 +188,11 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { productService } from '../../services/productService'
 import { categoryService } from '../../services/categoryService'
+
+const router = useRouter()
 
 const products    = ref([])
 const categories  = ref([])
@@ -187,66 +206,44 @@ const tableSort = ref('cat_asc')
 const opened       = ref(new Set())
 const selectedNode = ref({ type: 'all' })
 
-// Helpers
 const S = x => String(x ?? '')
 const unaccent = (s='') => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
 const catName  = id => categories.value.find(c => S(c.id) === S(id))?.name || '—'
 
-// Load data (có fallback sang sample trong service)
-
-
-
-
-
- // giữ nguyên khi category bên BE có dữ liệu và khi có dữ liệu thì xóa hoặc comment loadAll bên dưới 
-
 async function loadAll() {
+  loading.value = true; error.value = ''
   try {
-    const [ps, cs] = await Promise.all([productService.getAll(), categoryService.getAll()])
-    products.value   = Array.isArray(ps) ? ps : []
-    categories.value = Array.isArray(cs) ? cs : []
+    const [ps, cs] = await Promise.all([
+      productService.getAll(),
+      categoryService.getAll()
+    ])
+    let P = Array.isArray(ps) ? ps : []
+    let C = Array.isArray(cs) ? cs : []
+
+    const isSampleCat = C.length > 0 && C.every(c => String(c.id).startsWith('cat-'))
+    const looksLikeUUID = v => typeof v === 'string' && v.includes('-')
+    const prodHasUUIDCats = P.some(p => looksLikeUUID(String(p.categoryId)))
+
+    // nếu categories là sample mà products đang BE (UUID) -> buộc dùng cả product sample cho đồng bộ
+    if (isSampleCat && prodHasUUIDCats) {
+      P = [
+        { id: "p-ip11", sku: "IP11",  name: "iPhone 11",      brand: "Apple",   color:"Đen",  storage:"64GB",  categoryId: "cat-phone" },
+        { id: "p-ip12", sku: "IP12",  name: "iPhone 12",      brand: "Apple",   color:"Trắng",storage:"128GB", categoryId: "cat-phone" },
+        { id: "p-s21",  sku: "SS21",  name: "Galaxy S21",     brand: "Samsung", color:"Tím",  storage:"128GB", categoryId: "cat-phone" },
+        { id: "p-a78",  sku: "OP78",  name: "OPPO A78",       brand: "OPPO",    color:"Xanh", storage:"256GB", categoryId: "cat-phone" },
+        { id: "p-mba",  sku: "MBA",   name: "MacBook Air 13", brand: "Apple",   color:"Bạc",  storage:"256GB", categoryId: "cat-laptop" },
+        { id: "p-xps",  sku: "DXPS",  name: "Dell XPS 13",    brand: "Dell",    color:"Bạc",  storage:"512GB", categoryId: "cat-laptop" },
+      ]
+    }
+    products.value   = P
+    categories.value = C
   } catch (e) {
     error.value = e?.message || 'Lỗi tải dữ liệu'
   } finally {
     loading.value = false
   }
 }
-// async function loadAll() {
-//   loading.value = true; error.value = ''
-//   try {
-//     const [ps, cs] = await Promise.all([
-//       productService.getAll(),
-//       categoryService.getAll()
-//     ])
-//     let P = Array.isArray(ps) ? ps : []
-//     let C = Array.isArray(cs) ? cs : []
-
-//     const isSampleCat = C.length > 0 && C.every(c => String(c.id).startsWith('cat-'))
-//     const looksLikeUUID = v => typeof v === 'string' && v.includes('-')
-//     const prodHasUUIDCats = P.some(p => looksLikeUUID(String(p.categoryId)))
-
-//     // nếu categories là sample mà products đang BE (UUID) -> buộc dùng cả product sample cho đồng bộ
-//     if (isSampleCat && prodHasUUIDCats) {
-//       P = [
-//         { id: "p-ip11", sku: "IP11",  name: "iPhone 11",      brand: "Apple",   color:"Đen",  storage:"64GB",  categoryId: "cat-phone" },
-//         { id: "p-ip12", sku: "IP12",  name: "iPhone 12",      brand: "Apple",   color:"Trắng",storage:"128GB", categoryId: "cat-phone" },
-//         { id: "p-s21",  sku: "SS21",  name: "Galaxy S21",     brand: "Samsung", color:"Tím",  storage:"128GB", categoryId: "cat-phone" },
-//         { id: "p-a78",  sku: "OP78",  name: "OPPO A78",       brand: "OPPO",    color:"Xanh", storage:"256GB", categoryId: "cat-phone" },
-//         { id: "p-mba",  sku: "MBA",   name: "MacBook Air 13", brand: "Apple",   color:"Bạc",  storage:"256GB", categoryId: "cat-laptop" },
-//         { id: "p-xps",  sku: "DXPS",  name: "Dell XPS 13",    brand: "Dell",    color:"Bạc",  storage:"512GB", categoryId: "cat-laptop" },
-//       ]
-//     }
-//     products.value   = P
-//     categories.value = C
-//   } catch (e) {
-//     error.value = e?.message || 'Lỗi tải dữ liệu'
-//   } finally {
-//     loading.value = false
-//   }
-// }
-
 onMounted(loadAll)
-
 const treeData = computed(() =>
   categories.value.map(cat => {
     const prods = products.value.filter(p => S(p.categoryId) === S(cat.id))
@@ -266,14 +263,9 @@ const treeData = computed(() =>
 )
 const isOpen = id => opened.value.has(S(id))
 const toggle  = id => isOpen(id) ? opened.value.delete(S(id)) : opened.value.add(S(id))
-const selectNode = node => {
-  selectedNode.value = node
-  if (node.parentId) opened.value.add(S(node.parentId))
-  if (node.id)       opened.value.add(S(node.id))
-}
+const selectNode = node => { selectedNode.value = node; if (node.parentId) opened.value.add(S(node.parentId)); if (node.id) opened.value.add(S(node.id)) }
 const isSelected = node => selectedNode.value?.type === node?.type && S(selectedNode.value?.id) === S(node?.id)
 
-// Filter + Sort + Mode
 function applyFilters(){ applied.value = { ...filters.value } }
 function resetFilters(){ filters.value = { keyword:'', category:'' }; applyFilters() }
 
@@ -292,6 +284,13 @@ const baseFiltered = computed(() => {
   } else if (sel?.type === 'brand') {
     const [catId, brand] = S(sel.id).split('::')
     list = list.filter(p => S(p.categoryId) === S(catId) && (p.brand || '').trim().toLowerCase() === brand.trim().toLowerCase())
+  } else if (sel?.type === 'model') {
+    const [catId, brand, model] = S(sel.id).split('::')
+    list = list.filter(p =>
+      S(p.categoryId) === S(catId) &&
+      (p.brand || '').trim().toLowerCase() === (brand || '').trim().toLowerCase() &&
+      (p.name || '').trim().toLowerCase() === (model || '').trim().toLowerCase()
+    )
   } else if (sel?.type === 'product') {
     list = list.filter(p => S(p.id) === S(sel.id))
   }
@@ -318,6 +317,7 @@ const tableTitle = computed(() => {
   const sel = selectedNode.value
   if (sel?.type === 'category') return `Hãng trong “${sel.label}”`
   if (sel?.type === 'brand')     return `Sản phẩm của “${sel.label}”`
+  if (sel?.type === 'model')     return `Danh sách “${sel.label}”`
   if (sel?.type === 'product')   return `Sản phẩm: ${baseFiltered.value[0]?.name || ''}`
   return 'Danh sách sản phẩm'
 })
@@ -342,34 +342,51 @@ const totalDisplayed = computed(()=> tableMode.value==='brand' ? brandRows.value
 const outOfStock     = computed(()=> tableMode.value==='brand' ? 0 : productRows.value.filter(x => (x.quantity ?? 0) === 0).length)
 const nearlyOut      = computed(()=> tableMode.value==='brand' ? 0 : productRows.value.filter(x => (x.quantity ?? 0) > 0 && (x.quantity ?? 0) < 5).length)
 
-
-async function removeProduct(id){
-  if (!confirm('Xoá sản phẩm này?')) return
-  try {
-    await productService.removeProduct(id)
-    products.value = products.value.filter(p => S(p.id) !== S(id))
-  } catch {}
+/* Actions */
+function handleDetailClick(p){
+  if (selectedNode.value?.type === 'model') {
+    router.push(`/product/${p.id}`)
+  } else {
+    openModelFromRow(p)
+  }
+}
+function openModelFromRow(p){
+  const catId = S(p.categoryId)
+  const brand = (p.brand || '').trim()
+  const model = (p.name  || '').trim()
+  if (catId) opened.value.add(catId)
+  if (brand) opened.value.add(`${catId}::${brand}`)
+  selectedNode.value = { type:'model', id:`${catId}::${brand}::${model}`, label:model, parentId:`${catId}::${brand}` }
+}
+async function toggleHidden(p){
+  const next = !p.hidden
+  const action = next ? 'ẩn' : 'hiện'
+  if (!confirm(`Bạn có chắc muốn ${action} “${p.name}” (SKU: ${p.sku})?`)) return
+  try{ await productService.update(p.id, { hidden: next }); p.hidden = next }catch{}
 }
 </script>
 
 <style scoped>
 .pbox{ display:flex; gap:16px; }
 .side{
-  width:280px; background:#0f1f2a; color:#e9eef3; border-radius:14px; padding:14px;
+  width:280px; background:#ffffff; color:#000000; border-radius:14px; padding:14px;
   position:sticky; top:96px; height:calc(100vh - 110px); overflow:auto;
 }
 .main{ flex:1 1 auto; min-width:0; }
 .brand{ font-weight:700; display:flex; align-items:center; margin-bottom:10px; font-size:18px; }
-.tree-item{ display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; cursor:pointer; color:#e9eef3; }
-.tree-item:hover{ background:#173249; }
-.tree-item.active{ background:#1f6bff; color:#fff; }
-.toggle{ width:26px; height:26px; border-radius:6px; border:1px solid #214060; background:transparent; color:#8fb5ff; display:flex; align-items:center; justify-content:center; }
+.tree-item{ display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:10px; cursor:pointer; color:#000000; }
+.tree-item:hover{ background:#f0f0f0; }
+.tree-item.active{ background:#1f6bff; color:#ffffff; }
+.toggle{ width:26px; height:26px; border-radius:6px; border:1px solid #cccccc; background:transparent; color:#000000; display:flex; align-items:center; justify-content:center; }
 .tree-children{ padding-left:22px; }
 
 .badge-card{ background:#fff; border:1px solid #eef2f7; border-radius:10px; padding:8px 14px; min-width:110px; text-align:center; }
 .badge-card .num{ font-weight:700; color:#1f2937; }
 
-.table th, .table td { vertical-align: middle; }
+.table th,.table td{ vertical-align: middle; }
+
+/* Cỡ nút nhỏ đồng bộ */
+.btn-ctl-slim{ min-width:110px; }
 
 @media (max-width:992px){
   .pbox{ flex-direction:column; }

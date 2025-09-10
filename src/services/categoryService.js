@@ -28,25 +28,25 @@ export const categoryService = {
   
   // giữ nguyên khi category bên BE có dữ liệu và khi có dữ liệu thì xóa hoặc comment getAll bên dưới
 
-  async getAll() {
-    try {
-      const { data } = await api.get("/api/categories");
-      const arr = extractArray(data) ?? [];
-      return arr.map(normalizeCategory);
-    } catch {
-      return sampleCategories.map(normalizeCategory);
-    }
-  },
-//   async getAll(){
-//   try {
-//     const { data } = await api.get('/api/categories');
-//     const arr = extractArray(data);
-//     const base = (arr && arr.length ? arr : sampleCategories); // ← dùng sample nếu rỗng
-//     return base.map(c => ({ ...c, id: String(c.id) }));
-//   } catch {
-//     return sampleCategories;
-//   }
-// },
+  // async getAll() {
+  //   try {
+  //     const { data } = await api.get("/api/categories");
+  //     const arr = extractArray(data) ?? [];
+  //     return arr.map(normalizeCategory);
+  //   } catch {
+  //     return sampleCategories.map(normalizeCategory);
+  //   }
+  // },
+  async getAll(){
+  try {
+    const { data } = await api.get('/api/categories');
+    const arr = extractArray(data);
+    const base = (arr && arr.length ? arr : sampleCategories); // ← dùng sample nếu rỗng
+    return base.map(c => ({ ...c, id: String(c.id) }));
+  } catch {
+    return sampleCategories;
+  }
+},
 
   async getById(id) {
     try {

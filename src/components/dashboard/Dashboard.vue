@@ -9,17 +9,17 @@
         <div class="status">
           <div class="d-flex align-items-center justify-content-between mb-1">
             <span>Nhập kho:</span>
-            <span class="badge bg-success-subtle text-success">Running</span>
+            <span class="badge bg-success-subtle text-success"></span>
           </div>
           <div class="d-flex align-items-center justify-content-between">
             <span>Xuất kho:</span>
-            <span class="badge bg-success-subtle text-success">Running</span>
+            <span class="badge bg-success-subtle text-success"></span>
           </div>
         </div>
 
         <nav class="side-nav">
           <RouterLink to="/dashboard" class="side-item" exact-active-class="active">
-            <i class="fa-solid fa-gauge-high me-2"></i> Dashboard
+            <i class="fa-solid fa-gauge-high me-2"></i> Kho
           </RouterLink>
           <RouterLink to="/inbound" class="side-item" exact-active-class="active">
             <i class="fa-solid fa-boxes-packing me-2"></i> Nhập kho
@@ -34,7 +34,7 @@
       </aside>
       
       <main class="main">
-        <h3 class="page-title">My Dashboard</h3>
+        <h3 class="page-title">Quản lý kho</h3>
 
         <!-- STAT CARDS -->
         <div class="stats">
@@ -117,7 +117,7 @@ const stats = ref({ inStock:0, exported:0, employees:0 })
 const fmt = v => Number.isFinite(v) ? v.toLocaleString() : String(v)
 const statCards = computed(() => [
   { title:'Sản phẩm trong kho', display: fmt(stats.value.inStock), note:'Cập nhật hôm nay', icon:'fa-solid fa-boxes-stacked', iconClass:'bg-success-subtle text-success' },
-  { title:'Đã xuất',            display: 'Coming soon',             note:'Coming soon',       icon:'fa-solid fa-truck-ramp-box', iconClass:'bg-info-subtle text-info' },
+  { title:'Đã xuất',            display: 'đang cập nhật',             note:'đang cập nhật',       icon:'fa-solid fa-truck-ramp-box', iconClass:'bg-info-subtle text-info' },
   { title:'Số lượng nhân viên', display: fmt(stats.value.employees), note:'hoạt động',        icon:'fa-solid fa-users', iconClass:'bg-warning-subtle text-warning' },
 ])
 
@@ -211,16 +211,16 @@ watch(series, async () => { await drawChart() })
 <style scoped>
 .dbox{ display:flex; gap:20px; --top-offset:96px; }
 .side{
-  width:270px; background:#0f1f2a; color:#e9eef3; border-radius:14px; padding:16px;
+  width:270px; background:#ffffff; color:#000000; border-radius:14px; padding:16px;
   position:sticky; top:var(--top-offset); height:calc(100vh - var(--top-offset) - 16px); overflow:auto;
 }
 .main{ flex:1 1 auto; min-width:0; max-width:1280px; }
 
 .brand{ font-weight:700; display:flex; align-items:center; margin-bottom:12px; font-size:18px; }
-.status{ background:#122636; border-radius:12px; padding:12px 14px; margin-bottom:12px; font-size:14px; }
+.status{ background:#f0f0f0; border-radius:12px; padding:12px 14px; margin-bottom:12px; font-size:14px; }
 .side-nav{ display:flex; flex-direction:column; gap:8px; }
-.side-item{ color:#e9eef3; text-decoration:none; padding:10px 14px; border-radius:10px; display:flex; align-items:center; font-size:15px; }
-.side-item:hover{ background:#173249; }
+.side-item{ color:#000000; text-decoration:none; padding:10px 14px; border-radius:10px; display:flex; align-items:center; font-size:15px; }
+.side-item:hover{ background:#f0f0f0; }
 .side-item.active, .side-item.router-link-exact-active{ background:#1f6bff; color:#fff; }
 
 .page-title{ font-weight:800; font-size:28px; margin-bottom:16px; }
