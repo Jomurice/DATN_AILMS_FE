@@ -9,7 +9,7 @@
 
       
       <div class="col-12 col-lg-4 d-flex flex-column justify-content-center p-5" style="background-color: #ffffff;">
-        <h2 class="fw-bold text-primary mb-4 text-center">WELCOME</h2>
+        <h2 class="fw-bold text-primary mb-4 text-center">ĐĂNG NHẬP</h2>
 
         <form @submit.prevent="handleLogin">
           
@@ -49,7 +49,8 @@
           
           <button type="submit" class="btn btn-primary w-100" :disabled="loading">
             <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
-            Login
+            Đăng nhập
+          
           </button>
         </form>
       </div>

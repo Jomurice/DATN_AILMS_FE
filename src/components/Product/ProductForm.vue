@@ -1,4 +1,5 @@
 <template>
+<<<<<<< HEAD
   <div class="row  justify-content-center">
     <div class="card rounded-4 p-3 w-75">
 
@@ -91,6 +92,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { productService } from '../../services/productService'
 import { categoryService } from '../../services/categoryService'
+
 import { brandService } from '../../services/BrandService'
 import Attribute from './Attribute.vue'
 
@@ -105,8 +107,6 @@ const form = ref({ sku: '', name: '', brandId: '', specifications: '', color: ''
 const submitting = ref(false)
 const error = ref('')
 const touched = ref({ brand: false, name: false,brandId: false, color: false, categoryId: false })
-
-
 
 const nameError = computed(() => {
   const v = form.value.name?.trim() || ''
@@ -141,6 +141,7 @@ async function loadData() {
 }
 
 async function submitForm() {
+
   // touched.value = { brand: true, name: true, color: true, categoryId: true }
   // if (brandError.value || colorError.value || nameError.value || categoryError.value) return
   // submitting.value = true; error.value = ''
@@ -153,10 +154,12 @@ async function submitForm() {
   } catch (e) {
     error.value = 'Lưu thất bại.'
     console.log("error",e);
+
   } finally {
     submitting.value = false
   }
 }
+
 
 
 onMounted(loadData)
@@ -167,3 +170,4 @@ onMounted(loadData)
     cursor: pointer !important;
   }
 </style>
+
