@@ -47,12 +47,7 @@ export const productService = {
   },
 
   async create(payload) {
-    try {
-      await api.post("/api/products", toPayload(payload));
-    } catch {
-      // thêm vào mock để UI vẫn chạy
-      sampleProducts = [{ id: crypto.randomUUID?.() ?? Date.now().toString(16), ...payload }, ...sampleProducts];
-    }
+      return await api.post("/api/products", payload);
   },
 
   async update(id, payload) {

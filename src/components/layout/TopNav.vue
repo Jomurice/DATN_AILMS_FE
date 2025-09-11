@@ -4,13 +4,13 @@
       <div class="nav-center">
         <div class="nav-inner">
           <RouterLink class="tab" to="/dashboard" exact-active-class="active">Trang chủ</RouterLink>
-          <RouterLink class="tab" to="/admin/account" exact-active-class="active">Tài khoản</RouterLink>
           <RouterLink class="tab" to="/product" exact-active-class="active">Sản phẩm</RouterLink>
           <RouterLink class="tab" to="/category" exact-active-class="active">Loại hàng</RouterLink>
           <RouterLink class="tab" to="/inbound" exact-active-class="active">Nhập hàng</RouterLink>
           <RouterLink class="tab" to="/outbound" exact-active-class="active">Xuất hàng</RouterLink>
           <RouterLink class="tab" to="/warehouse" exact-active-class="active">Kho</RouterLink>
           <RouterLink class="tab" to="/report" exact-active-class="active">Báo cáo</RouterLink>
+          <RouterLink class="tab" to="/admin/account" exact-active-class="active">Nhân sự</RouterLink>
           <RouterLink class="tab" to="/report" exact-active-class="active">Tổng quát</RouterLink>
           <RouterLink class="tab" to="/report" exact-active-class="active">Khác</RouterLink>
         </div>

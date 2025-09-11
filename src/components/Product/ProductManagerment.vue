@@ -27,44 +27,27 @@
 
       <aside class=" card d-flex gap-3 border-0 shadow-sm rounded-3 p-2 side">
 
-        <div class="tree">
-          <h5 class="form-label fw-semibold mb-3">Loại hàng</h5>
-          <div class="tree-item" :class="{ active: isSelected({ type: 'all' }) }" @click="selectNode({ type: 'all' })">
-            <nav>
-              <i class="fa-solid fa-layer-group me-2"></i>
-              <span>Tất cả sản phẩm</span>
-            </nav>
-          </div>
-
-          <div v-for="cat in treeData" :key="cat.id" class="tree-cat">
-
-            <div class="tree-item" :class="{ active: isSelected(cat) }">
-              <span class="label" @click="selectNode(cat)">
-                <i class="fa-solid fa-folder me-2"></i>{{ cat.label }}
-              </span>
-              <nav v-if="cat.children.length" @click.stop="toggle(cat.id)"
-                :class="['toggle', { active: isOpen(cat.id) }]">
-                <span class="fw-bold fs-4 m-0 arrow"> &gt; </span>
-              </nav>
-            </div>
-
-            <div v-show="isOpen(cat.id)" class="tree-children">
-              <div v-for="br in cat.children" :key="br.id" class="tree-brand">
-                <div class="tree-item" :class="{ active: isSelected(br) }">
-                  <span class="label" @click="selectNode(br)">
-                    <i class="fa-solid fa-tags me-2"></i>{{ br.label }}
-                  </span>
-                  <nav class="toggle" v-if="br.children.length" @click.stop="toggle(br.id)">
-                    <span class="fw-bold fs-4 m-0 arrow"> &gt; </span>
-                  </nav>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="asideChildren">
+          <h5>Loại hàng</h5>
+          <tree-item
+            v-if="menus"
+            :node="menus"
+            :toggle="toggle"
+            :is-open="isOpen"
+            :is-selected="isSelected"
+            :select-node="selectNode"
+          />
         </div>
 
-        <div>
-          <h5 class="form-label fw-semibold mb-3">{{ tableTitle }}</h5>
+        <div class="asideChildren">
+          <h5>Trạng thái</h5>
+          <button @click="selectStatus('all')" :class="{ active: isStatus === 'all' }">Tất cả</button>
+          <button @click="selectStatus(true)" :class="{ active: isStatus === true }">Hoạt động</button>
+          <button @click="selectStatus(false)" :class="{ active: isStatus === false }">Khóa</button>
+        </div>
+
+        <div class="asideChildren">
+          <h5>{{ tableTitle }}</h5>
 
           <select v-model="tableSort" class=" form-select form-select-sm w-100">
             <optgroup label="Theo tên">
@@ -105,7 +88,8 @@
                 <td>{{ catName(p.categoryId) }}</td>
                 <td>{{ p.brand || '—' }}</td>
                 <td class="text-center">
-                  <button class="btn btn-sm btn-outline-info me-1" @click="isDetailProduct = true,getProductById(p.id)">Chi tiết</button>
+                  <button class="btn btn-sm btn-outline-info me-1"
+                    @click="isDetailProduct = true, getProductById(p.id)">Chi tiết</button>
                   <button class="btn btn-sm btn-outline-warning me-1"
                     @click="$router.push(`/product/${p.id}/edit`)">Sửa</button>
                   <button class="btn btn-sm btn-outline-danger" @click="removeProduct(p.id)">Xoá</button>
@@ -117,6 +101,24 @@
             </tbody>
           </table>
 
+          <!-- page -->
+          <div class="sizePage p-2 d-flex align-items-center justify-content-end">
+            Số mục
+            <select class="form-select mx-2 rounded-3">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="80">80</option>
+              <option value="100">100</option>
+            </select>
+
+            <nav class="page d-flex fs-4 gap-2">
+              <p class="fw-bold"> &lt; </p>
+              <p>1</p>
+              <p class="fw-bold"> &gt; </p>
+            </nav>
+          </div>
+
           <div v-if="loading" class="text-center py-5">
             <div class="spinner-border text-dark" role="status"></div>
             <div class="small text-muted mt-2">Đang tải dữ liệu...</div>
@@ -126,13 +128,13 @@
         </div>
       </div>
     </div>
-    
+
 
     <div v-if="isDetailProduct" class="d-flex align-items-center justify-content-center modal-overlay">
       <div class="card w-50 p-2">
         <div class="d-flex align-items-center justify-content-between">
-        <h3 >Chi tiết hàng hóa</h3>
-        <p class="fs-4 exit" @click="exitModal()">X</p>
+          <h3>Chi tiết hàng hóa</h3>
+          <p class="fs-4 exit" @click="exitModal()">X</p>
         </div>
         <nav class="product-info gap-4 mt-3">
           <p><span class="fw-bold">Mã SKU:</span> {{ product.sku }}</p>
@@ -152,15 +154,19 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import TreeItem from '../menu/TreeItem.vue'
 import { productService } from '../../services/productService'
 import { categoryService } from '../../services/categoryService'
+import { menuService } from '../../services/MenuService'
 
-const products = ref([])
+const products = ref([]);
 const product = ref({});
-const categories = ref([])
+const categories = ref([]);
+const menus = ref([]);
 const loading = ref(true)
 const error = ref('')
 const isDetailProduct = ref(false);
+const isStatus = ref('all');
 const filters = ref({ keyword: '', category: '' })
 const applied = ref({ ...filters.value })
 const tableSort = ref('cat_asc')
@@ -212,11 +218,23 @@ function resetFilters() {
 }
 
 // giữ nguyên khi category bên BE có dữ liệu và khi có dữ liệu thì xóa hoặc comment loadAll bên dưới 
+function selectStatus(value) {
+  isStatus.value = value
+}
+
+const isOpen = id => opened.value.has(S(id))
+const toggle = id => isOpen(id) ? opened.value.delete(S(id)) : opened.value.add(S(id))
+const selectNode = node => {
+  selectedNode.value = node
+}
+
+const isSelected = node => selectedNode.value?.title === node?.title && S(selectedNode.value?.id) === S(node?.id)
 
 async function loadAll() {
   try {
     products.value = await productService.getAll();
     categories.value = await categoryService.getAll();
+    menus.value = await menuService.getAllMenuTree();
 
   } catch (e) {
     error.value = e?.message || 'Lỗi tải dữ liệu'
@@ -227,20 +245,25 @@ async function loadAll() {
   console.log(isDetailProduct.value)
 }
 
+
+function getProductByIdTree(){
+  if(selectedNode.value.title === 'Menu') return loadAll();
+}
+
 async function getProductById(id) {
   try {
-      product.value = await productService.getById(id);
+    product.value = await productService.getById(id);
     console.log(product.value);
   } catch (error) {
-    console.log("error",error);
+    console.log("error", error);
   }
 }
 
-function exitModal(){
+function exitModal() {
   isDetailProduct.value = false;
 }
 
-onMounted(()=>{
+onMounted(() => {
   loadAll();
 })
 
@@ -263,21 +286,6 @@ const treeData = computed(() =>
 )
 
 
-const isOpen = id => opened.value.has(S(id))
-const toggle = id => isOpen(id) ? opened.value.delete(S(id)) : opened.value.add(S(id))
-const selectNode = node => {
-  selectedNode.value = node
-  console.log(node.parentId)
-  console.log(node.id)
-  console.log(selectedNode.value)
-  if (node.parentId) opened.value.add(S(node.parentId))
-  if (node.id) opened.value.add(S(node.id))
-}
-const isSelected = node => selectedNode.value?.type === node?.type && S(selectedNode.value?.id) === S(node?.id)
-
-// Filter + Sort + Mode
-// function applyFilters() { applied.value = { ...filters.value } }
-// function resetFilters() { filters.value = { keyword: '', category: '' }; applyFilters() }
 
 const baseFiltered = computed(() => {
   let list = [...products.value]
@@ -379,10 +387,32 @@ async function removeProduct(id) {
 
 .product-info {
   display: grid;
-  grid-template-columns: 1fr 1fr; 
-  gap: 10px 20px; 
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 20px;
 }
 
+.asideChildren {
+  min-width: 200px;
+}
+
+.asideChildren>h5 {
+  margin-bottom: 10px;
+}
+
+.asideChildren>button {
+  padding-left: 10px;
+  padding-right: 10px;
+  margin: 4px;
+  border-radius: 30px;
+  background-color: white;
+  min-width: 70px;
+  border: 1px solid grey;
+}
+
+.asideChildren>button.active {
+  background-color: blue;
+  color: white;
+}
 
 .modal-overlay {
   position: fixed;
@@ -397,8 +427,8 @@ async function removeProduct(id) {
   z-index: 9999;
 }
 
-.exit{
-  cursor: pointer !important; 
+.exit {
+  cursor: pointer !important;
 }
 
 .brand {
@@ -415,42 +445,6 @@ async function removeProduct(id) {
   border-radius: 10px;
 }
 
-.arrow {
-  display: inline-block;
-  transition: transform 0.3s ease;
-}
-
-.tree-item {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 10px;
-  cursor: pointer;
-}
-
-.tree-item:hover {
-  background-color: #d9d9d9ea;
-  /* color: #0823eaf9; */
-}
-
-.tree-item.active {
-  border: 2px solid blue;
-  background-color: #80ccff85;
-  color: #0410f7;
-  font-weight: 700 !important;
-}
-
-.toggle.active .arrow {
-  transform: rotate(90deg);
-}
-
-.tree-children {
-  padding-left: 22px;
-  max-width: 210px;
-}
-
 .badge-card {
   background: #fff;
   border: 1px solid #eef2f7;
@@ -464,6 +458,20 @@ async function removeProduct(id) {
 .badge-card .num {
   font-weight: 700;
   color: #1f2937;
+}
+
+
+.sizePage {
+  background-color: #f9e7e7;
+}
+
+.page>p {
+  margin: 0;
+  cursor: pointer;
+}
+
+.sizePage>.form-select {
+  max-width: 70px;
 }
 
 .table th,

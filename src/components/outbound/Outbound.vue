@@ -4,10 +4,10 @@
 
     <div class="d-flex align-items-center justify-content-between mb-2">
       <div>
-        <input type="text" class="form-control" placeholder="Tìm theo tên loại hàng hóa">
+        <input type="text" class="form-control" placeholder="Tìm theo mã đơn hàng">
       </div>
 
-      <h2>Loại hàng hóa</h2>
+      <h2>Xuất hàng</h2>
 
       <div class="d-flex gap-2">
         <div class="badge-card">
@@ -20,11 +20,8 @@
 
       <aside class="card d-flex gap-3 border-0 p-2 shadow-sm rounded-3 side ">
             <div class="asideChildren">
-              <label class="form-label fw-semibold text-dark">Sắp xếp</label>
-              <select v-model="filters.sort" class="form-select">
-                <option value="name_asc">Tên A → Z</option>
-                <option value="name_desc">Tên Z → A</option>
-              </select>
+              <label class="form-label fw-semibold text-dark">Danh sách đơn hàng</label>
+              
             </div>
 
       </aside>
@@ -32,26 +29,24 @@
       <!-- LIST -->
       <div class="card border-0 shadow-sm rounded-3 main">
         <div class="d-flex justify-content-between align-items-center px-3 pt-3 pb-2">
-          <button class="btn btn-success btn-sm" @click="$router.push('/category/add')">+ Thêm loại</button>
         </div>
 
         <div class="table-responsive">
           <table class="table table-hover mb-0">
             <thead class="bg-light">
               <tr class="text-uppercase table-primary small fw-bold">
-                <th>Tên loại</th>
-                <th>Mô tả</th>
-                <th class="text-center">Hành động</th>
+                <th class="ps-3">Mã đơn hàng</th>
+                <th>Tên hàng hóa</th>
+                <th>Loại hàng hóa</th>
+                <th>Số lượng</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="c in displayed" :key="c.id">
-                <td :data-label="'Tên loại'">{{ c.name }}</td>
-                <td :data-label="'Mô tả'">{{ c.description || '—' }}</td>
-                <td class="text-center" :data-label="'Hành động'">
-                  <button class="btn btn-sm btn-outline-primary me-1" @click="$router.push(`/category/${c.id}/detail`)">Sửa</button>
-                  <button class="btn btn-sm btn-outline-danger" @click="removeItem(c.id)">Xoá</button>
-                </td>
+                <td class="ps-3" :data-label="'Mã đơn hàng'">{{ c.id }}</td>
+                <td :data-label="'Tên hàng hóa'">{{ c.name }}</td>
+                <td :data-label="'Loại hàng hóa'">{{ c.description || '—' }}</td>
+                <td class="text-center" :data-label="'Số lượng'"></td>
               </tr>
               <tr v-if="!isLoading && displayed.length === 0">
                 <td colspan="4" class="text-center text-muted py-4">Không có dữ liệu</td>
@@ -75,6 +70,10 @@
               <p>1</p>
               <p class="fw-bold"> &gt; </p>
             </nav>
+          </div>
+
+           <div class="d-flex justify-content-end m-3" >
+            <button class="btn btn-success">Nhập hàng</button>
           </div>
 
           <div v-if="isLoading" class="text-center py-5">
