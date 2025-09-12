@@ -9,7 +9,6 @@
           <RouterLink class="tab" to="/inbound" exact-active-class="active">Nhập hàng</RouterLink>
           <RouterLink class="tab" to="/outbound" exact-active-class="active">Xuất hàng</RouterLink>
           <RouterLink class="tab" to="/warehouse" exact-active-class="active">Kho</RouterLink>
-<<<<<<< HEAD
           <RouterLink class="tab" to="/report" exact-active-class="active">Báo cáo</RouterLink>
           <RouterLink class="tab" to="/admin/account" exact-active-class="active">Nhân sự</RouterLink>
           <RouterLink class="tab" to="/report" exact-active-class="active">Tổng quát</RouterLink>
@@ -17,14 +16,6 @@
         </div>
       </div>
     </nav>
-=======
-          <RouterLink class="tab" to="/admin/account" exact-active-class="active">Tài khoản</RouterLink>
-          <RouterLink class="tab" to="/report" exact-active-class="active">Báo cáo</RouterLink>
-        </div>
-      </div>
-    </nav>
-    <!-- Offset bằng chiều cao TopNav -->
->>>>>>> 989a55af60ed7303b16d542cf23bf937cd440561
     <div class="topnav-offset" aria-hidden="true"></div>
   </div>
 </template>
@@ -33,11 +24,8 @@
 </script>
 
 <style scoped>
-<<<<<<< HEAD
+
 .topnav{ --topnav-h: 50px; }
-=======
-.topnav{ --topnav-h: 56px; }
->>>>>>> 989a55af60ed7303b16d542cf23bf937cd440561
 
 .topnav-wrap{ width:100%; }
 .topnav{
@@ -52,17 +40,14 @@
   box-shadow: 0 2px 10px rgba(0,0,0,.08);
   backdrop-filter: saturate(160%) blur(4px);
 }
-<<<<<<< HEAD
+
 .nav-center{ max-width:100%; margin:0 auto; padding:0 12px; width:100%; display:flex; justify-content:start; align-items:center; }
-=======
-.nav-center{ max-width:1200px; margin:0 auto; padding:0 12px; width:100%; display:flex; justify-content:center; align-items:center; }
->>>>>>> 989a55af60ed7303b16d542cf23bf937cd440561
+
 .nav-inner{ display:inline-flex; gap:.5rem; overflow-x:auto; white-space:nowrap; scroll-snap-type:x mandatory; -ms-overflow-style:none; scrollbar-width:none; }
 .nav-inner::-webkit-scrollbar{ display:none; }
 
 .tab{
   scroll-snap-align:start;
-<<<<<<< HEAD
   display:inline-flex; 
   align-items:center;
   color:#fff; 
@@ -81,21 +66,7 @@
   content:""; position:absolute; left:14px; right:14px; bottom:6px;
   height:3px; border-radius:2px; background:#fff; box-shadow:0 1px 0 rgba(0,0,0,.08);
 } */
-=======
-  display:inline-flex; align-items:center;
-  color:#fff; text-decoration:none;
-  font-weight:600; font-size:14px;
-  padding:10px 14px; border-radius:999px;
-  opacity:.9; transition:background .2s, transform .12s, opacity .2s;
-  position:relative;
-}
-.tab:hover{ background:rgba(255,255,255,.14); opacity:1; transform:translateY(-1px); }
-.active{ background:rgba(255,255,255,.2); opacity:1 !important; }
-.active::after{
-  content:""; position:absolute; left:14px; right:14px; bottom:6px;
-  height:3px; border-radius:2px; background:#fff; box-shadow:0 1px 0 rgba(0,0,0,.08);
-}
->>>>>>> 989a55af60ed7303b16d542cf23bf937cd440561
+
 
 /* offset chiều cao TopNav (nội dung sẽ bắt đầu sau TopNav) */
 .topnav-offset{ height: var(--topnav-h); }
