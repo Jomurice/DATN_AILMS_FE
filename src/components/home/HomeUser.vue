@@ -1,26 +1,19 @@
 <template>
   <div>
-    <!-- Header cố định trên cùng -->
     <Header />
-    <!-- Offset Header (để nội dung không chạm vào Header) -->
-    <div class="header-offset" aria-hidden="true"></div>
-
-    <!-- TopNav cố định ngay dưới Header -->
     <TopNav />
+    <div class="header-offset" aria-hidden="true">
+    </div>
 
-    <!-- Breadcrumb (hiển thị dưới cả Header + TopNav) -->
     <div class="crumb-bar">
-      <nav class="breadcrumb flex items-center gap-2 m-0 px-3">
+      <nav class="breadcrumb-custom flex items-center gap-2 m-0 px-3">
         <RouterLink class="link" to="/" aria-label="Trang chủ">
           <i class="fas fa-home"></i>
         </RouterLink>
         <template v-for="(crumb, index) in breadcrumbs" :key="index">
           <span v-if="crumb.title" class="mx-1">/</span>
-          <RouterLink
-            v-if="crumb.title && index < breadcrumbs.length - 1"
-            class="link"
-            :to="crumb.path"
-          >
+
+          <RouterLink v-if="crumb.title && index < breadcrumbs.length - 1" class="link" :to="crumb.path">
             {{ crumb.title }}
           </RouterLink>
           <span v-else-if="crumb.title" class="fw-medium">{{ crumb.title }}</span>
@@ -29,7 +22,7 @@
     </div>
 
     <!-- Nội dung trang con -->
-    <div class="container-fluid px-3 pt-2">
+    <div class="px-3">
       <RouterView />
     </div>
   </div>
@@ -60,13 +53,28 @@ const breadcrumbs = computed(() => {
 
 <style scoped>
 /* Khớp chiều cao Header trong Header.vue */
-.header-offset{ height:56px; }
 
-.crumb-bar{
-  background:#eef5ff;
-  border-bottom:1px solid #e5e7eb;
+.header-offset {
+  height: 108px;
 }
-.breadcrumb{ font-size:14px; margin:0; padding:6px 0; }
-.link{ color:#333; text-decoration:none; }
-.link:hover{ color:#2c2ce9; text-decoration:underline; }
+
+.crumb-bar {
+  /* position: fixed; */
+  max-width: fit-content;
+}
+
+.breadcrumb-custom {
+  font-size: 12px;
+  padding: 6px 0;
+}
+
+.link {
+  color: #333;
+  text-decoration: none;
+}
+
+.link:hover {
+  color: #2c2ce9;
+  text-decoration: underline;
+}
 </style>

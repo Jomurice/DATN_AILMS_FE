@@ -16,13 +16,13 @@ function gen(count, amp = 1, base = 5) {
   );
 }
 function mockSeries(tf) {
-  if (tf === "24H")
+  if (tf === "today")
     return { labels: [...Array(24)].map((_, i) => `${i}:00`), inbound: gen(24, .6, 3), outbound: gen(24, .5, 2) };
-  if (tf === "7D")
+  if (tf === "thisweek")
     return { labels: ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"], inbound: gen(7, .7, 4), outbound: gen(7, .6, 3) };
-  if (tf === "1M")
+  if (tf === "thismonth")
     return { labels: [...Array(30)].map((_, i) => `${i + 1}`), inbound: gen(30, .5, 5), outbound: gen(30, .45, 4) };
-  if (tf === "1Y")
+  if (tf === "thisyear")
     return { labels: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"], inbound: gen(12, .8, 8), outbound: gen(12, .7, 7) };
   return { labels: ["T-11","T-10","T-9","T-8","T-7","T-6","T-5","T-4","T-3","T-2","T-1","T"], inbound: gen(12, .9, 9), outbound: gen(12, .8, 8) };
 }

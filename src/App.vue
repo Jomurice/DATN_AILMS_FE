@@ -5,7 +5,7 @@ import Home from './components/home/Home.vue';
 </script>
 <style>
 html, body, #app {
-  background: #f5f6fa !important;  
+  background: #eff0f3 !important;  
   background-image: none !important;
 }
 
