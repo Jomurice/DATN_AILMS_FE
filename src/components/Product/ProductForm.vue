@@ -1,5 +1,4 @@
 <template>
-<<<<<<< HEAD
   <div class="row  justify-content-center">
     <div class="card rounded-4 p-3 w-75">
 
@@ -26,7 +25,7 @@
 
             <div class="col-md-4">
               <label class="form-label">Thương hiệu <span class="text-danger">*</span></label>
-              <select v-model="form.brandId" class="form-select"
+              <select v-model="categoryBrand.brandId" class="form-select"
                 :class="{ 'is-invalid': touched.brandId && brandError }">
                 <option value="">-- Thương hiệu --</option>
                 <option v-for="b in brands" :key="b.id" :value="b.id">{{ b.name }}</option>
@@ -46,12 +45,12 @@
               <input v-model.trim="form.storage" class="form-control" />
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label class="form-label">Loại (Category) <span class="text-danger">*</span></label>
-              <select v-model="form.categoryId" class="form-select"
+              <select v-model="categoryBrand.categoryId" class="form-select"
                 :class="{ 'is-invalid': touched.categoryId && categoryError }">
                 <option value="">-- Chọn loại --</option>
-                <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.categoryName }}</option>
+                <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
               <div class="invalid-feedback" v-if="touched.categoryId && categoryError">{{ categoryError }}</div>
             </div>
@@ -101,8 +100,10 @@ const router = useRouter();
 const productId = route.params.id;
 const isEdit = ref(false);
 const isModal = ref(false);
-const categories = ref([]);
-const brands = ref([]);
+
+const categories = ref();
+const brands = ref();
+const categoryBrand = ref([{categoryId:'', brandId:''}]);
 const form = ref({ sku: '', name: '', brandId: '', specifications: '', color: '', storage: '', categoryId: '' })
 const submitting = ref(false)
 const error = ref('')
@@ -145,10 +146,13 @@ async function submitForm() {
   // touched.value = { brand: true, name: true, color: true, categoryId: true }
   // if (brandError.value || colorError.value || nameError.value || categoryError.value) return
   // submitting.value = true; error.value = ''
-
+console.log(form.value,"adasd",categoryBrand.value);
   try {
     if (isEdit.value) await productService.update(productId, { ...form.value })
-    else await productService.create({ ...form.value })
+    else {
+      form.value.categoryId = await categoryService.createCategoryBrand(categoryBrand.value);
+      await productService.create({ ...form.value })
+    }
   console.log(form.value);
     router.push('/product')
   } catch (e) {
@@ -158,6 +162,8 @@ async function submitForm() {
   } finally {
     submitting.value = false
   }
+console.log(form.value);
+
 }
 
 

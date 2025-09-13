@@ -40,43 +40,47 @@ const routes = [
     children: [
       { path: "", redirect: "product" },
 
-      { path: "dashboard", component: Dashboard },
-      { path: "profile", component: ProfileView },
+      { path: "dashboard", meta: {title: 'Trang chủ'}, component: Dashboard },
+      { path: "profile", meta: {title: 'Thông tin cá nhân'}, component: ProfileView },
 
       // Product
-      { path: "product", component: Products },
-      { path: "product/add", component: ProductForm },
-      { path: "product/:id/edit", name: "product-detail", component: ProductForm, props: true },
+      { path: "product", meta: {title: 'Hàng hóa'}, component: Products },
+      { path: "product/add", meta: {title: 'Thêm'}, component: ProductForm },
+      { path: "product/:id/edit", meta: {title: 'Sửa'}, component: ProductForm, props: true },
       // { path: "product/:id/edit", name: "product-edit", component: ProductForm, props: true },
 
       // Category
-      { path: "category", component: Category },
-      { path: "category/add", component: CategoryForm },
-      { path: "category/:id/detail", component: CategoryForm, props: true },
+      { path: "category", meta: {title: 'Loại sản phẩm'}, component: Category },
+      { path: "category/add", meta: {title: 'Thêm'}, component: CategoryForm },
+      { path: "category/:id/detail", meta: {title: 'Sửa'}, component: CategoryForm, props: true },
 
       // Warehouse chain
-      { path: "warehouse", component: Warehouse },
-      { path: "warehouse/:wid/zone", component: Zone, props: true },
-      { path: "warehouse/:wid/zone/:zid/aisle", component: Aisle, props: true },
-      { path: "warehouse/:wid/zone/:zid/aisle/:aid/shelf", component: Shelf, props: true },
-      { path: "warehouse/:wid/zone/:zid/aisle/:aid/shelf/:sid/bin", name: "bin", component: Bin, props: true },
+      { path: "warehouse", meta: {title: 'Kho'}, component: Warehouse },
+      { path: "warehouse/:wid/zone", meta: {title: 'Khu'}, component: Zone, props: true },
+      { path: "warehouse/:wid/zone/:zid/aisle", meta: {title: 'Dãy'}, component: Aisle, props: true },
+      { path: "warehouse/:wid/zone/:zid/aisle/:aid/shelf", meta: {title: 'Kệ'}, component: Shelf, props: true },
+      { path: "warehouse/:wid/zone/:zid/aisle/:aid/shelf/:sid/bin", meta: {title: 'Ô'}, component: Bin, props: true },
 
       //inbound
-      { path: "inbound", name:'Nhập hàng', component: Inbound},
+      { path: "inbound", meta: {title: 'Nhập hàng'}, component: Inbound},
       //outbound
-      { path: "outbound", name: 'Xuất hàng', component: Outbound},
+      { path: "outbound", meta: {title: 'Xuất hàng'}, component: Outbound},
 
       // Admin
-      { path: "admin/account", component: Accounts },
-      { path: "admin/account/add", component: AccountForm },
-      { path: "admin/account/:id/edit", component: AccountForm, props: true },
-      { path: "admin/warehouse", component: Warehouse },
-      { path: "admin/warehouse/:id/detail", component: WarehouseDetail, props: true },
 
       // catch-all
       { path: ":pathMatch(.*)*", redirect: "/product" },
     ],
   },
+
+  { path: "/admin", meta: {title: 'Quản lý'}, component: HomeView,
+    children:[
+      { path: "account", meta: {title: 'Nhân sự'}, component: Accounts },
+      { path: "account/add", meta: {title: 'Thêm'}, component: AccountForm },
+      { path: "account/:id/edit", meta: {title: 'Sửa'}, component: AccountForm, props: true },
+      // { path: "warehouse", component: Warehouse },
+      // { path: "warehouse/:id/detail", component: WarehouseDetail, props: true },
+    ]}
 ];
 
 export default createRouter({ history: createWebHistory(), routes });

@@ -19,20 +19,32 @@
     <div class="d-flex gap-4">
 
       <aside class="card d-flex gap-3 border-0 p-2 shadow-sm rounded-3 side ">
-            <div class="asideChildren">
-              <label class="form-label fw-semibold text-dark">Sắp xếp</label>
-              <select v-model="filters.sort" class="form-select">
-                <option value="name_asc">Tên A → Z</option>
-                <option value="name_desc">Tên Z → A</option>
-              </select>
-            </div>
+        <div class="asideChildren">
+          <label class="form-label fw-semibold text-dark">Sắp xếp</label>
+          <select v-model="filters.sort" class="form-select">
+            <option value="name_asc">Tên A → Z</option>
+            <option value="name_desc">Tên Z → A</option>
+          </select>
+        </div>
 
       </aside>
 
       <!-- LIST -->
       <div class="card border-0 shadow-sm rounded-3 main">
-        <div class="d-flex justify-content-between align-items-center px-3 pt-3 pb-2">
-          <button class="btn btn-success btn-sm" @click="$router.push('/category/add')">+ Thêm loại</button>
+
+        <div class="m-2 d-flex gap-3 align-items-center justify-content-end">
+          <button class="btn btn-success col-md-1 " @click="$router.push('/category/add')">+ Thêm</button>
+          <!-- page -->
+          <div class="sizePage p-2 d-flex align-items-center rounded-3 justify-content-end">
+            Số mục
+            <select class="form-select mx-2 rounded-3">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="80">80</option>
+              <option value="100">100</option>
+            </select>
+          </div>
         </div>
 
         <div class="table-responsive">
@@ -49,8 +61,14 @@
                 <td :data-label="'Tên loại'">{{ c.name }}</td>
                 <td :data-label="'Mô tả'">{{ c.description || '—' }}</td>
                 <td class="text-center" :data-label="'Hành động'">
-                  <button class="btn btn-sm btn-outline-primary me-1" @click="$router.push(`/category/${c.id}/detail`)">Sửa</button>
-                  <button class="btn btn-sm btn-outline-danger" @click="removeItem(c.id)">Xoá</button>
+
+                  <button class="btn btn-sm btn-outline-warning me-1" title="Sửa thông tin loại hàng"
+                    @click="$router.push(`/category/${c.id}/detail`)">
+                    <i class="fas fa-edit"></i> 
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" @click="removeItem(c.id)" title="Ẩn loại hàng ">
+                    <i class="fas fa-eye-slash"></i>
+                  </button>
                 </td>
               </tr>
               <tr v-if="!isLoading && categories.length === 0">
@@ -60,20 +78,26 @@
           </table>
 
           <!-- page -->
-          <div class="sizePage p-2 d-flex align-items-center justify-content-end">
-            Số mục
-            <select class="form-select mx-2 rounded-3">
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="50">50</option>
-              <option value="80">80</option>
-              <option value="100">100</option>
-            </select>
+          <div class="sizePage bg-danger-subtle p-2 d-flex align-items-center justify-content-end">
+            <nav v-if="pages?.totalPages > 1" class="page d-flex fs-4 gap-2">
+              <!-- Last -->
+              <p class="fw-bold" :class="{ 'text-muted': pages.number === 0 }" @click="changePage(pages.number - 1)">
+                &lt;
+              </p>
 
-            <nav class="page d-flex fs-4 gap-2">
-              <p class="fw-bold"> &lt; </p>
-              <p>1</p>
-              <p class="fw-bold"> &gt; </p>
+              <nav class="d-flex gap-2">
+                <p v-for="p in visiblePages" :key="p"
+                  :class="[{ 'fw-bold text-primary': p !== '...' && pages.number === p - 1 }, p === '...' ? 'text-muted' : '']"
+                  @click="p !== '...' && changePage(p - 1)" class="m-0">
+                  <span class="fs-5">{{ p }}</span>
+                </p>
+              </nav>
+
+              <!-- Next -->
+              <p class="fw-bold" :class="{ 'text-muted': pages.number === pages.totalPages - 1 }"
+                @click="changePage(pages.number + 1)">
+                &gt;
+              </p>
             </nav>
           </div>
 
@@ -98,20 +122,27 @@ const isLoading = ref(false)
 const error = ref('')
 
 const filters = ref({ keyword: '', sort: 'name_asc' })
-const applied  = ref({ ...filters.value })
+const applied = ref({ ...filters.value })
+const payload = ref({
+  name: '',
+  pageable: {
+    page: 0,
+    size: 10,
+    sort: [""]
+  }
+});
+const unaccent = (s = '') => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
-const unaccent = (s='') => s.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
 
-
-async function loadAll(){
+async function loadAll() {
   isLoading.value = true
   error.value = ''
   try { categories.value = await categoryService.getAll() }
-  catch(e){ error.value = 'Lỗi tải danh mục.' }
+  catch (e) { error.value = 'Lỗi tải danh mục.' }
   finally { isLoading.value = false }
 }
 
-async function removeItem(id){
+async function removeItem(id) {
   if (!confirm('Xoá loại này?')) return
   await categoryService.remove(id)
   categories.value = categories.value.filter(c => String(c.id) !== String(id))
@@ -122,8 +153,14 @@ onMounted(loadAll)
 
 <style scoped>
 /* Kéo sát navbar (triệt padding của layout ngoài) */
-.category-page{ padding-top:8px !important; margin-top:-150px; }
-:deep(.container-fluid.py-4){ padding-top:0 !important; }
+.category-page {
+  padding-top: 8px !important;
+  margin-top: -150px;
+}
+
+:deep(.container-fluid.py-4) {
+  padding-top: 0 !important;
+}
 
 .side {
   width: 18%;
@@ -144,10 +181,11 @@ onMounted(loadAll)
   border-radius: 10px;
 }
 
-.asideChildren{
+.asideChildren {
   min-width: 200px;
 }
-.asideChildren>h5{
+
+.asideChildren>h5 {
   margin-bottom: 10px;
 }
 
@@ -166,49 +204,83 @@ onMounted(loadAll)
   color: #1f2937;
 }
 
-.sizePage{
-  background-color: #f9e7e7;
+.sizePage {
+  max-height: 650px;
 }
 
-.page>p{
-  margin: 0;
+.page>p {
   cursor: pointer;
+  max-height: 10px;
 }
 
-.sizePage>.form-select{
+.sizePage>.form-select {
   max-width: 70px;
 }
 
 /* Hai khối xếp dọc, rộng 100% */
-.stack{ display:flex; flex-direction:column; gap:14px; width:90%; }
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 90%;
+}
 
 /* Card trắng dùng chung */
-.section-card{
-  width:100%;
-  background:#fff;
-  border:1px solid #eef2f7;
-  border-radius:12px;
-  box-shadow:0 1px 2px rgba(0,0,0,.03);
+.section-card {
+  width: 100%;
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .03);
 }
-.section-card .card-body{ padding:16px 20px; }
 
-.table th, .table td { 
-  vertical-align:middle; 
+.section-card .card-body {
+  padding: 16px 20px;
+}
+
+.table th,
+.table td {
+  vertical-align: middle;
 }
 
 /* Mobile: bảng thành thẻ */
-@media (max-width: 576px){
-  .table thead{ display:none; }
-  .table, .table tbody, .table tr, .table td{ display:block; width:100%; }
-  .table tr{
-    background:#fff; margin-bottom:1rem; border:1px solid #e9ecef;
-    border-radius:.5rem; box-shadow:0 2px 4px rgba(0,0,0,.05); padding:.75rem;
+@media (max-width: 576px) {
+  .table thead {
+    display: none;
   }
-  .table td{
-    border:none !important; border-bottom:1px dashed #e9ecef !important;
-    display:flex; justify-content:space-between; align-items:center; padding:.5rem .25rem;
+
+  .table,
+  .table tbody,
+  .table tr,
+  .table td {
+    display: block;
+    width: 100%;
   }
-  .table td:last-child{ border-bottom:none !important; }
-  .section-card .card-body{ padding:12px; }
+
+  .table tr {
+    background: #fff;
+    margin-bottom: 1rem;
+    border: 1px solid #e9ecef;
+    border-radius: .5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, .05);
+    padding: .75rem;
+  }
+
+  .table td {
+    border: none !important;
+    border-bottom: 1px dashed #e9ecef !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: .5rem .25rem;
+  }
+
+  .table td:last-child {
+    border-bottom: none !important;
+  }
+
+  .section-card .card-body {
+    padding: 12px;
+  }
 }
 </style>
