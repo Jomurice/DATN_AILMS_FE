@@ -1,9 +1,7 @@
 <template>
-  <div class="tree-item" :class="{ active: isSelected(node) }">
+  <div class="tree-item" @click="selectNode(node)" :class="{ active: isSelected(node) }">
 
-    <nav @click="selectNode(node)">
       <span>{{ node.title }}</span>
-    </nav>
 
     <nav v-if="node.children?.length" @click.stop="toggle(node.id)" :class="['toggle', { active: isOpen(node.id) }]">
       <span class="fw-bold fs-4 m-0 arrow"> &gt; </span>

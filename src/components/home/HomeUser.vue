@@ -36,18 +36,13 @@ import TopNav from "../layout/TopNav.vue";
 
 const route = useRoute();
 
-function formatTitle(segment){
-  if(!segment) return "";
-  return segment.charAt(0).toUpperCase()+segment.slice(1);
-}
 const breadcrumbs = computed(() => {
-  const segs = route.path.split("/").filter(s => s !== "");
-  let path = "";
-  return segs.map(seg => {
-    path += "/" + seg;
-    const isParam = Object.values(route.params).includes(seg);
-    return { path, title: isParam ? null : formatTitle(seg) };
-  }).filter(b => b.title !== null);
+  return route.matched
+    .filter(r => r.name) // chỉ lấy những route có name
+    .map(r => ({
+      title: r.meta?.title,      // lấy name làm tiêu đề
+      path: r.path        // path để RouterLink tới
+    }));
 });
 </script>
 

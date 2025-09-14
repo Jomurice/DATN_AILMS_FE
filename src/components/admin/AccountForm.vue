@@ -138,14 +138,11 @@ async function load() {
 
 async function submit() {
   const vietnamPhoneRegex = /^(0|\+84)(3[2-9]|5[6|8|9]|7[0|6-9]|8[1-5]|9[0-9])[0-9]{7}$/
-  console.log(form.value);
   // if(form.value.username || form.value.name || form.value.password || form.value.phone || form.value.email 
   // || form.value.roles || form.value.dob || form.value.address === null || '') return error.value === 'Vui lòng điền đầy đủ thông tin !';
   if(/\d/.test(form.value.username) || /\s/.test(form.value.username) ) return error.value = 'Tên đăng nhập không được chứa khoảng trắng và số !';
-  if(form.value.password.length <6 ) return error.value = 'Mật khẩu phải nhiều hơn 6 ký tự !';
-  if (form.value.password != passwordConfirm.value) return error.value = 'Mật khẩu xác nhận phải giống mật khẩu đã nhập !';
   if (!vietnamPhoneRegex.test(form.value.phone)) return error.value = 'Số điện thoại không hợp lệ !';
-  if (form.value.roles || form.value.roles.length === 0) return error.value = 'Phải chọn ít nhất 1 chức vụ !';
+  if (!form.value.roles || form.value.roles.length === 0) return error.value = 'Phải chọn ít nhất 1 chức vụ !';
 
   submitting.value = true;
   try {
@@ -154,6 +151,8 @@ async function submit() {
       delete payload.password
       await userService.updateUser(form.value.id, payload)
     } else {
+      if(form.value.password.length <6 ) return error.value = 'Mật khẩu phải nhiều hơn 6 ký tự !';
+      if (form.value.password != passwordConfirm.value) return error.value = 'Mật khẩu xác nhận phải giống mật khẩu đã nhập !';
       console.log(form.value);
       await userService.createUser(form.value)
 
