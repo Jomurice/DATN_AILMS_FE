@@ -134,7 +134,7 @@ import { warehouseService } from "../../services/WarehouseService"
 import { zoneService } from "../../services/ZoneService"
 import { aisleService } from "../../services/AisleService"
 import { shelfService } from "../../services/ShelfService"
-import WarehouseSide from "./_WarehouseSide.vue"
+import WarehouseSide from "./WarehouseSide.vue"
 
 const route = useRoute()
 const router = useRouter()

@@ -6,17 +6,22 @@
     </div>
 
     <div class="crumb-bar">
-      <nav class="breadcrumb-custom flex items-center gap-2 m-0 px-3">
+      <nav class="breadcrumb-custom flex items-center gap-2">
+        <!-- Home -->
         <RouterLink class="link" to="/" aria-label="Trang chủ">
           <i class="fas fa-home"></i>
         </RouterLink>
-        <template v-for="(crumb, index) in breadcrumbs" :key="index">
-          <span v-if="crumb.title" class="mx-1">/</span>
 
-          <RouterLink v-if="crumb.title && index < breadcrumbs.length - 1" class="link" :to="crumb.path">
+        <template v-for="(crumb, index) in breadcrumbs" :key="index">
+          <span class="mx-1">/</span>
+
+          <!-- Nếu không phải item cuối cùng thì là link -->
+          <RouterLink v-if="index < breadcrumbs.length - 1" class="link" :to="crumb.path">
             {{ crumb.title }}
           </RouterLink>
-          <span v-else-if="crumb.title" class="fw-medium">{{ crumb.title }}</span>
+
+          <!-- Item cuối cùng chỉ là text -->
+          <span v-else class="fw-medium">{{ crumb.title }}</span>
         </template>
       </nav>
     </div>
@@ -29,22 +34,47 @@
 </template>
 
 <script setup>
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { computed } from "vue";
+// import { routes } from "../../router";
 import Header from "../layout/Header.vue";
-import TopNav from "../layout/TopNav.vue";
+import TopNav from "../layout/TopNav.vue"
 
 const route = useRoute();
+const router = useRouter();
 
-const breadcrumbs = computed(() => {
-  return route.matched
-    .filter(r => r.name) // chỉ lấy những route có name
-    .map(r => ({
-      title: r.meta?.title,      // lấy name làm tiêu đề
-      path: r.path        // path để RouterLink tới
-    }));
-});
+// function findParentTitle(routePath) {
+//   for (const r of routes) {
+//     if (r.children) {
+//       const match = r.children.find(c => router.resolve(c.path).href === routePath);
+//       if (match && r.meta?.title) return r.meta.title;
+//     }
+//   }
+//   return null;
+// }
+
+// const breadcrumbs = computed(() => {
+//   return route.matched
+//     .filter(r => r.meta?.title)
+//     .map(r => {
+//       const paramKeys = (r.path.match(/:([^/]+)/g) || []).map(k => k.substring(1));
+//       const params = {};
+//       paramKeys.forEach(k => {
+//         if (route.params[k]) params[k] = route.params[k];
+//       });
+
+//       // Lấy cả title của route cha
+//       const parentTitle = findParentTitle(r.path);
+//       return {
+//         title: parentTitle ? `${parentTitle} / ${r.meta.title}` : r.meta.title,
+//         path: router.resolve({ name: r.name, params }).href
+//       };
+//     });
+// });
+
 </script>
+
+
 
 <style scoped>
 /* Khớp chiều cao Header trong Header.vue */
@@ -55,6 +85,7 @@ const breadcrumbs = computed(() => {
 
 .crumb-bar {
   /* position: fixed; */
+  margin-left: 5px;
   max-width: fit-content;
 }
 

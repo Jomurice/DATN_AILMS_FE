@@ -136,7 +136,7 @@ import { useRoute, useRouter } from "vue-router"
 import { warehouseService } from "../../services/WarehouseService"
 import { zoneService } from "../../services/ZoneService"
 import { aisleService } from "../../services/AisleService"
-import WarehouseSide from "./_WarehouseSide.vue"  // (file phụ bên dưới)
+import WarehouseSide from "./WarehouseSide.vue"  // (file phụ bên dưới)
 
 const router = useRouter()
 const wid = useRoute().params.wid || useRoute().params.id

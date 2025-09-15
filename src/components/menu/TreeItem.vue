@@ -3,7 +3,7 @@
 
       <span>{{ node.title }}</span>
 
-    <nav v-if="node.children?.length" @click.stop="toggle(node.id)" :class="['toggle', { active: isOpen(node.id) }]">
+    <nav v-if="node.children?.length" @click.stop="toggle(node.id,node.children)"  :class="['toggle', { active: isOpen(node.id) }]">
       <span class="fw-bold fs-4 m-0 arrow"> &gt; </span>
     </nav>
   </div>
