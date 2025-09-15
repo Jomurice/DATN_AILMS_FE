@@ -1,4 +1,4 @@
-<!-- src/components/category/CategoryList.vue -->
+
 <template>
   <div class="">
 
