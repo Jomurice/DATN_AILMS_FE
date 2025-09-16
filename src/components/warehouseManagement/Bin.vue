@@ -158,7 +158,7 @@ import { zoneService } from "../../services/ZoneService";
 import { aisleService } from "../../services/AisleService";
 import { shelfService } from "../../services/ShelfService";
 import { binService, viStatus } from "../../services/BinService";
-import WarehouseSide from "./_WarehouseSide.vue";
+// import WarehouseSide from "./_WarehouseSide.vue";
 
 const router = useRouter();
 const route = useRoute();

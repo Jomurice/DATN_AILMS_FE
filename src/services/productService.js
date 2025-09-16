@@ -12,6 +12,16 @@ export const productService = {
       return response.data?.result; 
   },
 
+  async create(payload){
+   try {
+     await api.post('/api/products/',payload);
+   } catch (error) {
+      error.data?.code;
+   }
+   
+   return;
+  },
+
 
   async update(id, payload) {
     try {
@@ -20,6 +30,7 @@ export const productService = {
       sampleProducts = sampleProducts.map(p => p.id === id ? { ...p, ...payload } : p);
     }
   },
+  
 
   async removeProduct(id) {
     try {

@@ -144,7 +144,7 @@ import { useRoute, useRouter } from "vue-router";
 import { warehouseService } from "../../services/WarehouseService";
 import { zoneService } from "../../services/ZoneService";
 import { aisleService } from "../../services/AisleService";
-import WarehouseSide from "./_WarehouseSide.vue";
+// import WarehouseSide from "./_WarehouseSide.vue";
 
 const router = useRouter();
 const wid = useRoute().params.wid;

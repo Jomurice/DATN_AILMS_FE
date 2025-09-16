@@ -1,4 +1,3 @@
-<!-- src/components/Product/ProductManagement.vue -->
 <template>
   <div class="pbox">
 
@@ -166,7 +165,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
 import TreeItem from '../menu/TreeItem.vue'
 import { productDetailService } from '../../services/productDetailService'
 import { productService } from '../../services/productService'
@@ -185,64 +184,57 @@ const filters = ref({ keyword: '', category: '' })
 const applied = ref({ ...filters.value })
 const tableSort = ref('cat_asc')
 
-const opened = ref(new Set())
+// const opened = ref(new Set())
 const selectedNode = ref({ type: 'all' })
 
 // Helpers
 const S = x => String(x ?? '')
 const unaccent = (s = '') => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-const catName = id => categories.value.find(c => S(c.id) === S(id))?.name || '—'
-
-// Load data (có fallback sang sample trong service)
-
-
-const displayed = computed(() => {
-  let list = [...products.value];
-  list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "vi", { sensitivity: "base" }))
-
-  if (applied.value.keyword?.trim()) {
-    const kw = unaccent(applied.value.keyword.trim().toLowerCase());
-    list = list.filter((p) => unaccent((p.name || "").toLowerCase()).includes(kw));
-  }
-
-  if (applied.value.category) {
-    list = list.filter((p) => (p.categoryId) === applied.value.category);
-  }
-
-  // if (applied.value.quantity !== null && applied.value.quantity >= 0) {
-  //   list = list.filter((p) => (p.quantity ?? 0) === applied.value.quantity);
-  // }
-
-
-  switch (applied.value.sort) {
-    case "name_asc": list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "vi", { sensitivity: "base" })); break;
-    case "name_desc": list.sort((a, b) => (b.name || "").localeCompare(a.name || "", "vi", { sensitivity: "base" })); break;
-    case "cat_asc": list = sortProductByNameCategories(list, "asc"); break;
-    case "cat_desc": list = sortProductByNameCategories(list, "desc"); break;
-    // case "qty_asc": list.sort((a, b) => (a.quantity ?? 0) - (b.quantity ?? 0)); break;
-    // case "qty_desc": list.sort((a, b) => (b.quantity ?? 0) - (a.quantity ?? 0)); break;
-  }
-  return list;
-});
-
-function applyFilters() { applied.value = { ...filters.value }; }
-function resetFilters() {
-  filters.value = { keyword: "", category: "", quantity: null, sort: "cat_asc" };
-  applied.value = { ...filters.value };
-}
 
 // giữ nguyên khi category bên BE có dữ liệu và khi có dữ liệu thì xóa hoặc comment loadAll bên dưới 
-function selectStatus(value) {
-  isStatus.value = value
+const openNodes = reactive(new Set());
+const selectedNodeId = ref(null);
+
+function isOpen(id) {
+  return openNodes.has(id);
 }
 
-const isOpen = id => opened.value.has(S(id))
-const toggle = id => isOpen(id) ? opened.value.delete(S(id)) : opened.value.add(S(id))
-const selectNode = node => {
-  selectedNode.value = node
+function toggle(id, children = []) {
+  if (openNodes.has(id)) {
+    // Nếu đang mở → đóng lại
+    closeChildrenRecursively(children);
+    openNodes.delete(id);
+  } else {
+    openNodes.add(id);
+  }
+
 }
 
-const isSelected = node => selectedNode.value?.title === node?.title && S(selectedNode.value?.id) === S(node?.id)
+function closeChildrenRecursively(children) {
+  for (const child of children) {
+    // Nếu con đang mở thì đóng lại
+    openNodes.delete(child.id);
+
+    // Nếu node đang chọn là 1 trong các con thì clear selection
+    if (selectedNodeId.value === child.id) {
+      selectedNodeId.value = null;
+    }
+
+    // Kiểm tra sâu hơn
+    if (child.children?.length) {
+      closeChildrenRecursively(child.children);
+    }
+  }
+}
+
+function isSelected(node) {
+  return selectedNodeId.value === node.id;
+}
+
+function selectNode(node) {
+  selectedNodeId.value = node.id;
+}
+
 
 async function loadAll() {
   try {

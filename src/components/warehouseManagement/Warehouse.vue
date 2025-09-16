@@ -141,7 +141,7 @@ import { ref, computed, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
 import { warehouseService } from "../../services/WarehouseService";
 import { zoneService } from "../../services/ZoneService";
-import WarehouseSide from "./_WarehouseSide.vue";
+// import WarehouseSide from "./_WarehouseSide.vue";
 
 const router = useRouter();
 const ui = ref("list");
