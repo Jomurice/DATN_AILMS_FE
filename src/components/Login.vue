@@ -109,22 +109,16 @@ const handleLogin = async () => {
 
   loading.value = true;
   try {
-    const authData = await authService.login(username.value, password.value) 
-    console.log(authData)
-    auth.setToken(authData)
+    const data = await authService.login(username.value, password.value) 
+    console.log(data)
+    auth.setToken(data.result?.token);
     router.push("/profile");
   } catch (error) {
-      apiError.value = "Tên đăng nhập hoặc mật khẩu không đúng !";
+    if(error.response?.data?.message === 'User blocked'){apiError.value = "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với quản lý để được hỗ trợ !";}
+    else apiError.value = "Tên đăng nhập hoặc mật khẩu không đúng !";
+
   } finally {
     loading.value = false;
-  }
-}
-
-async function forgotPassword() {
-  try {
-    await passwordService.forgotPass()
-  } catch (error) {
-    
   }
 }
 </script>

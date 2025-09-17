@@ -14,19 +14,19 @@
           <form @submit.prevent="submitForm" class="row g-3">
             <div class="col-md-4">
               <label class="form-label">Mã SKU <span class="text-danger">*</span></label>
-              <input v-model.trim="form.sku" class="form-control" required />
+              <input v-model.trim="form.sku" class="form-control" placeholder="Nhập mã SKU" required />
             </div>
 
             <div class="col-md-8">
-              <label class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
+              <label class="form-label">Tên hàng hóa <span class="text-danger">*</span></label>
               <input v-model.trim="form.name" class="form-control" :class="{ 'is-invalid': touched.name && nameError }"
-                maxlength="255" required />
+                maxlength="255" placeholder="Nhập tên hàng hóa" required />
               <div class="invalid-feedback" v-if="touched.name">{{ nameError }}</div>
             </div>
 
             <div class="col-md-4">
               <label class="form-label">Thương hiệu <span class="text-danger">*</span></label>
-              <select v-model="categoryBrand.brandId" class="form-select"
+              <select v-model="form.brandId" class="form-select"
                 :class="{ 'is-invalid': touched.brandId && brandError }">
                 <option value="">-- Thương hiệu --</option>
                 <option v-for="b in brands" :key="b.id" :value="b.id">{{ b.name }}</option>
@@ -36,8 +36,13 @@
 
             <div class="col-md-4">
               <label class="form-label">Màu sắc <span class="text-danger">*</span></label>
-              <input v-model.trim="form.color" class="form-control"
-                :class="{ 'is-invalid': touched.color && colorError }" />
+              <select name="" id="" v-model="form.color">
+                <option value="Red">Đỏ</option>
+                <option value="Black">Đen</option>
+                <option value="Gold">Vàng kim</option>
+                <option value="Phantom Black"></option>
+                <option value="Green">Đỏ</option>
+              </select>
               <div class="invalid-feedback" v-if="touched.color && colorError">{{ colorError }}</div>
             </div>
 
@@ -48,7 +53,7 @@
 
             <div class="col-md-4">
               <label class="form-label">Loại (Category) <span class="text-danger">*</span></label>
-              <select v-model="categoryBrand.categoryId" class="form-select"
+              <select v-model="form.categoryId" class="form-select"
                 :class="{ 'is-invalid': touched.categoryId && categoryError }">
                 <option value="">-- Chọn loại --</option>
                 <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
@@ -146,9 +151,10 @@ async function submitForm() {
   // submitting.value = true; error.value = ''
   submitting.value = true;
   try {
+
     if (isEdit.value) await productService.update(productId, { ...form.value })
     else {
-      form.value.categoryId = await categoryService.createCategoryBrand(categoryBrand.value);
+      // form.value.categoryId = await categoryService.createCategoryBrand(categoryBrand.value);
       await productService.create({ ...form.value })
     }
     console.log(form.value);

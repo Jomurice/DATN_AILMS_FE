@@ -3,7 +3,7 @@
 
     <div class="d-flex mb-2 justify-content-between">
       <div class=" col-md-3 p-0">
-        <input v-model="filters.keyword" type="text" class="form-control" placeholder="Nhập tên sản phẩm..." />
+        <input v-model="filters.keyword" type="text" class="form-control" placeholder="Nhập tên hàng hóa" />
       </div>
       <h2>Hàng hóa</h2>
 
@@ -72,20 +72,24 @@
           </div>
         </div>
 
-        <div class="table-responsive">
+        <div class="table-wrapper">
           <table class="table table-hover mb-0">
             <thead>
               <tr class="text-uppercase table-primary small fw-bold">
                 <th class="ps-4">Mã</th>
-                <th>Ô</th>
+                <th>Tên</th>
+                <th>Hãng</th>
+                <th>Loại</th>
                 <th>Trạng thái</th>
                 <th class="text-center">Hành động</th>
               </tr>
             </thead>
             <tbody>
-              <tr v-for="p in productRows" :key="p.id">
-                <td class="ps-4">{{ p.serialNumber }}</td>
-                <td>{{ p.binId }}</td>
+              <tr v-for="p in products" :key="p.id">
+                <td class="ps-4">{{ p.sku }}</td>
+                <td>{{ p.name }}</td>
+                <td>{{ p.brandName }}</td>
+                <td>{{ p.categoryName }}</td>
                 <td>{{ p.status }}</td>
                 <td class="text-center">
                   <button class="btn btn-sm btn-outline-info me-1" title="Chi tiết hàng hóa"
@@ -101,7 +105,7 @@
                   </button>
                 </td>
               </tr>
-              <tr v-if="!loading && productRows.length === 0">
+              <tr v-if="!loading && products.length === 0">
                 <td colspan="6" class="text-center text-muted py-4">Không có dữ liệu</td>
               </tr>
             </tbody>
@@ -238,9 +242,9 @@ function selectNode(node) {
 
 async function loadAll() {
   try {
-    products.value = await productDetailService.getAllProduct();
+    products.value = await productService.getAll();
     // product.value = await productService.getById(product.value.productId);
-    categories.value = await categoryService.getAll();
+    // categories.value = await categoryService.getAll();
     menus.value = await menuService.getAllMenuTree();
 
   } catch (e) {
@@ -252,10 +256,6 @@ async function loadAll() {
   console.log(isDetailProduct.value)
 }
 
-
-function getProductByIdTree() {
-  if (selectedNode.value.title === 'Menu') return loadAll();
-}
 
 async function getProductById(id) {
   try {
@@ -273,102 +273,6 @@ function exitModal() {
 onMounted(() => {
   loadAll();
 })
-
-const treeData = computed(() =>
-  categories.value.map(cat => {
-    const prods = products.value.filter(p => S(p.categoryId) === S(cat.id))
-    const brandNames = [...new Set(prods.map(p => (p.brand || '').trim()).filter(Boolean))]
-      .sort((a, b) => a.localeCompare(b, 'vi', { sensitivity: 'base' }))
-    const brands = brandNames.map(bn => ({
-      id: `${S(cat.id)}::${bn}`,
-      label: bn,
-      type: 'brand',
-      parentId: S(cat.id),
-      children: prods
-        .filter(p => (p.brand || '').trim().toLowerCase() === bn.toLowerCase())
-        .map(p => ({ id: S(p.id), label: p.name, type: 'product' }))
-    }))
-    return { id: S(cat.id), label: cat.name, type: 'category', children: brands }
-  })
-)
-
-
-
-const baseFiltered = computed(() => {
-  let list = [...products.value]
-
-  if (applied.value.keyword.trim()) {
-    const kw = unaccent(applied.value.keyword.trim().toLowerCase())
-    list = list.filter(p => unaccent((p.name || '').toLowerCase()).includes(kw))
-  }
-  if (applied.value.category) list = list.filter(p => S(p.categoryId) === S(applied.value.category))
-
-  const sel = selectedNode.value
-  if (sel?.type === 'category') {
-    list = list.filter(p => S(p.categoryId) === S(sel.id))
-  } else if (sel?.type === 'brand') {
-    const [catId, brand] = S(sel.id).split('::')
-    list = list.filter(p => S(p.categoryId) === S(catId) && (p.brand || '').trim().toLowerCase() === brand.trim().toLowerCase())
-  } else if (sel?.type === 'product') {
-    list = list.filter(p => S(p.id) === S(sel.id))
-  }
-
-  switch (tableSort.value) {
-    case 'name_asc': list.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'vi', { sensitivity: 'base' })); break
-    case 'name_desc': list.sort((a, b) => (b.name || '').localeCompare(a.name || '', 'vi', { sensitivity: 'base' })); break
-    case 'cat_asc': {
-      const cmap = new Map(categories.value.map(c => [S(c.id), c.name]))
-      list.sort((a, b) => (cmap.get(S(a.categoryId)) || '').localeCompare(cmap.get(S(b.categoryId)) || '', 'vi', { sensitivity: 'base' })); break
-    }
-    case 'cat_desc': {
-      const cmap = new Map(categories.value.map(c => [S(c.id), c.name]))
-      list.sort((a, b) => (cmap.get(S(b.categoryId)) || '').localeCompare(cmap.get(S(a.categoryId)) || '', 'vi', { sensitivity: 'base' })); break
-    }
-    case 'storage_asc': list.sort((a, b) => S(a.storage).localeCompare(S(b.storage))); break
-    case 'storage_desc': list.sort((a, b) => S(b.storage).localeCompare(S(a.storage))); break
-  }
-  return list
-})
-
-const tableMode = computed(() => selectedNode.value?.type === 'category' ? 'brand' : 'product')
-const tableTitle = computed(() => {
-  const sel = selectedNode.value
-  if (sel?.type === 'category') return `Hãng trong “${sel.label}”`
-  if (sel?.type === 'brand') return `Sản phẩm của “${sel.label}”`
-  if (sel?.type === 'product') return `Sản phẩm: ${baseFiltered.value[0]?.name || ''}`
-  return 'Danh sách sản phẩm'
-})
-
-const productRows = computed(() => baseFiltered.value)
-
-productRows.value = computed(() => {
-  const sel = selectedNode.value
-  if (sel?.type !== 'category') return []
-  const inCat = products.value.filter(p => S(p.categoryId) === S(sel.id))
-  const map = new Map()
-  for (const p of inCat) {
-    const bn = (p.brand || '').trim() || '—'
-    const key = `${S(sel.id)}::${bn}`
-    map.set(key, (map.get(key) || 0) + 1)
-  }
-  return [...map.entries()]
-    .map(([key, count]) => ({ key, name: key.split('::')[1], count }))
-    .sort((a, b) => a.name.localeCompare(b.name, 'vi', { sensitivity: 'base' }))
-})
-
-const totalDisplayed = computed(() => tableMode.value === 'brand' ? productRows.value.length : productRows.value.length)
-const outOfStock = computed(() => tableMode.value === 'brand' ? 0 : productRows.value.filter(x => (x.quantity ?? 0) === 0).length)
-const nearlyOut = computed(() => tableMode.value === 'brand' ? 0 : productRows.value.filter(x => (x.quantity ?? 0) > 0 && (x.quantity ?? 0) < 5).length)
-
-
-async function removeProduct(id) {
-  if (!confirm('Xoá sản phẩm này?')) return
-  try {
-    await productService.removeProduct(id)
-    products.value = products.value.filter(p => S(p.id) !== S(id))
-  } catch { }
-}
-
 
 </script>
 
@@ -487,6 +391,18 @@ async function removeProduct(id) {
 .btn {
   max-height: 40px;
   min-width: 40px;
+}
+
+.table-wrapper {
+  /* max-height: 400px;  */
+  overflow-y: auto;
+}
+
+/* Sticky header */
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
 }
 
 .table th,

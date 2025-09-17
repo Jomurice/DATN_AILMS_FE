@@ -31,6 +31,8 @@ defineProps({
 .arrow {
   display: inline-block;
   transition: transform 0.3s ease;
+  max-width: fit-content;
+  max-height: fit-content;
 }
 
 .toggle.active .arrow {
