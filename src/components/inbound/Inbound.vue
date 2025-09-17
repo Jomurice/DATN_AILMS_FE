@@ -1,3 +1,4 @@
+<!-- src/pages/inventory/Inbound.vue -->
 <template>
   <div class="container-fluid px-3 py-4">
     <div class="pbox">
@@ -136,7 +137,7 @@
       </main>
     </div>
 
-    <!-- Modal: chặn auto-translate -->
+    <!-- Modal: Serial đã quét -->
     <div v-if="modalSku" class="modal-overlay d-flex align-items-center justify-content-center">
       <div class="card w-50 p-2 notranslate" translate="no">
         <div class="d-flex align-items-center justify-content-between">
@@ -176,7 +177,15 @@
 import { ref, computed, onMounted, watch } from 'vue'
 import { purchaseOrderService } from '../../services/purchaseOrderService'
 import { inventoryClient } from '../../services/inventoryClient'
+import { fire, EVENTS } from '../../services/eventBus'
 
+// ---------------- helpers ----------------
+const norm = s => String(s || '').trim()
+const normKey = s => norm(s).toLowerCase()
+const skuFromSerial = serial => String(serial || '').split('-')[0]?.trim()?.toLowerCase() || ''
+const inflight = new Set() // chống double-scan cùng serial
+
+// ---------------- state ----------------
 const orders = ref([])
 const loading = ref(true)
 const status = ref('ALL')
@@ -185,22 +194,15 @@ const selectedOrder = ref(null)
 const quickSerial = ref('')
 const quickInputRef = ref(null)
 
-const scannedBySku = ref({}) // { [sku]: { count, serials:[], details:[] } }
+const scannedBySku = ref({}) // { [lowerSku]: { count, serials:[lowerSerial], details:[{serialNumber,status,binId}] } }
 const modalSku = ref(null)
 const toastMsg = ref('')
 let toastTimer = null
 
-// Fallback demo khi BE lỗi (mặc định false)
-const FAKE_SCAN_ON_ERROR = String(import.meta.env?.VITE_FAKE_SCAN_ON_ERROR || '').toLowerCase() === 'true'
-
-// Paging
+// ---------------- paging ----------------
 const page = ref(1)
 const pageSize = ref(10)
 const pageSizeOptions = [5, 10, 20, 50]
-
-const filteredOrders = computed(() =>
-  status.value === 'ALL' ? orders.value : orders.value.filter(o => o.status === status.value)
-)
 const totalItems = computed(() => selectedOrder.value?.items?.length || 0)
 const pageCount = computed(() => Math.max(1, Math.ceil(totalItems.value / pageSize.value)))
 const pagedItems = computed(() => {
@@ -210,50 +212,61 @@ const pagedItems = computed(() => {
 })
 watch([selectedOrder, pageSize], () => { page.value = 1 })
 
-const chipCls = s => ({
-  'btn-outline-secondary': status.value !== s,
-  'btn-primary text-white': status.value === s,
-})
-const toViStatus = s => ({ UPCOMING:'Sắp xảy ra', IN_PROGRESS:'Đang thực hiện', DONE:'Hoàn tất' }[s] || s)
+// ---------------- ui utils ----------------
+const chipCls = s => ({ 'btn-outline-secondary': status.value !== s, 'btn-primary text-white': status.value === s })
+const toViStatus = s => ({ UPCOMING: 'Sắp xảy ra', IN_PROGRESS: 'Đang thực hiện', DONE: 'Hoàn tất' }[s] || s)
+const filteredOrders = computed(() => status.value === 'ALL' ? orders.value : orders.value.filter(o => o.status === status.value))
+const scannedCount = sku => scannedBySku.value[String(sku || '').toLowerCase()]?.count || 0
+const canComplete = computed(() => selectedOrder.value?.items?.length && Object.values(scannedBySku.value).some(x => (x?.count || 0) > 0))
+const showToast = (msg = '') => { toastMsg.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toastMsg.value = '', 1800) }
 
-const scannedCount = sku => scannedBySku.value[sku]?.count || 0
-const canComplete = computed(() =>
-  selectedOrder.value?.items?.length && Object.values(scannedBySku.value).some(x => (x?.count||0) > 0)
-)
-
-const showToast = (msg='') => { toastMsg.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(()=>toastMsg.value='',1800) }
-const skuFromSerial = serial => String(serial||'').split('-')[0]?.trim()?.toLowerCase() || ''
-
-function normalizeOrder(order){
+// ---------------- normalize PO item ----------------
+function normalizeOrder(order) {
   const items = (order.items || []).map(x => ({
-    productId:     x.productId ?? x.product?.id ?? null,
-    sku:           x.sku ?? x.product?.sku ?? '',
-    name:          x.name ?? x.product?.name ?? '',
-    categoryName:  x.categoryName ?? x.product?.category?.name ?? '',
-    brandName:     x.brandName ?? x.product?.brand?.name ?? '',
-    color:         x.color ?? x.product?.color ?? '',
-    qty:           x.qty ?? x.quantity ?? 0,
+    productId:    x.productId ?? x.product?.id ?? null,
+    sku:          x.sku ?? x.product?.sku ?? '',
+    name:         x.name ?? x.product?.name ?? '',
+    categoryName: x.categoryName ?? x.product?.categoryName ?? x.product?.category?.name ?? '',
+    brandName:    x.brandName ?? x.product?.brandName ?? x.product?.brand?.name ?? '',
+    color:        x.color ?? x.product?.color ?? '',
+    qty:          x.qty ?? x.quantity ?? 0,
   }))
   return { ...order, items }
 }
 
-// Quét nhanh
-async function handleQuickScan(){
-  const serial = quickSerial.value?.trim()
-  if(!serial) return
+// ---------------- modal & open order ----------------
+function openSerialsModal(sku) { modalSku.value = sku }
+
+async function openOrder(o) {
+  try {
+    let full = o
+    if (!Array.isArray(o.items) || !o.items.length) {
+      full = await purchaseOrderService.getById(o.id, { includeItems: true })
+    }
+    selectedOrder.value = normalizeOrder(full)
+    scannedBySku.value = {}
+    page.value = 1
+  } catch {
+    showToast('Không tải được chi tiết phiếu')
+  }
+}
+
+// ---------------- scan flows ----------------
+async function handleQuickScan() {
+  const serial = norm(quickSerial.value)
+  if (!serial) return
   const sku = skuFromSerial(serial)
-  const item = selectedOrder.value?.items?.find(x => x.sku?.toLowerCase() === sku)
-  if(!item){ showToast('Serial không khớp SKU nào trong phiếu này'); quickSerial.value = ''; return }
+  const item = selectedOrder.value?.items?.find(x => String(x.sku || '').toLowerCase() === sku)
+  if (!item) { showToast('Serial không khớp SKU nào trong phiếu này'); quickSerial.value = ''; return }
   await scanSerialForItem(serial, item)
   quickSerial.value = ''
   quickInputRef.value?.focus()
 }
 
-// Quét theo dòng
-async function handleRowScanWithGlobal(item){
-  const serial = quickSerial.value?.trim()
-  if(!serial){ showToast('Nhập/scan serial ở ô “Quét nhanh” trước'); quickInputRef.value?.focus(); return }
-  if(skuFromSerial(serial) !== String(item.sku).toLowerCase()){
+async function handleRowScanWithGlobal(item) {
+  const serial = norm(quickSerial.value)
+  if (!serial) { showToast('Nhập/scan serial ở ô “Quét nhanh” trước'); quickInputRef.value?.focus(); return }
+  if (skuFromSerial(serial) !== String(item.sku).toLowerCase()) {
     showToast(`Serial không khớp SKU dòng này (${item.sku})`); quickInputRef.value?.focus(); return
   }
   await scanSerialForItem(serial, item)
@@ -261,69 +274,79 @@ async function handleRowScanWithGlobal(item){
   quickInputRef.value?.focus()
 }
 
-// Scan -> cập nhật tiến độ (có fallback tuỳ chọn)
-async function scanSerialForItem(serial, item){
-  let detail = null
-  try{
-    detail = await inventoryClient.scan(serial) // {id, serialNumber, status, productId, binId}
-  }catch(e){
-    if(FAKE_SCAN_ON_ERROR){
-      detail = { serialNumber: serial, status: 'INBOUND', productId: item.productId ?? null, binId: null }
-    }else{
-      showToast('Quét thất bại'); return
+async function scanSerialForItem(serial, item) {
+  const input = norm(serial); if (!input) return
+
+  const reqKey = normKey(input)
+  if (inflight.has(reqKey)) return
+  inflight.add(reqKey)
+
+  let detail
+  try {
+    detail = await inventoryClient.scan(input) // { id, serialNumber, status, productId, binId }
+  } catch (e) {
+    // demo offline (tuỳ chọn): VITE_FAKE_SCAN_ON_ERROR=true
+    if (String(import.meta.env?.VITE_FAKE_SCAN_ON_ERROR || '').toLowerCase() === 'true') {
+      detail = { serialNumber: input, status: 'INBOUND', productId: item.productId ?? null, binId: null }
+    } else {
+      showToast('Quét thất bại'); 
+      return
     }
+  } finally {
+    inflight.delete(reqKey)
   }
 
-  if(item.productId && detail?.productId && String(detail.productId) !== String(item.productId)){
-    showToast('BE trả về serial thuộc sản phẩm khác dòng này'); return
+  const detailSN = norm(detail?.serialNumber ?? input)
+  const snKey = normKey(detailSN)
+  const skuKey = String(item.sku || '').toLowerCase()
+  const prefixMatches = skuFromSerial(detailSN) === skuKey
+
+  // Từ chối khi chắc chắn sai
+  if (item.productId && detail?.productId
+      && String(detail.productId) !== String(item.productId)
+      && !prefixMatches) {
+    showToast('Serial thuộc sản phẩm khác dòng này')
+    return
   }
 
-  const cur = scannedBySku.value[item.sku] || { count:0, serials:[], details:[] }
-  if(cur.serials.includes(serial)){ showToast('Serial này đã quét trong phiếu'); return }
+  const store = scannedBySku.value[skuKey] || { count: 0, serials: [], details: [] }
+  if (store.serials.includes(snKey)) { showToast('Serial này đã quét trong phiếu'); return }
 
-  cur.serials.push(serial)
-  cur.details.unshift({
-    serialNumber: serial,
+  store.serials.push(snKey)
+  store.details.unshift({
+    serialNumber: detailSN,
     status: detail?.status || 'INBOUND',
     binId: detail?.binId || null
   })
-  cur.count = cur.serials.length
-  scannedBySku.value[item.sku] = { ...cur }
+  store.count = store.serials.length
+  scannedBySku.value = { ...scannedBySku.value, [skuKey]: store }
+
+  // bắn sự kiện cho Dashboard/Product/Product-detail tự reload
+  fire(EVENTS.INBOUND_SCANNED, {
+    serial: detailSN,
+    productId: detail?.productId ?? item.productId ?? null,
+    binId: detail?.binId ?? null,
+  })
 
   showToast('Đã quét ✓')
 }
 
-function openSerialsModal(sku){ modalSku.value = sku }
-
-async function openOrder(o){
-  try{
-    let full = o
-    if(!Array.isArray(o.items) || !o.items.length){
-      full = await purchaseOrderService.getById(o.id, { includeItems: true })
-    }
-    selectedOrder.value = normalizeOrder(full)
-    scannedBySku.value = {}
-    page.value = 1
-  }catch{
-    showToast('Không tải được chi tiết phiếu')
-  }
-}
-
-async function completeOrder(){
-  if(!selectedOrder.value) return
-  try{
+async function completeOrder() {
+  if (!selectedOrder.value) return
+  try {
     await purchaseOrderService.complete(selectedOrder.value.id, { confirmedAt: new Date().toISOString() })
     selectedOrder.value.status = 'DONE'
     showToast('Đã nhập hàng & xác nhận phiếu')
-  }catch{
+  } catch {
     showToast('Nhập hàng thất bại')
   }
 }
 
-onMounted(async ()=>{
-  try{ orders.value = await purchaseOrderService.list() }
-  catch{ showToast('Không tải được danh sách phiếu') }
-  finally{ loading.value = false }
+// ---------------- mount ----------------
+onMounted(async () => {
+  try { orders.value = await purchaseOrderService.list() }
+  catch { showToast('Không tải được danh sách phiếu') }
+  finally { loading.value = false }
 })
 </script>
 
@@ -337,7 +360,6 @@ onMounted(async ()=>{
 .badge-card { background:#fff; border:1px solid #eef2f7; border-radius:10px; padding:8px 14px; text-align:center; display:inline-flex; flex-direction:column; min-width:140px; }
 .badge-card .num { font-weight:700; color:#1f2937; font-size:18px; }
 
-/* Bảng: không 3 chấm, không xuống hàng */
 .table-balanced th, .table-balanced td {
   vertical-align:middle; white-space:nowrap; overflow:visible; text-overflow:clip;
   height:56px; padding-top:12px; padding-bottom:12px;
@@ -350,13 +372,15 @@ onMounted(async ()=>{
 }
 .mono { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; }
 
-/* Pager */
 .pager-bar { display:flex; justify-content:flex-end; padding:10px 16px; gap:10px; border-top:1px solid #eef2f7; background:#fafbfc; }
 
-/* Modal & Toast */
 .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:10000; }
 .toast-box { position:fixed; bottom:20px; right:20px; background:#111; color:#fff; padding:10px 14px; border-radius:8px; z-index:20000; }
 
-/* Ngăn Google Translate dịch các cụm kỹ thuật */
 .notranslate { -webkit-user-select:text; user-select:text; }
+
+@media (max-width: 992px) {
+  .pbox { flex-direction:column; }
+  .side { width:100%; height:auto; position:static; }
+}
 </style>
