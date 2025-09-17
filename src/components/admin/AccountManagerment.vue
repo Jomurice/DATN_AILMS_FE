@@ -257,8 +257,8 @@ async function load() {
     roles.value = await roleService.getAll();
     totalUser.value = await userService.getTotalUser();
     const response = await userService.getAllUsers(payload.value);
-    users.value = response.data?.result?.content;
-    pages.value = response.data?.result;
+    users.value = response.result?.content;
+    pages.value = response.result;
   } catch (e) {
     error.value = e?.message || 'Lỗi tải danh sách.'
     console.log("error", e);

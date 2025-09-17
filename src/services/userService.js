@@ -22,7 +22,8 @@ export const userService = {
             key => (params[key] === '' || params[key] == null) && delete params[key]
         );
 
-        return await api.get("/api/users", { params });
+        const response = await api.get("/api/users", { params });
+        return response.data;
 
     },
 
