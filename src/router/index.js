@@ -9,7 +9,6 @@ import Accounts from "../components/admin/AccountManagerment.vue";
 import AccountForm from "../components/admin/AccountForm.vue";
 
 import Warehouse from "../components/warehouseManagement/Warehouse.vue";
-import WarehouseDetail from "../components/warehouseManagement/detail/Warehouse-Detail.vue";
 import Zone from "../components/warehouseManagement/Zone.vue";
 import Aisle from "../components/warehouseManagement/Aisle.vue";
 import Shelf from "../components/warehouseManagement/Shelf.vue";
@@ -26,13 +25,11 @@ import Dashboard from "../components/dashboard/Dashboard.vue";
 import Inbound from "../components/inbound/Inbound.vue";
 import Outbound from "../components/outbound/Outbound.vue";
 
-
-
-const routes = [
+ const routes = [
   { path: "/", redirect: "/login" },
-  { path: "/login", component: Login },
-  { path: "/forgot-password", component: Forgotpass },
-  { path: "/change-password", component: ChangePassword },
+  { path: "/login", name: "login", component: Login },
+  { path: "/forgot-password", name: "forgot-password", component: Forgotpass },
+  { path: "/change-password", name: "change-password", component: ChangePassword },
 
   {
     path: "/",
@@ -40,43 +37,45 @@ const routes = [
     children: [
       { path: "", redirect: "product" },
 
-      { path: "dashboard", component: Dashboard },
-      { path: "profile", component: ProfileView },
+      { path: "dashboard", name: "dashboard", meta: {title: 'Trang chủ'}, component: Dashboard },
+      { path: "profile", name: "profile", meta: {title: 'Thông tin cá nhân'}, component: ProfileView },
 
       // Product
-      { path: "product", component: Products },
-      { path: "product/add", component: ProductForm },
-      { path: "product/:id/edit", name: "product-detail", component: ProductForm, props: true },
-      // { path: "product/:id/edit", name: "product-edit", component: ProductForm, props: true },
+      { path: "product", name: "product", meta: {title: 'Hàng hóa'}, component: Products },
+      { path: "product/add", name: "product-add", meta: {title: 'Thêm'}, component: ProductForm },
+      { path: "product/:id/edit", name: "product-edit", meta: {title: 'Sửa'}, component: ProductForm, props: true },
 
       // Category
-      { path: "category", component: Category },
-      { path: "category/add", component: CategoryForm },
-      { path: "category/:id/detail", component: CategoryForm, props: true },
+      { path: "category", name: "category", meta: {title: 'Loại sản phẩm'}, component: Category },
+      { path: "category/add", name: "category-add", meta: {title: 'Thêm'}, component: CategoryForm },
+      { path: "category/:id/detail", name: "category-detail", meta: {title: 'Sửa'}, component: CategoryForm, props: true },
 
       // Warehouse chain
-      { path: "warehouse", component: Warehouse },
-      { path: "warehouse/:wid/zone", component: Zone, props: true },
-      { path: "warehouse/:wid/zone/:zid/aisle", component: Aisle, props: true },
-      { path: "warehouse/:wid/zone/:zid/aisle/:aid/shelf", component: Shelf, props: true },
-      { path: "warehouse/:wid/zone/:zid/aisle/:aid/shelf/:sid/bin", name: "bin", component: Bin, props: true },
+      { path: "warehouse", name: "warehouse", meta: {title: 'Kho'}, component: Warehouse },
+      { path: "warehouse/:wid/zone", name: "zone", meta: {title: 'Khu'}, component: Zone, props: true },
+      { path: "warehouse/:wid/zone/:zid/aisle", name: "aisle", meta: {title: 'Dãy'}, component: Aisle, props: true },
+      { path: "warehouse/:wid/zone/:zid/aisle/:aid/shelf", name: "shelf", meta: {title: 'Kệ'}, component: Shelf, props: true },
+      { path: "warehouse/:wid/zone/:zid/aisle/:aid/shelf/:sid/bin", name: "bin", meta: {title: 'Ô'}, component: Bin, props: true },
 
-      //inbound
-      { path: "inbound", name:'Nhập hàng', component: Inbound},
-      //outbound
-      { path: "outbound", name: 'Xuất hàng', component: Outbound},
+      // Inbound & Outbound
+      { path: "inbound", name: "inbound", meta: {title: 'Nhập hàng'}, component: Inbound},
+      { path: "outbound", name: "outbound", meta: {title: 'Xuất hàng'}, component: Outbound},
 
-      // Admin
-      { path: "admin/account", component: Accounts },
-      { path: "admin/account/add", component: AccountForm },
-      { path: "admin/account/:id/edit", component: AccountForm, props: true },
-      { path: "admin/warehouse", component: Warehouse },
-      { path: "admin/warehouse/:id/detail", component: WarehouseDetail, props: true },
-
-      // catch-all
       { path: ":pathMatch(.*)*", redirect: "/product" },
     ],
   },
+
+  {
+    path: "/admin",
+    name: "admin",
+    meta: {title: 'Quản lý'},
+    component: HomeView,
+    children:[
+      { path: "account", name: "admin-account", meta: {title: 'Nhân sự'}, component: Accounts },
+      { path: "account/add", name: "admin-account-add", meta: {title: 'Thêm'}, component: AccountForm },
+      { path: "account/:id/edit", name: "admin-account-edit", meta: {title: 'Sửa'}, component: AccountForm, props: true },
+    ]
+  }
 ];
 
 export default createRouter({ history: createWebHistory(), routes });

@@ -23,7 +23,12 @@ export const userService = {
         );
 
         return await api.get("/api/users", { params });
-        
+
+    },
+
+    async getTotalUser() {
+        const response = await api.get('/api/users/stats');
+        return response.data?.result;
     },
 
     async getUserById(userId) {
@@ -41,8 +46,13 @@ export const userService = {
         return response.data.result;
     },
 
+    async unEnableUser(userId) {
+        const response = await api.patch(`/api/admin/users/${userId}/blocked`);
+        return response.data.result;
+    },
+
     async enableUser(userId) {
-        const response = await api.put(`/api/users/enable/${userId}`);
+        const response = await api.patch(`/api/admin/users/${userId}/active`);
         return response.data.result;
     },
 };

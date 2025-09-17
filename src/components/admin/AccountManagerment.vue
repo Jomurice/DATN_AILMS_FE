@@ -13,15 +13,13 @@
 
       <div class="d-flex gap-2">
         <div class="badge-card">
-          <div class="text-muted small">Tổng nhân viên: <span class="num">{{ users.length }}</span></div>
+          <div class="text-muted small">Tổng nhân viên: <span class="num">{{ totalUser.totalUsers }}</span></div>
         </div>
         <div class="badge-card">
-          <div class="text-muted small">Nhân viên nam: <span class="num">{{users.filter(user => user.gender ===
-            true).length}}</span></div>
+          <div class="text-muted small">Nhân viên nam: <span class="num">{{ totalUser.totalMales }}</span></div>
         </div>
         <div class="badge-card">
-          <div class="text-muted small">Nhân viên nữ: <span class="num">{{users.filter(user => user.gender ===
-            false).length}}</span></div>
+          <div class="text-muted small">Nhân viên nữ: <span class="num">{{ totalUser.totalFemales }}</span></div>
         </div>
       </div>
 
@@ -57,10 +55,10 @@
         <div class=" asideChildren">
           <h5>Sắp xếp</h5>
 
-          <select class=" form-select form-select-sm w-100">
+          <select v-model.trim="payload.pageable.sort" class=" form-select form-select-sm w-100">
             <optgroup label="Theo tên">
-              <option value="name_asc">Tên A → Z</option>
-              <option value="name_desc">Tên Z → A</option>
+              <option value="name,asc">Tên A → Z</option>
+              <option value="name,desc">Tên Z → A</option>
             </optgroup>
           </select>
 
@@ -71,8 +69,8 @@
 
       <div class="card border-0 shadow-sm rounded-3 main">
 
-        <div class="m-2 d-flex gap-3 justify-content-end">
-          <button class="btn btn-success btn-sm col-md-1 " @click="$router.push('/admin/account/add')">+ Thêm</button>
+        <div class="m-2 d-flex gap-3 align-items-center justify-content-end">
+          <button class="btn btn-success col-md-1 " @click="$router.push('/admin/account/add')">+ Thêm</button>
           <!-- page -->
           <div class="sizePage p-2 d-flex align-items-center rounded-3 justify-content-end">
             Số mục
@@ -83,32 +81,15 @@
               <option value="80">80</option>
               <option value="100">100</option>
             </select>
-
-            <nav v-if="pages?.totalPages > 1" class="page d-flex fs-4 gap-2">
-              <!-- Last -->
-              <p class="fw-bold" :class="{ 'text-muted': pages.number === 0 }" @click="changePage(pages.number - 1)">
-                &lt;
-              </p>
-
-              <p v-for="p in pages.totalPages" :key="p" :class="{ 'fw-bold text-primary': pages.number === p - 1 }" @click="changePage(p - 1)">
-                <span class="fs-5">{{ p }}</span>
-              </p>
-
-              <!-- Next -->
-              <p class="fw-bold" :class="{ 'text-muted': pages.number === pages.totalPages - 1 }"
-                @click="changePage(pages.number + 1)">
-                &gt;
-              </p>
-            </nav>
-
           </div>
         </div>
 
-        <div class="table-responsive">
+        <div class="table-wrapper">
 
-          <table class="table table-striped table-hover mb-0">
+          <table class="table table-hover mb-0">
             <thead>
               <tr class="text-uppercase table-primary small fw-bold">
+                <th>STT</th>
                 <th class="ps-4">Tên đăng nhập</th>
                 <th>Họ tên</th>
                 <th>Email</th>
@@ -121,7 +102,8 @@
 
 
             <tbody>
-              <tr v-for="u in users" :key="u.id">
+              <tr v-for="(u, index) in users" :key="u.id">
+                <td class="ps-4" :data-label="'STT'">{{ payload.pageable.page * payload.pageable.size + index + 1 }}</td>
                 <td class="ps-4" :data-label="'Tên đăng nhập'">{{ u.username }}</td>
                 <td class="ps-4" :data-label="'Họ và tên'">{{ u.name }}</td>
                 <td :data-label="'Email'">{{ u.email }}</td>
@@ -136,14 +118,18 @@
                 </td>
                 <td class="text-center" :data-label="'Hành động'">
                   <div class="d-flex justify-content-center gap-2 flex-nowrap">
-                    <button class="btn btn-sm btn-outline-info me-1"
-                      @click="$router.push(`/admin/account/${u.id}/detail`)">Chi tiết
+                    <button class="btn btn-sm btn-outline-info me-1" title="Chi tiết"
+                      @click="$router.push(`/admin/account/${u.id}/detail`)">
+                      <i class="fas fa-eye"></i>
                     </button>
-                    <button class="btn btn-outline-warning"
-                      @click="$router.push(`/admin/account/${u.id}/edit`)">Sửa</button>
-                    <button class="btn" :class="u.enabled ? 'btn-outline-danger' : 'btn-outline-success'"
-                      @click="toggleEnable(u)">
-                      {{ u.enabled ? 'Khoá' : 'Mở khoá' }}
+                    <button class="btn btn-outline-warning" title="Sửa thông tin"
+                      @click="$router.push(`/admin/account/${u.id}/edit`)">
+                      <i class="fa-solid fa-user-pen"></i>
+                    </button>
+                    <button class="btn" :class="u.status ? 'btn-outline-danger' : 'btn-outline-success'"
+                      :title="u.status ? 'Khóa tài khoản' : 'Mở khóa tài khoản'" @click="changeStatus(u)" @load="">
+                      <i v-if="u.status" class="fas fa-user-slash"></i>
+                      <i v-else class="fas fa-user-check"></i>
                     </button>
                   </div>
                 </td>
@@ -155,6 +141,30 @@
               </tr>
             </tbody>
           </table>
+
+          <div class="sizePage bg-danger-subtle p-2 d-flex align-items-center justify-content-end">
+
+            <nav v-if="pages?.totalPages > 1" class="page d-flex fs-4 gap-2">
+              <!-- Last -->
+              <p class="fw-bold" :class="{ 'text-muted': pages.number === 0 }" @click="changePage(pages.number - 1)">
+                &lt;
+              </p>
+
+              <nav class="d-flex gap-2">
+                <p v-for="p in visiblePages" :key="p"
+                  :class="[{ 'fw-bold text-primary': p !== '...' && pages.number === p - 1 }, p === '...' ? 'text-muted' : '']"
+                  @click="p !== '...' && changePage(p - 1)" class="m-0">
+                  <span class="fs-5">{{ p }}</span>
+                </p>
+              </nav>
+
+              <!-- Next -->
+              <p class="fw-bold" :class="{ 'text-muted': pages.number === pages.totalPages - 1 }"
+                @click="changePage(pages.number + 1)">
+                &gt;
+              </p>
+            </nav>
+          </div>
         </div>
 
         <div v-if="loading" class="text-center py-5">
@@ -183,12 +193,15 @@ const payload = ref({
   pageable: {
     page: 0,
     size: 10,
-    sort: [""]
+    sort: "name,asc"
   }
 });
 
+const totalUser = ref([]);
+
 const pages = ref();
 const users = ref([]);
+const user = ref();
 const roles = ref([]);
 const loading = ref(false);
 const error = ref('');
@@ -214,12 +227,35 @@ function changePage(newPage) {
   payload.value.pageable.page = newPage
 }
 
+const visiblePages = computed(() => {
+  if (!pages.value) return []
+  const total = pages.value.totalPages
+  const current = pages.value.number + 1
+  const result = []
+
+  if (total <= 5) {
+    for (let i = 1; i <= total; i++) result.push(i)
+  } else {
+    if (current <= 4) {
+      result.push(1, 2, 3, 4, '...', total)
+    } else if (current >= total - 3) {
+      result.push(1, '...', total - 3, total - 2, total - 1, total)
+    } else {
+      result.push(1, '...', current - 1, current, current + 1, '...', total)
+    }
+  }
+
+  return result
+})
+
+
 
 async function load() {
   loading.value = true
   error.value = ''
   try {
     roles.value = await roleService.getAll();
+    totalUser.value = await userService.getTotalUser();
     const response = await userService.getAllUsers(payload.value);
     users.value = response.data?.result?.content;
     pages.value = response.data?.result;
@@ -232,14 +268,42 @@ async function load() {
   console.log(payload.value.pageable);
 }
 
+async function getUserById(id) {
+  try {
+    user.value = await userService.getUserById(id);
+    console.log(user.value);
+  } catch (error) {
+    console.log("error", error);
+  }
+}
+
+async function changeStatus(user) {
+  if (user.status === true) {
+    await userService.unEnableUser(user.id);
+    console.log("khoas");
+  } else { await userService.enableUser(user.id); console.log("mo") }
+  console.log('changeStatus', user.value)
+  load();
+}
+
 
 const debouncedLoad = debounce(load, 300);
 
 onMounted(load)
 
-watch(payload, () => {
-  debouncedLoad()
-}, { deep: true });
+watch(
+  () => [payload.value.name, payload.value.role, payload.value.status, payload.value.gender, payload.value.pageable.size, payload.value.pageable.sort,],
+  () => {
+    payload.value.pageable.page = 0
+    debouncedLoad()
+  }
+)
+
+watch(
+  () => payload.value.pageable.page,
+  () => debouncedLoad()
+)
+
 
 </script>
 
@@ -312,11 +376,16 @@ watch(payload, () => {
 }
 
 .sizePage {
-  background-color: #f9e7e7;
+  max-height: 650px;
 }
 
 .page>p {
-  margin: 0;
+  max-height: 10px;
+  cursor: pointer;
+
+}
+
+.page>nav>p>span {
   cursor: pointer;
 }
 
@@ -324,10 +393,23 @@ watch(payload, () => {
   max-width: 70px;
 }
 
-.btn-cta {
-  padding: .55rem 1rem;
-  font-weight: 600;
+.btn {
+  max-height: 40px;
+  min-width: 40px;
 }
+
+.table-wrapper {
+  /* max-height: 400px;  */
+  overflow-y: auto;
+}
+
+/* Sticky header */
+.table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
 
 .table th,
 .table td {

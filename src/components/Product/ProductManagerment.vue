@@ -1,4 +1,3 @@
-<!-- src/components/Product/ProductManagement.vue -->
 <template>
   <div class="pbox">
 
@@ -28,15 +27,8 @@
       <aside class=" card d-flex gap-3 border-0 shadow-sm rounded-3 p-2 side">
 
         <div class="asideChildren">
-          <h5>Loại hàng</h5>
-          <tree-item
-            v-if="menus"
-            :node="menus"
-            :toggle="toggle"
-            :is-open="isOpen"
-            :is-selected="isSelected"
-            :select-node="selectNode"
-          />
+          <tree-item v-if="menus" :node="menus" :toggle="toggle" :is-open="isOpen" :is-selected="isSelected"
+            :select-node="selectNode" />
         </div>
 
         <div class="asideChildren">
@@ -47,7 +39,7 @@
         </div>
 
         <div class="asideChildren">
-          <h5>{{ tableTitle }}</h5>
+          <h5>Sắp xếp</h5>
 
           <select v-model="tableSort" class=" form-select form-select-sm w-100">
             <optgroup label="Theo tên">
@@ -65,34 +57,48 @@
 
 
       <div class="main card border-0 shadow-sm rounded-3">
-        <div class="m-2 d-flex justify-content-end">
+        <div class="m-2 d-flex gap-3 align-items-center justify-content-end">
           <button class="btn btn-success btn-sm col-md-1 " @click="$router.push('/product/add')">+ Thêm</button>
+          <!-- page -->
+          <div class="sizePage p-2 d-flex align-items-center rounded-3 justify-content-end">
+            Số mục
+            <select class="form-select mx-2 rounded-3">
+              <option value="10">10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+              <option value="80">80</option>
+              <option value="100">100</option>
+            </select>
+          </div>
         </div>
-
 
         <div class="table-responsive">
           <table class="table table-hover mb-0">
             <thead>
               <tr class="text-uppercase table-primary small fw-bold">
                 <th class="ps-4">Mã</th>
-                <th>Tên</th>
-                <th>Loại</th>
-                <th>Hãng</th>
+                <th>Ô</th>
+                <th>Trạng thái</th>
                 <th class="text-center">Hành động</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="p in productRows" :key="p.id">
-                <td class="ps-4">{{ p.sku }}</td>
-                <td>{{ p.name }}</td>
-                <td>{{ catName(p.categoryId) }}</td>
-                <td>{{ p.brand || '—' }}</td>
+                <td class="ps-4">{{ p.serialNumber }}</td>
+                <td>{{ p.binId }}</td>
+                <td>{{ p.status }}</td>
                 <td class="text-center">
-                  <button class="btn btn-sm btn-outline-info me-1"
-                    @click="isDetailProduct = true, getProductById(p.id)">Chi tiết</button>
-                  <button class="btn btn-sm btn-outline-warning me-1"
-                    @click="$router.push(`/product/${p.id}/edit`)">Sửa</button>
-                  <button class="btn btn-sm btn-outline-danger" @click="removeProduct(p.id)">Xoá</button>
+                  <button class="btn btn-sm btn-outline-info me-1" title="Chi tiết hàng hóa"
+                    @click="isDetailProduct = true, getProductById(p.productId)">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                  <button class="btn btn-sm btn-outline-warning me-1" title="Sửa thông tin hàng hóa"
+                    @click="$router.push(`/product/${p.id}/edit`)">
+                    <i class="fas fa-edit"></i> 
+                  </button>
+                  <button class="btn btn-sm btn-outline-danger" @click="removeProduct(p.id)" title="Ẩn hàng hóa">
+                    <i class="fas fa-eye-slash"></i>
+                  </button>
                 </td>
               </tr>
               <tr v-if="!loading && productRows.length === 0">
@@ -102,20 +108,26 @@
           </table>
 
           <!-- page -->
-          <div class="sizePage p-2 d-flex align-items-center justify-content-end">
-            Số mục
-            <select class="form-select mx-2 rounded-3">
-              <option value="10">10</option>
-              <option value="20">20</option>
-              <option value="50">50</option>
-              <option value="80">80</option>
-              <option value="100">100</option>
-            </select>
+          <div class="sizePage bg-danger-subtle p-2 d-flex align-items-center justify-content-end">
+            <nav v-if="pages?.totalPages > 1" class="page d-flex fs-4 gap-2">
+              <!-- Last -->
+              <p class="fw-bold" :class="{ 'text-muted': pages.number === 0 }" @click="changePage(pages.number - 1)">
+                &lt;
+              </p>
 
-            <nav class="page d-flex fs-4 gap-2">
-              <p class="fw-bold"> &lt; </p>
-              <p>1</p>
-              <p class="fw-bold"> &gt; </p>
+              <nav class="d-flex gap-2">
+                <p v-for="p in visiblePages" :key="p"
+                  :class="[{ 'fw-bold text-primary': p !== '...' && pages.number === p - 1 }, p === '...' ? 'text-muted' : '']"
+                  @click="p !== '...' && changePage(p - 1)" class="m-0">
+                  <span class="fs-5">{{ p }}</span>
+                </p>
+              </nav>
+
+              <!-- Next -->
+              <p class="fw-bold" :class="{ 'text-muted': pages.number === pages.totalPages - 1 }"
+                @click="changePage(pages.number + 1)">
+                &gt;
+              </p>
             </nav>
           </div>
 
@@ -139,9 +151,9 @@
         <nav class="product-info gap-4 mt-3">
           <p><span class="fw-bold">Mã SKU:</span> {{ product.sku }}</p>
           <p><span class="fw-bold">Tên:</span> {{ product.name }}</p>
-          <p><span class="fw-bold">Loại:</span> {{ catName(product.categoryId) }}</p>
+          <p><span class="fw-bold">Loại:</span> {{ product.categoryName }}</p>
           <p><span class="fw-bold">Màu:</span></p>
-          <p><span class="fw-bold">Hãng:</span> {{ product.brand }}</p>
+          <p><span class="fw-bold">Hãng:</span> {{ product.brandName }}</p>
           <p><span class="fw-bold">Thuộc tính khác:</span></p>
           <p><span class="fw-bold">Thông số kỹ thuật:</span> {{ product.specifications }}</p>
         </nav>
@@ -153,8 +165,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, reactive } from 'vue'
 import TreeItem from '../menu/TreeItem.vue'
+import { productDetailService } from '../../services/productDetailService'
 import { productService } from '../../services/productService'
 import { categoryService } from '../../services/categoryService'
 import { menuService } from '../../services/MenuService'
@@ -171,68 +184,62 @@ const filters = ref({ keyword: '', category: '' })
 const applied = ref({ ...filters.value })
 const tableSort = ref('cat_asc')
 
-const opened = ref(new Set())
+// const opened = ref(new Set())
 const selectedNode = ref({ type: 'all' })
 
 // Helpers
 const S = x => String(x ?? '')
 const unaccent = (s = '') => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-const catName = id => categories.value.find(c => S(c.id) === S(id))?.name || '—'
-
-// Load data (có fallback sang sample trong service)
-
-
-const displayed = computed(() => {
-  let list = [...products.value];
-  list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "vi", { sensitivity: "base" }))
-
-  if (applied.value.keyword?.trim()) {
-    const kw = unaccent(applied.value.keyword.trim().toLowerCase());
-    list = list.filter((p) => unaccent((p.name || "").toLowerCase()).includes(kw));
-  }
-
-  if (applied.value.category) {
-    list = list.filter((p) => (p.categoryId) === applied.value.category);
-  }
-
-  // if (applied.value.quantity !== null && applied.value.quantity >= 0) {
-  //   list = list.filter((p) => (p.quantity ?? 0) === applied.value.quantity);
-  // }
-
-
-  switch (applied.value.sort) {
-    case "name_asc": list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "vi", { sensitivity: "base" })); break;
-    case "name_desc": list.sort((a, b) => (b.name || "").localeCompare(a.name || "", "vi", { sensitivity: "base" })); break;
-    case "cat_asc": list = sortProductByNameCategories(list, "asc"); break;
-    case "cat_desc": list = sortProductByNameCategories(list, "desc"); break;
-    // case "qty_asc": list.sort((a, b) => (a.quantity ?? 0) - (b.quantity ?? 0)); break;
-    // case "qty_desc": list.sort((a, b) => (b.quantity ?? 0) - (a.quantity ?? 0)); break;
-  }
-  return list;
-});
-
-function applyFilters() { applied.value = { ...filters.value }; }
-function resetFilters() {
-  filters.value = { keyword: "", category: "", quantity: null, sort: "cat_asc" };
-  applied.value = { ...filters.value };
-}
 
 // giữ nguyên khi category bên BE có dữ liệu và khi có dữ liệu thì xóa hoặc comment loadAll bên dưới 
-function selectStatus(value) {
-  isStatus.value = value
+const openNodes = reactive(new Set());
+const selectedNodeId = ref(null);
+
+function isOpen(id) {
+  return openNodes.has(id);
 }
 
-const isOpen = id => opened.value.has(S(id))
-const toggle = id => isOpen(id) ? opened.value.delete(S(id)) : opened.value.add(S(id))
-const selectNode = node => {
-  selectedNode.value = node
+function toggle(id, children = []) {
+  if (openNodes.has(id)) {
+    // Nếu đang mở → đóng lại
+    closeChildrenRecursively(children);
+    openNodes.delete(id);
+  } else {
+    openNodes.add(id);
+  }
+
 }
 
-const isSelected = node => selectedNode.value?.title === node?.title && S(selectedNode.value?.id) === S(node?.id)
+function closeChildrenRecursively(children) {
+  for (const child of children) {
+    // Nếu con đang mở thì đóng lại
+    openNodes.delete(child.id);
+
+    // Nếu node đang chọn là 1 trong các con thì clear selection
+    if (selectedNodeId.value === child.id) {
+      selectedNodeId.value = null;
+    }
+
+    // Kiểm tra sâu hơn
+    if (child.children?.length) {
+      closeChildrenRecursively(child.children);
+    }
+  }
+}
+
+function isSelected(node) {
+  return selectedNodeId.value === node.id;
+}
+
+function selectNode(node) {
+  selectedNodeId.value = node.id;
+}
+
 
 async function loadAll() {
   try {
-    products.value = await productService.getAll();
+    products.value = await productDetailService.getAllProduct();
+    // product.value = await productService.getById(product.value.productId);
     categories.value = await categoryService.getAll();
     menus.value = await menuService.getAllMenuTree();
 
@@ -246,8 +253,8 @@ async function loadAll() {
 }
 
 
-function getProductByIdTree(){
-  if(selectedNode.value.title === 'Menu') return loadAll();
+function getProductByIdTree() {
+  if (selectedNode.value.title === 'Menu') return loadAll();
 }
 
 async function getProductById(id) {
@@ -462,16 +469,24 @@ async function removeProduct(id) {
 
 
 .sizePage {
-  background-color: #f9e7e7;
+  max-height: 650px;
 }
 
 .page>p {
-  margin: 0;
+  max-height: 10px;
+}
+
+.page>nav>p>span {
   cursor: pointer;
 }
 
 .sizePage>.form-select {
   max-width: 70px;
+}
+
+.btn {
+  max-height: 40px;
+  min-width: 40px;
 }
 
 .table th,

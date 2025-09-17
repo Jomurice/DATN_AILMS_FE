@@ -1,5 +1,4 @@
 <template>
-<<<<<<< HEAD
   <div class="row  justify-content-center">
     <div class="card rounded-4 p-3 w-75">
 
@@ -20,13 +19,14 @@
 
             <div class="col-md-8">
               <label class="form-label">Tên sản phẩm <span class="text-danger">*</span></label>
-              <input v-model.trim="form.name" class="form-control" :class="{ 'is-invalid': touched.name && nameError }" maxlength="255" required />
+              <input v-model.trim="form.name" class="form-control" :class="{ 'is-invalid': touched.name && nameError }"
+                maxlength="255" required />
               <div class="invalid-feedback" v-if="touched.name">{{ nameError }}</div>
             </div>
 
             <div class="col-md-4">
               <label class="form-label">Thương hiệu <span class="text-danger">*</span></label>
-              <select v-model="form.brandId" class="form-select"
+              <select v-model="categoryBrand.brandId" class="form-select"
                 :class="{ 'is-invalid': touched.brandId && brandError }">
                 <option value="">-- Thương hiệu --</option>
                 <option v-for="b in brands" :key="b.id" :value="b.id">{{ b.name }}</option>
@@ -46,9 +46,9 @@
               <input v-model.trim="form.storage" class="form-control" />
             </div>
 
-            <div class="col-md-6">
+            <div class="col-md-4">
               <label class="form-label">Loại (Category) <span class="text-danger">*</span></label>
-              <select v-model="form.categoryId" class="form-select"
+              <select v-model="categoryBrand.categoryId" class="form-select"
                 :class="{ 'is-invalid': touched.categoryId && categoryError }">
                 <option value="">-- Chọn loại --</option>
                 <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
@@ -68,8 +68,8 @@
             </div>
 
             <div class="col-12 d-flex gap-2">
-              <button type="submit" class="btn btn-primary">
-                <!-- <span v-if="submitting" class="spinner-border spinner-border-sm me-1"></span> -->
+              <button type="submit" class="btn btn-primary" :disabled="submitting">
+                <span v-if="submitting" class="spinner-border spinner-border-sm me-1"></span>
                 {{ isEdit ? 'Cập nhật' : 'Thêm mới' }}
               </button>
               <button type="button" class="btn btn-outline-secondary" @click="$router.push('/product')">Huỷ</button>
@@ -78,10 +78,7 @@
         </div>
       </div>
 
-      <attribute
-      v-if="isModal"
-      @close="isModal = false"
-      />
+      <attribute v-if="isModal" @close="isModal = false" />
 
     </div>
   </div>
@@ -101,12 +98,14 @@ const router = useRouter();
 const productId = route.params.id;
 const isEdit = ref(false);
 const isModal = ref(false);
-const categories = ref([]);
-const brands = ref([]);
+
+const categories = ref();
+const brands = ref();
+const categoryBrand = ref({ categoryId: '', brandId: '' });
 const form = ref({ sku: '', name: '', brandId: '', specifications: '', color: '', storage: '', categoryId: '' })
 const submitting = ref(false)
 const error = ref('')
-const touched = ref({ brand: false, name: false,brandId: false, color: false, categoryId: false })
+const touched = ref({ brand: false, name: false, brandId: false, color: false, categoryId: false })
 
 const nameError = computed(() => {
   const v = form.value.name?.trim() || ''
@@ -145,19 +144,23 @@ async function submitForm() {
   // touched.value = { brand: true, name: true, color: true, categoryId: true }
   // if (brandError.value || colorError.value || nameError.value || categoryError.value) return
   // submitting.value = true; error.value = ''
-
+  submitting.value = true;
   try {
     if (isEdit.value) await productService.update(productId, { ...form.value })
-    else await productService.create({ ...form.value })
-  console.log(form.value);
+    else {
+      form.value.categoryId = await categoryService.createCategoryBrand(categoryBrand.value);
+      await productService.create({ ...form.value })
+    }
+    console.log(form.value);
     router.push('/product')
   } catch (e) {
     error.value = 'Lưu thất bại.'
-    console.log("error",e);
+    console.log("error", e);
 
   } finally {
     submitting.value = false
   }
+
 }
 
 
@@ -166,8 +169,7 @@ onMounted(loadData)
 </script>
 
 <style>
-  .addAttribute{
-    cursor: pointer !important;
-  }
+.addAttribute {
+  cursor: pointer !important;
+}
 </style>
-
