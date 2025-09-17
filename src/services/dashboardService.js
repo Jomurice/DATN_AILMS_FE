@@ -31,19 +31,13 @@ function mockSeries(tf) {
 
 /** Lấy thống kê 3 ô đầu trang */
 export const getDashboardStats = async (timeframe) => {
-  try {
-    const { data } = await api.get("/api/dashboard/stats", { params: mapTimeframe(timeframe) });
-    const r = data?.result ?? data;
-    // đảm bảo đủ field, giống cách bạn chuẩn hoá ở các service khác
-    return {
-      inStock: Number(r?.inStock ?? 0),
-      exported: Number(r?.exported ?? 0),
-      employees: Number(r?.employees ?? 0),
-    };
-  } catch (err) {
-    // fallback để dev vẫn xem được UI
-    return { inStock: 1313, exported: timeframe === "7D" ? 64 : 297, employees: 23 };
-  }
+  const { data } = await api.get("/api/dashboard/stats", { params: mapTimeframe(timeframe) });
+  const r = data?.result ?? data;
+  return {
+    inStock: Number(r?.inStock ?? 0),
+    exported: Number(r?.exported ?? 0),
+    employees: Number(r?.employees ?? 0),
+  };
 };
 
 /** Lấy series nhập/xuất cho biểu đồ */

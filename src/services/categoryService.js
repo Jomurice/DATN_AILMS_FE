@@ -5,7 +5,7 @@ export const categoryService = {
   
   
   async getAll() {
-      const response = await api.get("/api/category-brands");
+      const response = await api.get("/api/categories");
       return response.data?.result;
   },
 

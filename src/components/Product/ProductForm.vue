@@ -51,7 +51,7 @@
               <select v-model="form.categoryId" class="form-select"
                 :class="{ 'is-invalid': touched.categoryId && categoryError }">
                 <option value="">-- Chọn loại --</option>
-                <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.categoryName }}</option>
+                <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
               </select>
               <div class="invalid-feedback" v-if="touched.categoryId && categoryError">{{ categoryError }}</div>
             </div>
