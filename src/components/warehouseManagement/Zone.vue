@@ -14,32 +14,37 @@
             <h4 class="fw-bold mb-0">Danh sách khu</h4>
             <button class="btn btn-success btn-sm btn-ctl" @click="openAdd">+ Thêm</button>
           </div>
-          <div class="table-responsive">
-            <table v-if="pagedItems.length" class="table table-hover mb-0">
-              <thead class="bg-light">
+          <div class="table-responsive tbl-shell">
+            <table v-if="pagedItems.length" class="table table-hover mb-0 tbl-sticky table-tight">
+              <thead class="tbl-head-blue">
                 <tr class="text-uppercase small fw-bold">
-                  <th style="width:260px">ID</th>
+                  <th style="width:220px">ID</th>
                   <th>Tên</th>
                   <th>Mã</th>
-                  <th class="text-center">Hành động</th>
+                  <th class="nowrap">Ngày tạo</th>
+                  <th class="nowrap">Ngày cập nhật</th>
+                  <th class="text-center" style="width:160px">Hành động</th>
                 </tr>
               </thead>
               <tbody>
                 <tr v-for="z in pagedItems" :key="z.id">
-                  <td class="text-monospace small">{{ z.id }}</td>
-                  <td>{{ z.name }}</td>
-                  <td>{{ z.code }}</td>
+                  <td class="mono small nowrap">{{ z.id }}</td>
+                  <td class="nowrap">{{ z.name }}</td>
+                  <td class="mono nowrap">{{ z.code }}</td>
+                  <td class="nowrap">{{ fmtDT(z.createdAt) }}</td>
+                  <td class="nowrap">{{ fmtDT(z.updatedAt) }}</td>
                   <td class="text-center">
                     <div class="row-actions">
-                      <button class="btn btn-sm btn-outline-info btn-ctl" @click="openDetail(z.id)">Chi tiết</button>
-                      <button class="btn btn-sm btn-outline-warning btn-ctl" @click="openEdit(z)">Sửa</button>
-                      <button class="btn btn-sm btn-outline-danger btn-ctl" @click="remove(z.id)">Xoá</button>
-                      <!-- Xem dãy (ICON như sidebar) -->
-                      <RouterLink
-                        class="icon-view"
-                        :to="`/warehouse/${wid}/zone/${z.id}/aisle`"
-                        title="Xem dãy"
-                      >
+                      <button class="btn btn-outline-info btn-icon" title="Chi tiết" @click="openDetail(z.id)">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                      <button class="btn btn-outline-warning btn-icon" title="Sửa" @click="openEdit(z)">
+                        <i class="fas fa-edit"></i>
+                      </button>
+                      <button class="btn btn-outline-danger btn-icon" title="Xoá" @click="remove(z.id)">
+                        <i class="fas fa-trash"></i>
+                      </button>
+                      <RouterLink class="btn btn-outline-primary btn-icon" :to="`/warehouse/${wid}/zone/${z.id}/aisle`" title="Xem dãy">
                         <i class="fa-solid fa-bars"></i>
                       </RouterLink>
                     </div>
@@ -83,6 +88,12 @@
                 <label class="form-label">Mã</label>
                 <input v-model.trim="form.code" class="form-control" />
               </div>
+
+              <div v-if="isEdit" class="col-12 small text-muted">
+                <span class="me-3">Created: {{ fmtDT(detail?.createdAt) }}</span>
+                <span>Updated: {{ fmtDT(detail?.updatedAt) }}</span>
+              </div>
+
               <div class="col-12 small text-muted">Kho: {{ wid }} — {{ path.whName }}</div>
               <div class="col-12">
                 <button class="btn btn-primary btn-ctl">{{ isEdit ? 'Cập nhật' : 'Thêm mới' }}</button>
@@ -102,31 +113,39 @@
             </div>
           </div>
           <div class="card border-0 shadow-sm p-4">
-            <div class="mb-2"><small class="text-muted">ID</small><div class="fw-medium">{{ detail?.id }}</div></div>
-            <div class="mb-2"><small class="text-muted">Tên</small><div>{{ detail?.name }}</div></div>
-            <div class="mb-2"><small class="text-muted">Mã</small><div>{{ detail?.code }}</div></div>
-            <div class="mb-2"><small class="text-muted">Kho</small><div>{{ path.whName || '—' }}</div></div>
+            <div class="row g-3">
+              <div class="col-md-4"><small class="text-muted">ID</small><div class="fw-medium">{{ detail?.id }}</div></div>
+              <div class="col-md-4"><small class="text-muted">Tên</small><div>{{ detail?.name }}</div></div>
+              <div class="col-md-4"><small class="text-muted">Mã</small><div class="mono">{{ detail?.code || '—' }}</div></div>
+              <div class="col-md-3"><small class="text-muted">Ngày tạo</small><div class="nowrap">{{ fmtDT(detail?.createdAt) }}</div></div>
+              <div class="col-md-3"><small class="text-muted">Ngày cập nhật</small><div class="nowrap">{{ fmtDT(detail?.updatedAt) }}</div></div>
+            </div>
+
             <h6 class="fw-bold mt-4">Dãy — {{ aisles.length }}</h6>
-            <div class="table-responsive">
-              <table class="table table-sm mb-0">
-                <thead class="bg-light">
+            <div class="table-responsive tbl-shell">
+              <table class="table table-sm mb-0 tbl-sticky table-tight">
+                <thead class="tbl-head-blue">
                   <tr class="text-uppercase small fw-bold">
                     <th style="width:220px">ID</th>
                     <th>Tên</th>
                     <th>Mã</th>
+                    <th class="nowrap">Ngày tạo</th>
+                    <th class="nowrap">Ngày câp nhật</th>
                     <th></th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr v-for="a in aisles" :key="a.id">
-                    <td class="text-monospace small">{{ a.id }}</td>
-                    <td>{{ a.name }}</td>
-                    <td>{{ a.code }}</td>
+                    <td class="mono small nowrap">{{ a.id }}</td>
+                    <td class="nowrap">{{ a.name }}</td>
+                    <td class="mono nowrap">{{ a.code }}</td>
+                    <td class="nowrap">{{ fmtDT(a.createdAt) }}</td>
+                    <td class="nowrap">{{ fmtDT(a.updatedAt) }}</td>
                     <td>
                       <RouterLink class="btn btn-sm btn-outline-primary btn-ctl" :to="`/warehouse/${wid}/zone/${detail.id}/aisle/${a.id}/shelf`">Quản lý kệ</RouterLink>
                     </td>
                   </tr>
-                  <tr v-if="!aisles.length"><td colspan="4" class="text-center text-muted">Chưa có dãy</td></tr>
+                  <tr v-if="!aisles.length"><td colspan="6" class="text-center text-muted">Chưa có dãy</td></tr>
                 </tbody>
               </table>
             </div>
@@ -140,13 +159,12 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { useRoute } from "vue-router";
 import { warehouseService } from "../../services/WarehouseService";
 import { zoneService } from "../../services/ZoneService";
 import { aisleService } from "../../services/AisleService";
 import WarehouseSide from "./WarehouseSide.vue";
 
-const router = useRouter();
 const wid = useRoute().params.wid;
 const ui = ref("list");
 const items = ref([]);
@@ -168,13 +186,23 @@ const pagedItems = computed(()=>{
 });
 watch(pageSize, ()=> page.value = 1);
 
+const fmtDT = (d) => {
+  if (!d) return "—";
+  try {
+    const dt = typeof d === "string" ? new Date(d) : d;
+    if (isNaN(dt)) return "—";
+    const pad = n => String(n).padStart(2,"0");
+    return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())} ${pad(dt.getHours())}:${pad(dt.getMinutes())}`;
+  } catch { return "—"; }
+};
+
 async function loadPath() {
   try { const w = await warehouseService.getById(wid); path.value.whName = w?.name || ""; } catch {}
 }
 async function load() { items.value = await zoneService.getAll(wid) || []; }
 async function openDetail(id) { detail.value = await zoneService.getById(id); aisles.value = await aisleService.getAll(id) || []; ui.value = "detail"; }
-function openAdd() { isEdit.value = false; editingId.value = null; form.value = { name: "", code: "" }; ui.value = "form"; }
-function openEdit(z) { isEdit.value = true; editingId.value = z.id; form.value = { name: z.name, code: z.code }; ui.value = "form"; }
+function openAdd() { isEdit.value = false; editingId.value = null; form.value = { name: "", code: "" }; detail.value=null; ui.value = "form"; }
+function openEdit(z) { isEdit.value = true; editingId.value = z.id; form.value = { name: z.name, code: z.code }; detail.value=z; ui.value = "form"; }
 async function submit() { if (isEdit.value) await zoneService.update(editingId.value, form.value); else await zoneService.create(wid, form.value); await load(); ui.value = "list"; }
 async function remove(id) { if (confirm("Xoá khu này?")) { await zoneService.remove(id); await load(); } }
 function prevPage(){ if(page.value>1) page.value-- }
@@ -189,20 +217,6 @@ onMounted(async () => { await loadPath(); await load(); });
 .crumb { display: flex; align-items: center; justify-content: space-between; }
 .crumb-chip { background: #eef5ff; border: 1px solid #d9e6ff; padding: 6px 10px; border-radius: 10px; }
 .section-card { background: #fff; border: 1px solid #eef2f7; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
-.table th, .table td { vertical-align: middle; }
 .btn-ctl { min-width: 110px; }
-
-/* actions */
-.row-actions{ display:flex; gap:8px; justify-content:center; align-items:center; }
-.icon-view{
-  width:34px;height:34px;border:1px solid #d7dbe6;border-radius:8px;
-  background:#fff;display:inline-flex;align-items:center;justify-content:center;
-}
-.icon-view:hover{ background:#f5f7fb; }
-
-/* pager */
-.pager-bar{
-  display:flex; justify-content:flex-end; padding:10px 16px; gap:10px;
-  border-top: 1px solid #eef2f7; background:#fafbfc;
-}
+.pager-bar{ display:flex; justify-content:flex-end; padding:10px 16px; gap:10px; border-top: 1px solid #eef2f7; background:#fafbfc; }
 </style>
