@@ -8,7 +8,7 @@
     <div class="crumb-bar">
       <nav class="breadcrumb-custom flex items-center gap-2">
         <!-- Home -->
-        <RouterLink class="link" to="/" aria-label="Trang chủ">
+        <RouterLink class="link" to="/dashboard" aria-label="Trang chủ">
           <i class="fas fa-home"></i>
         </RouterLink>
 
