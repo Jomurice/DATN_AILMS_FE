@@ -12,12 +12,29 @@
 
         <div class="d-flex gap-2">
 
-            <div class="card rounded-3 col-md-5 p-2">
-                <div class="d-flex flex-wrap justify-content-between">
+            <div class="card list rounded-3 col-md-5 p-2">
+
+                <div class="mb-3">
+                    <i class="fa fa-bars fs-5 mx-2" title="Lọc theo nhóm hàng"></i>
+                </div>
+
+                <div class="d-flex flex-wrap gap-1">
                     <div v-for="p in products" :key="p.id" :title="p.name" @click="addProduct(p)"
-                        class="list rounded-3  m-2 px-2">
+                        class="product rounded-3  m-2 px-2">
                         {{ p.name }}
                     </div>
+                </div>
+
+                <div class="page d-flex gap-3">
+                    <nav>
+                        Trang <input type="text" class="rounded-3">
+                    </nav>
+
+                    <nav>
+                        <span> &lt; </span>
+                        <span> 1/12 </span>
+                        <span> &gt; </span>
+                    </nav>
                 </div>
             </div>
 
@@ -47,6 +64,20 @@
                 <div class="spinner-border text-info" role="status"></div>
                 <div class="small mx-2 fs-5 text-info mt-2">Đang tải...</div>
             </div>
+
+            <div class="modal fade" id="confirmModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+                        <div class="modal-body text-center">
+                            <p class="mb-4">{{ confirmMessage }}</p>
+                            <div class="d-flex justify-content-center gap-3">
+                                <button class="btn btn-secondary" @click="cancelConfirm">Hủy</button>
+                                <button class="btn btn-success" @click="confirmAction">Xác nhận</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </template>
@@ -58,14 +89,34 @@ import { productService } from '../../services/productService';
 const products = ref([]);
 const items = ref([]);
 const isLoading = ref(false);
+const confirmMessage = ref('')
+let confirmCallback = null
 
+
+function showConfirm(message, callback) {
+    confirmMessage.value = message
+    confirmCallback = callback
+    const modal = new bootstrap.Modal(document.getElementById('confirmModal'))
+    modal.show()
+}
+
+function confirmAction() {
+    if (confirmCallback) confirmCallback()
+    const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'))
+    modal.hide()
+}
+
+function cancelConfirm() {
+    const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'))
+    modal.hide()
+}
 
 async function load() {
     isLoading.value = true;
-    
+
     try {
         products.value = await productService.getAll();
-        items.value = JSON.parse(localStorage.getItem("listOrder")) || [];
+        items.value = JSON.parse(localStorage.getItem("productOrder")) || [];
     } catch (error) {
         console.log("error", error);
     } finally {
@@ -97,14 +148,16 @@ function addProduct(product) {
         });
     }
 
-    localStorage.setItem("listOrder", JSON.stringify(items.value));
+    localStorage.setItem("productOrder", JSON.stringify(items.value));
 }
 
 
 function deleteProduct(id) {
-    items.value = items.value.filter(p => p.id !== id);
-    localStorage.setItem("listOrder", JSON.stringify(items.value));
-    load();
+    showConfirm('Bạn có chắc muốn xóa sản phẩm này ra khỏi đơn hàng !', () => {
+        items.value = items.value.filter(p => p.id !== id);
+        localStorage.setItem("productOrder", JSON.stringify(items.value));
+        load();
+    })
 }
 
 onMounted(() => {
@@ -112,26 +165,40 @@ onMounted(() => {
 })
 
 watch(items, (newItems) => {
-    localStorage.setItem("listOrder", JSON.stringify(newItems));
+    localStorage.setItem("productOrder", JSON.stringify(newItems));
 }, { deep: true });
 
 </script>
 
 <style scoped>
+.list {
+    overflow: auto;
+    height: calc(100vh - 200px);
+}
 
-.search{
+.order {
+    overflow: auto;
+    height: calc(100vh - 200px);
+}
+
+.search {
     display: block;
     text-overflow: ellipsis;
-    white-space: normal;
     width: 18%;
 }
 
-.form-control {
-  border: none;
-  border-radius: 10px;
+.page>nav>input {
+    border: 1px solid black;
+    width: 40px;
+    text-align: center;
 }
 
-.list {
+.form-control {
+    border: none;
+    border-radius: 10px;
+}
+
+.product {
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
@@ -145,18 +212,17 @@ watch(items, (newItems) => {
     padding: 4px;
 }
 
-.list:hover {
+.product:hover {
     border: 1px solid blue;
 
 }
 
-.order {
-    overflow: auto;
-    height: calc(100vh - 200px);
-}
-
 .name {
     width: 230px;
+    display: block;
+    overflow: hidden;        
+    text-overflow: ellipsis; 
+    white-space: nowrap; 
 }
 
 .sku {
@@ -168,16 +234,16 @@ h2 {
 }
 
 .modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: flex;
-  background: rgba(0, 0, 0, 0.147);
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    background: rgba(0, 0, 0, 0.147);
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
 }
 
 .quantity>input {

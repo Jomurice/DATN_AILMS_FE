@@ -311,6 +311,7 @@ onMounted(() => {
   z-index: 9999;
 }
 
+
 .asideChildren {
   min-width: 200px;
 }
@@ -398,6 +399,13 @@ onMounted(() => {
   overflow-y: auto;
 }
 
+.name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Sticky header */
 .table thead th {
   position: sticky;
@@ -407,7 +415,11 @@ onMounted(() => {
 
 .table th,
 .table td {
+  width: 100px;
   vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @media (max-width:992px) {

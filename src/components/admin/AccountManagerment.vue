@@ -104,11 +104,11 @@
 
             <table class="table table-hover mb-0">
               <colgroup></colgroup>
-              <tbody >
+              <tbody>
                 <tr v-for="(u, index) in users" :key="u.id">
                   <td class="ps-4" :data-label="'STT'">{{ payload.pageable.page * payload.pageable.size + index + 1 }}
                   </td>
-                  <td  :data-label="'Tên đăng nhập'">{{ u.username }}</td>
+                  <td :data-label="'Tên đăng nhập'">{{ u.username }}</td>
                   <td :data-label="'Họ và tên'">{{ u.name }}</td>
                   <td :data-label="'Email'" :title="u.email">{{ u.email }}</td>
                   <td :data-label="'Giới tính'">{{ u.gender ? 'Nam' : 'Nữ' }}</td>
@@ -148,28 +148,26 @@
           </div>
 
           <div class="page bg-danger-subtle p-2 d-flex align-items-center justify-content-end">
+            <nav class="d-flex fs-4 gap-2 align-items-center">
+              <span class="fs-5">Trang</span>
 
-            <nav v-if="pages?.totalPages > 1" class="d-flex fs-4 gap-2">
-              <!-- Last -->
-              <p class="fw-bold" :class="{ 'text-muted': pages.number === 0 }" @click="changePage(pages.number - 1)">
+              <input type="text" v-model.number="currentPageInput" @keyup.enter="goToPage" min="1"
+                :max="pages.totalPages" class=" rounded-3">
+
+              <button class="btn btn-sm fw-bold " :disabled="pages.number === 0"
+                @click="changePage(pages.number - 1)">
                 &lt;
-              </p>
+              </button>
 
-              <nav class="numberPage d-flex gap-2">
-                <p v-for="p in visiblePages" :key="p"
-                  :class="[{ 'fw-bold text-primary': p !== '...' && pages.number === p - 1 }, p === '...' ? 'text-muted' : '']"
-                  @click="p !== '...' && changePage(p - 1)" class="m-0">
-                  <span class="fs-5">{{ p }}</span>
-                </p>
-              </nav>
+              <span class="fs-5">{{ pages.number + 1 }} / {{ pages.totalPages }}</span>
 
-              <!-- Next -->
-              <p class="fw-bold" :class="{ 'text-muted': pages.number === pages.totalPages - 1 }"
+              <button class="btn btn-sm fw-bold" :disabled="pages.number === pages.totalPages - 1"
                 @click="changePage(pages.number + 1)">
                 &gt;
-              </p>
+              </button>
             </nav>
           </div>
+
 
           <p v-if="error" class="text-danger small p-3">{{ error }}</p>
         </div>
@@ -221,9 +219,14 @@ const payload = ref({
   }
 });
 
+const pages = ref({
+  number: 0,
+  totalPages: 10,
+  content: []
+})
+
 const totalUser = ref([]);
 
-const pages = ref();
 const users = ref([]);
 const user = ref();
 const roles = ref([]);
@@ -249,31 +252,29 @@ function selectStatus(value) {
   payload.value.status = value;
 }
 
+
+
+// Input số trang
+const currentPageInput = ref(1)
+
+// Khi người dùng nhập số trang
+function goToPage() {
+  let newPage = currentPageInput.value - 1
+  if (newPage < 0) newPage = 0
+  if (newPage >= pages.value.totalPages) newPage = pages.value.totalPages - 1
+  changePage(newPage)
+}
+
+// Thay đổi trang bằng nút Previous/Next
 function changePage(newPage) {
   if (newPage < 0 || newPage >= pages.value.totalPages) return
   payload.value.pageable.page = newPage
+  pages.value.number = newPage
+  currentPageInput.value = newPage + 1
+  // TODO: gọi API fetch dữ liệu mới ở đây
 }
 
-const visiblePages = computed(() => {
-  if (!pages.value) return []
-  const total = pages.value.totalPages
-  const current = pages.value.number + 1
-  const result = []
 
-  if (total <= 5) {
-    for (let i = 1; i <= total; i++) result.push(i)
-  } else {
-    if (current <= 4) {
-      result.push(1, 2, 3, 4, '...', total)
-    } else if (current >= total - 3) {
-      result.push(1, '...', total - 3, total - 2, total - 1, total)
-    } else {
-      result.push(1, '...', current - 1, current, current + 1, '...', total)
-    }
-  }
-
-  return result
-})
 
 function showConfirm(message, callback) {
   confirmMessage.value = message
@@ -444,18 +445,23 @@ watch(
   max-height: 650px;
 }
 
-.sizePage>span{
-
-}
-
-.page {
- display: flex;
-  justify-content: flex-end;
-}
-
 .page>nav>p {
   max-height: 10px;
   cursor: pointer;
+}
+
+.page>nav>.btn{
+  height: 30px;
+  font-size: 18px;
+  border: none;
+}
+
+.page>nav>input {
+  border: none;
+  width: 50px;
+  height: 30px;
+  font-size: 18px;
+  text-align: center;
 }
 
 .numberPage>p>span {
