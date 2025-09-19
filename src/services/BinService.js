@@ -34,14 +34,13 @@ export const viStatus = s =>
 
 export const binService = {
   // Lấy tất cả bin trong 1 shelf
-  async list(shelfId) {
+  async getByShelf(shelfId) {
     try {
-      const { data } = await api.get(`/api/shelves/${encodeURIComponent(shelfId)}/bins`)
-      const out = Array.isArray(data?.result) ? data.result : (Array.isArray(data) ? data : null)
-      // nếu backend trả rỗng → fallback vào mẫu theo shelf
-      return out ?? sampleBins.filter(b => b.shelf?.id === shelfId)
+      const { data } = await api.get(`/api/bins/shelf/${encodeURIComponent(shelfId)}`)
+      return Array.isArray(data?.result) ? data.result : [];
     } catch {
-      return sampleBins.filter(b => b.shelf?.id === shelfId)
+      console.error("binService.getByShelf error", err);
+      return [];
     }
   },
 
@@ -55,23 +54,14 @@ export const binService = {
   },
 
   // Tạo bin trong 1 shelf
-  async create(shelfId, payload) {
+  async create(payload) {
     try {
-      const { data } = await api.post(`/api/shelves/${encodeURIComponent(shelfId)}/bins`, payload)
+      const { data } = await api.post(`/api/bins`, payload)
       return data?.result ?? data
     } catch {
-      const newItem = {
-        id: (crypto.randomUUID?.() ?? Date.now().toString(16) + Math.random().toString(16).slice(2)),
-        name: payload.name,
-        code: payload.code,
-        capacity: Number(payload.capacity) ?? 0,
-        currentQty: Number(payload.currentQty) ?? 0,
-        preferredProductId: payload.preferredProductId ?? null,
-        shelf: { id: shelfId, name: "—" },
-        productDetails: []
-      }
-      sampleBins = [newItem, ...sampleBins]
-      return newItem
+      
+      return null;
+
     }
   },
 

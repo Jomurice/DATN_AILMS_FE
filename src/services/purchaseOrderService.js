@@ -1,8 +1,8 @@
 // src/services/purchaseOrderService.js
 import api from "./axios";
+import { fire, EVENTS } from "./eventBus";
 
-// NOTE: Tạm mock. Sau này thay bằng API thật (vd: /api/purchase-orders, /api/purchase-orders/:id/items)
-// Cấu trúc item cần có: productId, sku, name, categoryName, brandName, color, qty
+// ✅ mock cho FE
 let sampleOrders = [
   {
     id: "po-2025-001",
@@ -11,8 +11,13 @@ let sampleOrders = [
     status: "IN_PROGRESS",
     eta: "2025-09-20",
     items: [
-      { productId: "f9a0d2d1-1111-4c11-a0c0-111111111111", sku: "iphone15prm", name: "iPhone 15 Pro Max",
-        categoryName: "Điện thoại", brandName: "Apple", color: "Natural Titanium", qty: 10 },
+      { productId: "f9a0d2d1-1111-4c11-a0c0-111111111111", 
+        sku: "iphone15prm", 
+        name: "iPhone 15 Pro Max",
+        categoryName: "Điện thoại", 
+        brandName: "Apple", 
+        color: "Natural Titanium", 
+        qty: 10 },
       { productId: "379230b1-879e-4148-b5d3-285127d615de", sku: "dxps13",
         name: "Dell XPS 13", categoryName: "Laptop", brandName: "Dell", color: "Silver", qty: 5 },
     ]
@@ -31,60 +36,38 @@ let sampleOrders = [
 ];
 
 export const purchaseOrderService = {
-  async list() {
+  async list(params = {}) {
     try {
-      const { data } = await api.get("/api/purchase-orders");
+      const { data } = await api.get("/api/purchase-orders", { params });
       const out = Array.isArray(data?.result) ? data.result : data;
-      if (out) return out;
-    } catch {}
-    return sampleOrders;
+      return out ?? [];
+    } catch (e) {
+      console.warn("[PO] list fail -> use mock", e);   // ✅ luôn fallback
+      return sampleOrders;
+    }
   },
-  async getById(id) {
+
+  async getById(id, params = {}) {
     try {
-      const { data } = await api.get(`/api/purchase-orders/${encodeURIComponent(id)}`);
-      return data?.result ?? data ?? sampleOrders.find(x => x.id === id);
-    } catch {}
-    return sampleOrders.find(x => x.id === id) ?? null;
+      const { data } = await api.get(`/api/purchase-orders/${encodeURIComponent(id)}`, { params });
+      return data?.result ?? data;
+    } catch (e) {
+      console.warn("[PO] getById fail -> use mock", e);
+      return sampleOrders.find(x => x.id === id) ?? null;
+    }
   },
-  // Sau này có API hoàn tất PO -> gọi ở đây
+
   async complete(id, payload) {
-    // payload: { confirmedAt }
     try {
       const { data } = await api.post(`/api/purchase-orders/${encodeURIComponent(id)}/complete`, payload);
-      return data?.result ?? data;
-    } catch {
+      const res = data?.result ?? data;
+      fire(EVENTS.DASHBOARD_SHOULD_REFRESH);
+      return res;
+    } catch (e) {
+      console.warn("[PO] complete fail -> update mock", e);
       sampleOrders = sampleOrders.map(x => x.id === id ? { ...x, status: "DONE" } : x);
+      fire(EVENTS.DASHBOARD_SHOULD_REFRESH);
       return true;
     }
   }
 };
-// purchaseOrderService.js
-// import api from "./axios";
-// const USE_MOCK = String(import.meta.env.VITE_USE_MOCK || "").toLowerCase() === "true";
-
-// export const purchaseOrderService = {
-//   async list(params = {}) {
-//     try {
-//       const { data } = await api.get("/api/purchase-orders", { params });
-//       const out = Array.isArray(data?.result) ? data.result : data;
-//       return out ?? [];
-//     } catch (e) {
-//       if (USE_MOCK) return sampleOrders; // chỉ khi bạn bật mock
-//       throw e;                            // mặc định: không fallback → luôn dữ liệu thật
-//     }
-//   },
-//   async getById(id, params = {}) {
-//     try {
-//       const { data } = await api.get(`/api/purchase-orders/${encodeURIComponent(id)}`, { params });
-//       return data?.result ?? data;
-//     } catch (e) {
-//       if (USE_MOCK) return sampleOrders.find(x => x.id === id) ?? null;
-//       throw e;
-//     }
-//   },
-//   async complete(id, payload) {
-//     const { data } = await api.post(`/api/purchase-orders/${encodeURIComponent(id)}/complete`, payload);
-//     return data?.result ?? data;
-//   }
-// };
-

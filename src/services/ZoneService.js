@@ -1,48 +1,60 @@
-import api from "./axios"
-
-let sampleZones = [
-  { id: "01", name: "Zone A", description: "Khu A", warehouse: { id: "01", name: "Warehouse A" } },
-  { id: "02", name: "Zone B", description: "Khu B", warehouse: { id: "01", name: "Warehouse A" } },
-]
+import api from "./axios";
 
 export const zoneService = {
-  async getAll(wid) {
+  // Lấy tất cả zone
+  async getAll() {
     try {
-      const { data } = await api.get(`/api/warehouses/${encodeURIComponent(wid)}/zones`)
-      const out = Array.isArray(data?.result) ? data.result : (Array.isArray(data) ? data : null)
-      return out ?? sampleZones.filter(z=>z.warehouse?.id===wid)
-    } catch { return sampleZones.filter(z=>z.warehouse?.id===wid) }
-  },
-
-  async getById(id) {
-    try {
-      const { data } = await api.get(`/api/zones/${encodeURIComponent(id)}`)
-      return data?.result ?? data ?? sampleZones.find(x=>x.id===id) ?? null
-    } catch { return sampleZones.find(x=>x.id===id) ?? null }
-  },
-
-  async create(wid, payload) {
-    try {
-      const { data } = await api.post(`/api/warehouses/${encodeURIComponent(wid)}/zones`, payload)
-      return data?.result ?? data
-    } catch {
-      const item = { id: crypto.randomUUID?.() ?? Date.now().toString(16), ...payload, warehouse:{ id: wid, name:"—" } }
-      sampleZones = [item, ...sampleZones]; return item
+      const { data } = await api.get("/api/zones");
+      return Array.isArray(data?.result) ? data.result : [];
+    } catch (err) {
+      console.error("zoneService.getAll error", err);
+      return [];
     }
   },
 
-  async update(id, payload) {
+  // Lấy zone theo warehouse UUID
+  async getByWarehouse(warehouseId) {
     try {
-      const { data } = await api.put(`/api/zones/${encodeURIComponent(id)}`, payload)
-      return data?.result ?? data
-    } catch {
-      sampleZones = sampleZones.map(x => x.id===id ? { ...x, ...payload } : x)
-      return sampleZones.find(x=>x.id===id)
+      const { data } = await api.get(`/api/zones/warehouse/${encodeURIComponent(warehouseId)}`);
+      return Array.isArray(data?.result) ? data.result : [];
+    } catch (err) {
+      console.error("zoneService.getByWarehouse error", err);
+      return [];
     }
   },
 
-  async remove(id) {
-    try { await api.delete(`/api/zones/${encodeURIComponent(id)}`); return true }
-    catch { sampleZones = sampleZones.filter(x=>x.id!==id); return true }
+  // Lấy chi tiết zone theo id
+  async getById(zoneId) {
+    try {
+      const { data } = await api.get(`/api/zones/${encodeURIComponent(zoneId)}`);
+      return data?.result ?? null;
+    } catch (err) {
+      console.error("zoneService.getById error", err);
+      return null;
+    }
+  },
+
+  // Tạo mới zone
+  async create(payload) {
+    try {
+      const { data } = await api.post("/api/zones", payload,{
+      headers: { "Content-Type": "application/json" }
+    });
+      return data?.result ?? null;
+    } catch (err) {
+      console.error("zoneService.create error", err);
+      return null;
+    }
+  },
+
+  // Cập nhật zone
+  async update(zoneId, payload) {
+    try {
+      const { data } = await api.put(`/api/zones/${encodeURIComponent(zoneId)}`, payload);
+      return data?.result ?? null;
+    } catch (err) {
+      console.error("zoneService.update error", err);
+      return null;
+    }
   }
-}
+};
