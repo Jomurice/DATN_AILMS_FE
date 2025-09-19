@@ -31,10 +31,24 @@
                   <td>{{ w.location }}</td>
                   <td class="text-center">
                     <div class="row-actions">
-                      <button class="btn btn-sm btn-outline-info btn-ctl" @click="openDetail(w.id)">Chi tiết</button>
-                      <button class="btn btn-sm btn-outline-warning btn-ctl" @click="openEdit(w)">Sửa</button>
-                      <button class="btn btn-sm btn-outline-danger btn-ctl" @click="remove(w.id)">Xoá</button>
-                      <!-- Xem khu (ICON như sidebar) -->
+                      <button
+                        class="btn btn-sm btn-outline-info btn-ctl"
+                        @click="goDetail(w.id)"
+                      >
+                        Chi tiết
+                      </button>
+                      <button
+                        class="btn btn-sm btn-outline-warning btn-ctl"
+                        @click="openEdit(w)"
+                      >
+                        Sửa
+                      </button>
+                      <button
+                        class="btn btn-sm btn-outline-danger btn-ctl"
+                        @click="remove(w.id)"
+                      >
+                        Xoá
+                      </button>
                       <RouterLink
                         class="icon-view"
                         :to="`/warehouse/${w.id}/zone`"
@@ -57,9 +71,21 @@
               <select v-model.number="pageSize" class="form-select form-select-sm w-auto">
                 <option v-for="n in pageSizeOptions" :key="n" :value="n">{{ n }}</option>
               </select>
-              <button class="btn btn-sm btn-outline-secondary" :disabled="page<=1" @click="prevPage()">&lt;</button>
+              <button
+                class="btn btn-sm btn-outline-secondary"
+                :disabled="page<=1"
+                @click="prevPage()"
+              >
+                &lt;
+              </button>
               <span class="px-2">{{ page }}</span>
-              <button class="btn btn-sm btn-outline-secondary" :disabled="page>=pageCount" @click="nextPage()">&gt;</button>
+              <button
+                class="btn btn-sm btn-outline-secondary"
+                :disabled="page>=pageCount"
+                @click="nextPage()"
+              >
+                &gt;
+              </button>
             </div>
           </div>
         </div>
@@ -75,13 +101,17 @@
           </div>
           <div class="card border-0 shadow-sm p-4">
             <form class="row g-3" @submit.prevent="submit">
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label class="form-label">Tên <span class="text-danger">*</span></label>
                 <input v-model.trim="form.name" class="form-control" required />
               </div>
-              <div class="col-md-6">
+              <div class="col-md-4">
                 <label class="form-label">Vị trí <span class="text-danger">*</span></label>
                 <input v-model.trim="form.location" class="form-control" required />
+              </div>
+              <div class="col-md-4">
+                <label class="form-label">Code <span class="text-danger">*</span></label>
+                <input v-model.trim="form.code" class="form-control" required />
               </div>
               <div class="col-12">
                 <button class="btn btn-primary btn-ctl">{{ isEdit ? 'Cập nhật' : 'Thêm mới' }}</button>
@@ -121,7 +151,12 @@
                     <td>{{ z.name }}</td>
                     <td>{{ z.code }}</td>
                     <td>
-                      <RouterLink class="btn btn-sm btn-outline-primary btn-ctl" :to="`/warehouse/${detail.id}/zone/${z.id}/aisle`">Quản lý dãy</RouterLink>
+                      <RouterLink
+                        class="btn btn-sm btn-outline-primary btn-ctl"
+                        :to="`/warehouse/${detail.id}/zone/${z.id}/aisle`"
+                      >
+                        Quản lý dãy
+                      </RouterLink>
                     </td>
                   </tr>
                   <tr v-if="!zones.length"><td colspan="4" class="text-center text-muted">Chưa có khu</td></tr>
@@ -138,19 +173,21 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { warehouseService } from "../../services/WarehouseService";
 import { zoneService } from "../../services/ZoneService";
-// import WarehouseSide from "./_WarehouseSide.vue";
+import WarehouseSide from "./WarehouseSide.vue";
 
 const router = useRouter();
+const route = useRoute();
+
 const ui = ref("list");
 const items = ref([]);
 const zones = ref([]);
 const isEdit = ref(false);
 const editingId = ref(null);
 const detail = ref(null);
-const form = ref({ name: "", location: "" });
+const form = ref({ name: "", location: "" , code: ""});
 
 // pagination
 const page = ref(1);
@@ -163,9 +200,24 @@ const pagedItems = computed(()=>{
 });
 watch(pageSize, ()=> page.value = 1);
 
-async function load() {
+async function loadList() {
   items.value = await warehouseService.getAll() || [];
 }
+
+// đồng bộ chi tiết khi warehouseId trong route thay đổi
+async function loadDetailByRoute() {
+  const wid = route.params.warehouseId;
+  if (wid) {
+    detail.value = await warehouseService.getById(String(wid));
+    zones.value = await zoneService.getByWarehouse(String(wid)) || [];
+    ui.value = "detail";
+  }
+}
+
+function goDetail(id) {
+  router.push(`/warehouse/${id}/zone`);
+}
+
 function openAdd() {
   isEdit.value = false;
   editingId.value = null;
@@ -178,27 +230,28 @@ function openEdit(w) {
   form.value = { name: w.name, location: w.location };
   ui.value = "form";
 }
-async function openDetail(id) {
-  detail.value = await warehouseService.getById(String(id));
-  zones.value = await zoneService.getAll(String(id)) || [];
-  ui.value = "detail";
-}
 async function submit() {
   if (isEdit.value) await warehouseService.update(editingId.value, form.value);
   else await warehouseService.create(form.value);
-  await load();
+  await loadList();
   ui.value = "list";
 }
 async function remove(id) {
   if (confirm("Xoá kho này?")) {
     await warehouseService.remove(id);
-    await load();
+    await loadList();
   }
 }
 function prevPage(){ if(page.value>1) page.value-- }
 function nextPage(){ if(page.value<pageCount.value) page.value++ }
 
-onMounted(load);
+onMounted(() => {
+  loadList();
+  loadDetailByRoute();
+});
+watch(() => route.params.warehouseId, () => {
+  loadDetailByRoute();
+});
 </script>
 
 <style scoped>
@@ -209,20 +262,15 @@ onMounted(load);
 .section-card { background: #fff; border: 1px solid #eef2f7; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
 .table th, .table td { vertical-align: middle; }
 .btn-ctl { min-width: 110px; }
-
-/* actions */
 .row-actions{ display:flex; gap:8px; justify-content:center; align-items:center; }
 .icon-view{
   width:34px;height:34px;border:1px solid #d7dbe6;border-radius:8px;
   background:#fff;display:inline-flex;align-items:center;justify-content:center;
 }
 .icon-view:hover{ background:#f5f7fb; }
-
-/* pager */
 .pager-bar{
   display:flex; justify-content:flex-end; padding:10px 16px; gap:10px;
   border-top: 1px solid #eef2f7; background:#fafbfc;
 }
-
 @media (max-width: 992px) { .pbox { flex-direction: column; } }
 </style>

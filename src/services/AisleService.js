@@ -6,24 +6,20 @@ let sampleAisles = [
 ]
 
 export const aisleService = {
-  async getAll(zid) {
+
+  async getByZone(zoneId) {
     try {
-      const { data } = await api.get(`/api/zones/${encodeURIComponent(zid)}/aisles`)
-      const out = Array.isArray(data?.result) ? data.result : (Array.isArray(data) ? data : null)
-      return out ?? sampleAisles.filter(a=>a.zone?.id===zid)
-    } catch { return sampleAisles.filter(a=>a.zone?.id===zid) }
+      const { data } = await api.get(`/api/aisles/zone/${encodeURIComponent(zoneId)}`);
+      return Array.isArray(data?.result) ? data.result : [];
+    } catch (err) {
+      console.error("aisleService.getByZone error", err);
+      return [];
+    }
   },
 
-  async getById(id) {
+  async create(payload) {
     try {
-      const { data } = await api.get(`/api/aisles/${encodeURIComponent(id)}`)
-      return data?.result ?? data ?? sampleAisles.find(x=>x.id===id) ?? null
-    } catch { return sampleAisles.find(x=>x.id===id) ?? null }
-  },
-
-  async create(zid, payload) {
-    try {
-      const { data } = await api.post(`/api/zones/${encodeURIComponent(zid)}/aisles`, payload)
+      const { data } = await api.post(`/api/aisles`, payload)
       return data?.result ?? data
     } catch {
       const item = { id: crypto.randomUUID?.() ?? Date.now().toString(16), ...payload, zone:{ id: zid, name:"—" } }
