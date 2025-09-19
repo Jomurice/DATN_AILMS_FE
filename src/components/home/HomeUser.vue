@@ -5,29 +5,26 @@
     <div class="header-offset" aria-hidden="true">
     </div>
 
-    <div class="crumb-bar">
+    <!-- <div class="crumb-bar">
       <nav class="breadcrumb-custom flex items-center gap-2">
-        <!-- Home -->
-        <RouterLink class="link" to="/" aria-label="Trang chủ">
+        <RouterLink class="link" to="/dashboard" aria-label="Trang chủ">
           <i class="fas fa-home"></i>
         </RouterLink>
 
         <template v-for="(crumb, index) in breadcrumbs" :key="index">
           <span class="mx-1">/</span>
 
-          <!-- Nếu không phải item cuối cùng thì là link -->
           <RouterLink v-if="index < breadcrumbs.length - 1" class="link" :to="crumb.path">
             {{ crumb.title }}
           </RouterLink>
 
-          <!-- Item cuối cùng chỉ là text -->
           <span v-else class="fw-medium">{{ crumb.title }}</span>
         </template>
       </nav>
-    </div>
+    </div> -->
 
     <!-- Nội dung trang con -->
-    <div class="px-3">
+    <div class="px-3 mt-3">
       <RouterView />
     </div>
   </div>

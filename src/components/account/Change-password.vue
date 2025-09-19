@@ -4,13 +4,13 @@
             <h2>Đổi mật khẩu</h2>
             <form action="" class="m-4" @submit.prevent="handleChangePass">
                 <div>
-                    <label for="txtEmail">Mật khẩu mới :</label>
+                    <label for="txtEmail" class="fs-5 mb-0">Mật khẩu mới :</label>
                     <input type="password" v-model="formPassword.newPassword" class="form-control mt-2"
                         placeholder="Mật khẩu mới" required>
                 </div>
 
-                <div>
-                    <label for="txtEmail">Xác nhận mật khẩu :</label>
+                <div class="mt-3">
+                    <label for="txtEmail" class="fs-5 m-0">Xác nhận mật khẩu :</label>
                     <input type="password" v-model="formPassword.confirmPassword" class="form-control mt-2"
                         placeholder="Xác nhận mật khẩu" required>
                 </div>
@@ -18,7 +18,7 @@
                 <span v-if="message" :class="messageType">{{ message }}</span>
 
                 <div class="d-flex justify-content-end mt-3 gap-3">
-                    <button class="btn btn-primary" type="submit">{{ isLoading ? 'Đang xử lý...' : 'Xác nhận' }}</button>
+                    <button class="btn btn-primary " type="submit">{{ isLoading ? 'Đang xử lý...' : 'Xác nhận' }}</button>
                 </div>
 
             </form>
@@ -84,20 +84,15 @@ async function handleChangePass() {
 
 </script>
 
-<style>
-html,
-body {
-    height: 100%;
-    margin: 0;
-}
+<style scoped>
 
 .container-fluid {
-    /* background-image: url("../../assets/hinh2.png"); */
+    background-image: url("../../assets/hinh2.png");
     display: flex;
     justify-content: center;
     align-items: center;
     width: 100%;
-    height: 100%;
+    min-height: 100vh;
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -107,8 +102,9 @@ body {
 
 .form {
     background-color: rgb(154, 154, 154, 0.9);
+    color: white;
     border-radius: 15px;
-    width: 40%;
+    width: 35%;
 }
 
 /* form {

@@ -1,9 +1,9 @@
 <!-- src/components/category/CategoryList.vue -->
 <template>
-  <div class="">
+  <div>
 
     <div class="d-flex align-items-center justify-content-between mb-2">
-      <div>
+      <div class="search p-0">
         <input type="text" class="form-control" placeholder="Tìm theo tên loại hàng hóa">
       </div>
 
@@ -64,7 +64,7 @@
 
                   <button class="btn btn-sm btn-outline-warning me-1" title="Sửa thông tin loại hàng"
                     @click="$router.push(`/category/${c.id}/detail`)">
-                    <i class="fas fa-edit"></i> 
+                    <i class="fas fa-edit"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-danger" @click="removeItem(c.id)" title="Ẩn loại hàng ">
                     <i class="fas fa-eye-slash"></i>
@@ -101,13 +101,12 @@
             </nav>
           </div>
 
-          <div v-if="isLoading" class="text-center py-5">
-            <div class="spinner-border text-dark" role="status"></div>
-            <div class="small text-muted mt-2">Đang tải...</div>
-          </div>
-
           <p v-if="error" class="text-danger small p-3">{{ error }}</p>
         </div>
+      </div>
+      <div v-if="isLoading" class="modal-overlay text-center py-5">
+        <div class="spinner-border text-info" role="status"></div>
+        <div class="small mx-2 fs-5 text-info mt-2">Đang tải...</div>
       </div>
     </div>
   </div>
@@ -163,7 +162,7 @@ onMounted(loadAll)
 }
 
 .side {
-  width: 18%;
+  flex: 0 0 18%;
   height: calc(100vh - 200px);
   overflow: auto;
 }
@@ -175,8 +174,25 @@ onMounted(loadAll)
   overflow: auto;
 }
 
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  background: rgba(0, 0, 0, 0.147);
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.search {
+  flex: 0 0 18%;
+}
+
 .form-control {
-  width: 270px;
+  width: 100%;
   border: none;
   border-radius: 10px;
 }

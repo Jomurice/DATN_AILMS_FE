@@ -4,7 +4,7 @@
             <h2>Quên mật khẩu</h2>
             <form action="" class="m-4" @submit.prevent="isOtp ? handleVerify() : handleForgot()">
                 <div>
-                    <label for="txtEmail">Email :</label>
+                    <label for="txtEmail" class="fs-5 mb-0">Email :</label>
                     <input type="email" v-model="forgotPassword.email" class="form-control mt-2" placeholder="Email" required>
                 </div>
 
@@ -127,10 +127,10 @@ async function handleResendOtp() {
 }
 </script>
 
-<style>
-/* CSS không thay đổi */
+<style scoped>
+
 .container-fluid {
-    /* background-image: url("../../assets/hinh2.png"); */
+    background-image: url("../../assets/hinh2.png");
     display: flex;
     justify-content: center;
     align-items: center;
@@ -146,7 +146,8 @@ async function handleResendOtp() {
 .form {
     background-color: rgb(154, 154, 154, 0.9);
     border-radius: 15px;
-    width: 40%;
+    color: white;
+    width: 35%;
 }
 
 h2 {
