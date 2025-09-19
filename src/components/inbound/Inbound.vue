@@ -40,7 +40,7 @@
           <div class="d-flex align-items-center justify-content-between px-3 pt-3 pb-2">
             <div class="fw-bold">
               <div>{{ selectedOrder.code }} — <span class="text-muted">{{ selectedOrder.supplier }}</span></div>
-              <small class="text-muted">ETA: {{ selectedOrder.eta }} • Trạng thái: {{ toViStatus(selectedOrder.status) }}</small>
+              <small class="text-muted">ETA: {{ selectedOrder.createdAt }} • Trạng thái: {{ toViStatus(selectedOrder.status) }}</small>
             </div>
             <button class="btn btn-outline-secondary btn-sm" @click="selectedOrder=null">← Quay lại</button>
           </div>
@@ -93,7 +93,7 @@
                   <td class="nowrap">{{ it.brandName }}</td>
                   <td class="nowrap">{{ it.color || '—' }}</td>
                   <td class="text-end nowrap">
-                    <span>{{ scannedCount(it.sku) }}/{{ it.qty }}</span>
+                    <span>{{ scannedCount(it.sku) }}/{{ it.orderQuantity }}</span>
                     <button class="btn btn-link btn-sm ms-1" title="Xem serial đã quét" @click="openSerialsModal(it.sku)">
                       <i class="fa-solid fa-eye"></i>
                     </button>
@@ -215,7 +215,11 @@ watch([selectedOrder, pageSize], () => { page.value = 1 })
 // ---------------- ui utils ----------------
 const chipCls = s => ({ 'btn-outline-secondary': status.value !== s, 'btn-primary text-white': status.value === s })
 const toViStatus = s => ({ UPCOMING: 'Sắp xảy ra', IN_PROGRESS: 'Đang thực hiện', DONE: 'Hoàn tất' }[s] || s)
-const filteredOrders = computed(() => status.value === 'ALL' ? orders.value : orders.value.filter(o => o.status === status.value))
+
+const filteredOrders = computed(() => 
+status.value === 'ALL' ? orders.value : orders.value.filter(o => o.status === status.value)
+)
+
 const scannedCount = sku => scannedBySku.value[String(sku || '').toLowerCase()]?.count || 0
 const canComplete = computed(() => selectedOrder.value?.items?.length && Object.values(scannedBySku.value).some(x => (x?.count || 0) > 0))
 const showToast = (msg = '') => { toastMsg.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toastMsg.value = '', 1800) }
@@ -229,7 +233,8 @@ function normalizeOrder(order) {
     categoryName: x.categoryName ?? x.product?.categoryName ?? x.product?.category?.name ?? '',
     brandName:    x.brandName ?? x.product?.brandName ?? x.product?.brand?.name ?? '',
     color:        x.color ?? x.product?.color ?? '',
-    qty:          x.qty ?? x.quantity ?? 0,
+    orderQuantity: x.orderQuantity ?? 0,     // <-- fix ở đây
+    scannedQuantity: x.scannedQuantity ?? 0, // <-- nếu muốn lấy luôn
   }))
   return { ...order, items }
 }
@@ -344,8 +349,12 @@ async function completeOrder() {
 
 // ---------------- mount ----------------
 onMounted(async () => {
-  try { orders.value = await purchaseOrderService.list() }
-  catch { showToast('Không tải được danh sách phiếu') }
+  try { 
+    orders.value = await purchaseOrderService.list() 
+  }
+  catch { 
+    showToast('Không tải được danh sách phiếu') 
+  }
   finally { loading.value = false }
 })
 </script>

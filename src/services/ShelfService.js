@@ -16,16 +16,19 @@ export const shelfService = {
     } catch { return sampleShelves.filter(s=>s.aisle?.id===aid) }
   },
 
-  async getById(id) {
-    try {
-      const { data } = await api.get(`/api/shelves/${encodeURIComponent(id)}`)
-      return data?.result ?? data ?? sampleShelves.find(x=>x.id===id) ?? null
-    } catch { return sampleShelves.find(x=>x.id===id) ?? null }
-  },
+async getByAisle(shelfId) {
+  try {
+    const { data } = await api.get(`/api/shelves/aisle/${encodeURIComponent(shelfId)}`);
+    return Array.isArray(data?.result) ? data.result : [];
+  } catch (err) {
+    console.error("shelfService.getByAisle error", err);
+    return [];
+  }
+},
 
-  async create(aid, payload) {
+  async create(payload) {
     try {
-      const { data } = await api.post(`/api/aisles/${encodeURIComponent(aid)}/shelves`, payload)
+      const { data } = await api.post(`/api/shelves`, payload)
       return data?.result ?? data
     } catch {
       const item = { id: crypto.randomUUID?.() ?? Date.now().toString(16), ...payload, aisle:{ id: aid, name:"—" }, bins: [] }

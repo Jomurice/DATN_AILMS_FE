@@ -11,8 +11,13 @@ let sampleOrders = [
     status: "IN_PROGRESS",
     eta: "2025-09-20",
     items: [
-      { productId: "f9a0d2d1-1111-4c11-a0c0-111111111111", sku: "iphone15prm", name: "iPhone 15 Pro Max",
-        categoryName: "Điện thoại", brandName: "Apple", color: "Natural Titanium", qty: 10 },
+      { productId: "f9a0d2d1-1111-4c11-a0c0-111111111111", 
+        sku: "iphone15prm", 
+        name: "iPhone 15 Pro Max",
+        categoryName: "Điện thoại", 
+        brandName: "Apple", 
+        color: "Natural Titanium", 
+        qty: 10 },
       { productId: "379230b1-879e-4148-b5d3-285127d615de", sku: "dxps13",
         name: "Dell XPS 13", categoryName: "Laptop", brandName: "Dell", color: "Silver", qty: 5 },
     ]
