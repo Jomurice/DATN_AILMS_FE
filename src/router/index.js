@@ -14,6 +14,9 @@ import Aisle from "../components/warehouseManagement/Aisle.vue";
 import Shelf from "../components/warehouseManagement/Shelf.vue";
 import Bin from "../components/warehouseManagement/Bin.vue";
 
+
+import WarehouseMenu from "../components/NewWarehouse/WarehouseMenu.vue";
+
 import Products from "../components/Product/ProductManagerment.vue";
 import ProductForm from "../components/Product/ProductForm.vue";
 
@@ -50,6 +53,7 @@ import Outbound from "../components/outbound/Outbound.vue";
       { path: "category/add", name: "category-add", meta: {title: 'Thêm'}, component: CategoryForm },
       { path: "category/:id/detail", name: "category-detail", meta: {title: 'Sửa'}, component: CategoryForm, props: true },
 
+      { path: "/warehouses", name: "Warehouses", component: Warehouse },
       // Warehouse chain
       { path: "warehouse", name: "warehouse", meta: {title: 'Kho'}, component: Warehouse },
       { path: "warehouse/:wid/zone", name: "zone", meta: {title: 'Khu'}, component: Zone, props: true },
