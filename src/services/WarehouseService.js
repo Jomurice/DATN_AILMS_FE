@@ -1,48 +1,51 @@
-import api from "./axios"
-
-let sampleWarehouses = [
-  { id: "01", name: "Warehouse A", location: "Hà Nội" },
-  { id: "02", name: "Warehouse B", location: "HCM" }
-]
+import api from "./axios";
 
 export const warehouseService = {
   async getAll() {
-    try {
-      const { data } = await api.get("/api/warehouses")
-      const out = Array.isArray(data?.result) ? data.result : (Array.isArray(data) ? data : null)
-      return out ?? sampleWarehouses
-    } catch { return sampleWarehouses }
+    const { data } = await api.get("/api/warehouses");
+    return data?.result ?? data ?? [];
   },
-
-  async getById(id) {
-    try {
-      const { data } = await api.get(`/api/warehouses/${encodeURIComponent(id)}`)
-      return data?.result ?? data ?? sampleWarehouses.find(x=>x.id===id) ?? null
-    } catch { return sampleWarehouses.find(x=>x.id===id) ?? null }
+  async getById(warehouseId) {
+    const { data } = await api.get(`/api/warehouses/${warehouseId}`);
+    return data?.result ?? data ?? null;
   },
-
   async create(payload) {
-    try {
-      const { data } = await api.post(`/api/warehouses`, payload)
-      return data?.result ?? data
-    } catch {
-      const item = { id: crypto.randomUUID?.() ?? Date.now().toString(16), ...payload }
-      sampleWarehouses = [item, ...sampleWarehouses]; return item
-    }
+    const { data } = await api.post(`/api/warehouses`, payload);
+    return data?.result ?? data;
   },
-
-  async update(id, payload) {
-    try {
-      const { data } = await api.put(`/api/warehouses/${encodeURIComponent(id)}`, payload)
-      return data?.result ?? data
-    } catch {
-      sampleWarehouses = sampleWarehouses.map(x => x.id===id ? { ...x, ...payload } : x)
-      return sampleWarehouses.find(x=>x.id===id)
-    }
+  async update(warehouseId, payload) {
+    const { data } = await api.put(`/api/warehouses/${warehouseId}`, payload);
+    return data?.result ?? data;
   },
+  async remove(warehouseId) {
+    // Swagger hiện không có DELETE /api/warehouses/{warehouseId}
+    throw new Error("Backend chưa cung cấp DELETE /api/warehouses/{warehouseId}");
+    // await api.delete(`/api/warehouses/${warehouseId}`)
+    //  return true
+  },
+};
 
-  async remove(id) {
-    try { await api.delete(`/api/warehouses/${encodeURIComponent(id)}`); return true }
-    catch { sampleWarehouses = sampleWarehouses.filter(x=>x.id!==id); return true }
-  }
-}
+// import api from "./axios"
+
+// export const warehouseService = {
+//   async getAll() {
+//     const { data } = await api.get("/api/warehouses")
+//     return data?.result ?? data ?? []
+//   },
+//   async getById(id) {
+//     const { data } = await api.get(`/api/warehouses/${encodeURIComponent(id)}`)
+//     return data?.result ?? data ?? null
+//   },
+//   async create(payload) {
+//     const { data } = await api.post(`/api/warehouses`, payload)
+//     return data?.result ?? data
+//   },
+//   async update(id, payload) {
+//     const { data } = await api.put(`/api/warehouses/${encodeURIComponent(id)}`, payload)
+//     return data?.result ?? data
+//   },
+//   async remove(id) {
+//     await api.delete(`/api/warehouses/${encodeURIComponent(id)}`)
+//     return true
+//   }
+// }
