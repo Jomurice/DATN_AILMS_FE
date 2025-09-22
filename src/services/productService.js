@@ -33,4 +33,16 @@ export const productService = {
       return true;
     }
   },
+  async findBySkuLocal(products, sku) {
+    if (!sku) return null;
+    return (products || []).find(p => String(p.sku).toLowerCase() === String(sku).toLowerCase()) || null;
+  },
+  searchByNameLocal(products, q) {
+    if (!q) return products || [];
+    const s = q.toLowerCase();
+    return (products || []).filter(p =>
+      String(p.name).toLowerCase().includes(s) ||
+      String(p.sku).toLowerCase().includes(s)
+    );
+  }
 };
