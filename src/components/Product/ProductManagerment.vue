@@ -106,7 +106,7 @@
                 <td>{{ p.status }}</td>
                 <td class="text-center">
                   <button class="btn btn-sm btn-outline-info me-1" title="Chi tiết hàng hóa"
-                    @click="isDetailProduct = true, getProductById(p.id)">
+                    @click="isDetailProduct = true, getByProductId(p.id)">
                     <i class="fas fa-eye"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-warning me-1" title="Sửa thông tin hàng hóa"
@@ -169,11 +169,12 @@
 import { ref, computed, onMounted, reactive } from 'vue'
 import TreeItem from '../menu/TreeItem.vue'
 import ProductDetail from './ProductDetail.vue'
-import { productService } from '../../services/productService'
+import { productService } from '../../services/product/productService'
 import { menuService } from '../../services/MenuService'
+import { productDetailService } from '../../services/product/productDetailService'
 
 const products = ref([]);
-const product = ref({});
+const product = ref([]);
 const menus = ref([]);
 const isLoading = ref(true)
 const error = ref('')
@@ -252,9 +253,9 @@ async function loadAll() {
 }
 
 
-async function getProductById(id) {
+async function getByProductId(id) {
   try {
-    product.value = await productService.getById(id);
+    product.value = await productDetailService.getByProductId(id);
     console.log(product.value);
   } catch (error) {
     console.log("error", error);

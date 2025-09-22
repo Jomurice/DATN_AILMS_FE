@@ -27,7 +27,8 @@
             <div class="col-md-4" v-if="brands.length > 0">
               <label class="form-label">Thương hiệu <span class="text-danger">*</span></label>
               <Multiselect v-model="form.brandId" :options="brands.map(br => br.id)" :searchable="true" track-by="id"
-                :custom-label="id => brands.find(br => br.id === id)?.name || '--'" placeholder="-- Chọn thương hiệu --">
+                :custom-label="id => brands.find(br => br.id === id)?.name || '--'"
+                placeholder="-- Chọn thương hiệu --">
 
                 <template #noResult>
                   <div class="no-result-custom">Không thương hiệu bạn tìm !</div>
@@ -92,6 +93,10 @@
 
       <attribute v-if="isModal" @close="isModal = false" />
 
+      <div v-if="isLoading" class="modal-overlay text-center py-5">
+        <div class="spinner-border text-info" role="status"></div>
+        <div class="small mx-2 fs-5 text-info mt-2">Đang tải...</div>
+      </div>
     </div>
   </div>
 </template>
@@ -99,7 +104,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { productService } from '../../services/productService'
+import { productService } from '../../services/product/productService'
 import { categoryService } from '../../services/categoryService'
 
 import { brandService } from '../../services/BrandService'
@@ -110,7 +115,7 @@ const router = useRouter();
 const productId = route.params.id;
 const isEdit = ref(false);
 const isModal = ref(false);
-
+const isLoading = ref(false);
 const categories = ref([]);
 const brands = ref([]);
 const form = ref({ sku: '', name: '', brandId: null, specifications: '', color: '', storage: '', categoryId: null })
@@ -140,14 +145,21 @@ const colorError = computed(() => {
 const categoryError = computed(() => (form.value.categoryId ? '' : 'Vui lòng chọn loại sản phẩm.'))
 
 async function loadData() {
-  categories.value = await categoryService.getAll();
-  brands.value = await brandService.getAllBrand();
-  if (productId) {
-    isEdit.value = true
-    const p = await productService.getById(productId)
-    if (p) form.value = { ...form.value, ...p }
-  } else {
-    isEdit.value = false
+  isLoading.value = true;
+  try {
+    categories.value = await categoryService.getAll();
+    brands.value = await brandService.getAllBrand();
+    if (productId) {
+      isEdit.value = true
+      const p = await productService.getById(productId);
+      if (p) form.value = { ...form.value, ...p };
+    } else {
+      isEdit.value = false;
+    }
+  } catch (error) {
+    console.log("error", error);
+  } finally {
+    isLoading.value = false;
   }
 }
 
@@ -160,7 +172,7 @@ async function submitForm() {
   console.log(form.value);
   try {
     if (isEdit.value) await productService.update(productId, { ...form.value })
-    else await productService.create({...form.value })
+    else await productService.create({ ...form.value })
 
     router.push('/product')
   } catch (e) {
@@ -188,6 +200,19 @@ onMounted(loadData)
   padding: 10px;
   color: #dc3545;
   text-align: center;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  background: rgba(0, 0, 0, 0.147);
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
 }
 
 ::v-deep(.multiselect__content-wrapper) {

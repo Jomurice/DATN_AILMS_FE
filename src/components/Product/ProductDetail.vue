@@ -1,25 +1,42 @@
 <template>
-    <div class="card w-50 p-2">
-          <div class="d-flex align-items-center justify-content-between">
-            <h3>Chi tiết hàng hóa</h3>
-            <p class="fs-4 exit" @click="$emit('close')">X</p>
-          </div>
+  <div class="card w-50 p-2">
+    <div class="d-flex align-items-center justify-content-between">
+      <h3>Chi tiết hàng hóa</h3>
+      <p class="fs-4 exit" @click="$emit('close')">X</p>
+    </div>
 
-          <nav class="product-info gap-4 mt-3">
-            <p><span class="fw-bold">Mã SKU:</span> {{ node.sku }}</p>
-            <p><span class="fw-bold">Tên:</span> {{ node.name }}</p>
-            <p><span class="fw-bold">Loại:</span> {{ node.categoryName }}</p>
-            <p><span class="fw-bold">Màu: </span>{{ node.color }}</p>
-            <p><span class="fw-bold">Hãng: </span> {{ node.brandName }}</p>
-            <p><span class="fw-bold">Thuộc tính khác: </span>sadas</p>
-            <p><span class="fw-bold">Thông số kỹ thuật: </span> {{ node.specifications }}</p>
-          </nav>
-        </div>
+    <table class="table table-hover">
+      <thead>
+        <tr>
+          <th>MÃ SERIAL</th>
+          <th>TRẠNG THÁI</th>
+          <th>LOẠI</th>
+          <th>MÀU</th>
+          <th>HÃNG</th>
+          <th>THUỘC TÍNH</th>
+          <th>THÔNG SỐ</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr v-for="pd in node">
+          <td>{{ pd.serialNumber }}</td>
+          <td>{{ pd.status }}</td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td></td>
+        </tr>
+      </tbody>
+    </table>
+
+  </div>
 </template>
 
 <script setup>
 defineProps({
-    node: Object,
+  node: Array,
 })
 
 defineEmits(["close"])
@@ -27,17 +44,17 @@ defineEmits(["close"])
 
 <style scoped>
 .card {
-    height: calc(100vh - 200px);
-    overflow: auto;
+  height: calc(100vh - 200px);
+  overflow: auto;
 }
 
 .product-info {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 20px;
 }
 
 .exit {
-    cursor: pointer !important;
+  cursor: pointer !important;
 }
 </style>
