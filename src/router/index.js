@@ -24,7 +24,7 @@ import Dashboard from "../components/dashboard/Dashboard.vue";
 
 import Inbound from "../components/inbound/Inbound.vue";
 import Outbound from "../components/outbound/Outbound.vue";
-import OrderProduct from "../components/order/OrderProduct.vue";
+
 
  const routes = [
   { path: "/", redirect: "/login" },
@@ -72,7 +72,6 @@ import OrderProduct from "../components/order/OrderProduct.vue";
     meta: {title: 'Quản lý'},
     component: HomeView,
     children:[
-      { path: "order-product", name: "admin-order-product", meta: {title: 'Đặt hàng'}, component: OrderProduct },
       { path: "account", name: "admin-account", meta: {title: 'Nhân sự'}, component: Accounts },
       { path: "account/add", name: "admin-account-add", meta: {title: 'Thêm'}, component: AccountForm },
       { path: "account/:id/edit", name: "admin-account-edit", meta: {title: 'Sửa'}, component: AccountForm, props: true },

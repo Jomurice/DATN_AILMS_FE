@@ -24,42 +24,49 @@
               <div class="invalid-feedback" v-if="touched.name">{{ nameError }}</div>
             </div>
 
-            <div class="col-md-4">
+            <div class="col-md-4" v-if="brands.length > 0">
               <label class="form-label">Thương hiệu <span class="text-danger">*</span></label>
-              <select v-model="form.brandId" class="form-select"
-                :class="{ 'is-invalid': touched.brandId && brandError }">
-                <option value="">-- Thương hiệu --</option>
-                <option v-for="b in brands" :key="b.id" :value="b.id">{{ b.name }}</option>
-              </select>
+              <Multiselect v-model="form.brandId" :options="brands.map(br => br.id)" :searchable="true" track-by="id"
+                :custom-label="id => brands.find(br => br.id === id)?.name || '--'" placeholder="-- Chọn thương hiệu --">
+
+                <template #noResult>
+                  <div class="no-result-custom">Không thương hiệu bạn tìm !</div>
+                </template>
+              </Multiselect>
               <div class="invalid-feedback" v-if="touched.brand && brandError">{{ brandError }}</div>
+            </div>
+
+            <div class="col-md-4" v-if="categories.length > 0">
+              <label class="form-label">Loại <span class="text-danger">*</span></label>
+              <Multiselect v-model="form.categoryId" :options="categories.map(c => c.id)" :searchable="true"
+                :custom-label="id => categories.find(c => c.id === id)?.name || '---'" placeholder="-- Chọn loại --">
+
+                <template #noResult>
+                  <div class="no-result-custom">Không có loại hàng bạn tìm !</div>
+                </template>
+              </Multiselect>
+              <div class="invalid-feedback" v-if="touched.categoryId && categoryError">{{ categoryError }}</div>
             </div>
 
             <div class="col-md-4">
               <label class="form-label">Màu sắc <span class="text-danger">*</span></label>
-              <select name="" id="" v-model="form.color">
+              <select name="" id="" v-model="form.color" class="form-select">
+                <option value="">-- Chọn màu sắc --</option>
                 <option value="Red">Đỏ</option>
                 <option value="Black">Đen</option>
                 <option value="Gold">Vàng kim</option>
-                <option value="Phantom Black"></option>
-                <option value="Green">Đỏ</option>
+                <option value="Phantom Black">Đen tuyền</option>
+                <option value="Green">Xanh lá</option>
               </select>
               <div class="invalid-feedback" v-if="touched.color && colorError">{{ colorError }}</div>
             </div>
 
             <div class="col-md-4">
-              <label class="form-label">Lưu trữ (Dung lượng)</label>
+              <label class="form-label">Dung lượng</label>
               <input v-model.trim="form.storage" class="form-control" />
             </div>
 
-            <div class="col-md-4">
-              <label class="form-label">Loại (Category) <span class="text-danger">*</span></label>
-              <select v-model="form.categoryId" class="form-select"
-                :class="{ 'is-invalid': touched.categoryId && categoryError }">
-                <option value="">-- Chọn loại --</option>
-                <option v-for="c in categories" :key="c.id" :value="c.id">{{ c.name }}</option>
-              </select>
-              <div class="invalid-feedback" v-if="touched.categoryId && categoryError">{{ categoryError }}</div>
-            </div>
+
 
             <div class="col-md-4">
               <label for="txtThuoctinh">Thuộc tính khác:</label>
@@ -104,13 +111,13 @@ const productId = route.params.id;
 const isEdit = ref(false);
 const isModal = ref(false);
 
-const categories = ref();
-const brands = ref();
-const categoryBrand = ref({ categoryId: '', brandId: '' });
-const form = ref({ sku: '', name: '', brandId: '', specifications: '', color: '', storage: '', categoryId: '' })
+const categories = ref([]);
+const brands = ref([]);
+const form = ref({ sku: '', name: '', brandId: null, specifications: '', color: '', storage: '', categoryId: null })
 const submitting = ref(false)
 const error = ref('')
 const touched = ref({ brand: false, name: false, brandId: false, color: false, categoryId: false })
+
 
 const nameError = computed(() => {
   const v = form.value.name?.trim() || ''
@@ -150,14 +157,11 @@ async function submitForm() {
   // if (brandError.value || colorError.value || nameError.value || categoryError.value) return
   // submitting.value = true; error.value = ''
   submitting.value = true;
+  console.log(form.value);
   try {
-
     if (isEdit.value) await productService.update(productId, { ...form.value })
-    else {
-      // form.value.categoryId = await categoryService.createCategoryBrand(categoryBrand.value);
-      await productService.create({ ...form.value })
-    }
-    console.log(form.value);
+    else await productService.create({...form.value })
+
     router.push('/product')
   } catch (e) {
     error.value = 'Lưu thất bại.'
@@ -166,16 +170,47 @@ async function submitForm() {
   } finally {
     submitting.value = false
   }
-
+  console.log(form.value);
 }
 
 
 
 onMounted(loadData)
+
 </script>
 
-<style>
+<style scoped>
 .addAttribute {
   cursor: pointer !important;
+}
+
+.no-result-custom {
+  padding: 10px;
+  color: #dc3545;
+  text-align: center;
+}
+
+::v-deep(.multiselect__content-wrapper) {
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Hover highlight */
+::v-deep(.multiselect__option--highlight) {
+  background-color: #0d6efd !important;
+  color: #fff !important;
+  cursor: pointer;
+  /* con trỏ pointer khi hover */
+}
+
+::v-deep(.multiselect__option--highlight::after) {
+  content: none !important;
+}
+
+
+/* Selected + hover */
+::v-deep(.multiselect__option--selected.multiselect__option--highlight) {
+  background-color: #0b5ed7 !important;
+  color: #fff !important;
 }
 </style>

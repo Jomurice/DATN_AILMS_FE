@@ -4,7 +4,7 @@
     <div class="d-flex mb-2 align-items-center justify-content-between ">
 
       <div class="search p-0">
-        <input v-model="payload.name" @change="load()" type="text" class="form-control"
+        <input v-model.trim="payload.name" @change="load()" type="text" class="form-control"
           placeholder="Nhập tên nhân viên cần tìm" />
       </div>
 
@@ -28,7 +28,12 @@
 
     <div class="d-flex gap-4">
 
-      <aside class="card d-flex gap-3 border-0 p-2 shadow-sm rounded-3 side">
+      <aside class="card d-flex gap-3 border-0 p-2 shadow-sm rounded-3 side" v-if="isAsideOpen">
+
+        <!-- nút đóng hiện khi hover -->
+        <button v-if="isAsideOpen" class="btn toggle-btn" @click="toggleAside">
+          <i class="fas fa-angle-left"></i>
+        </button>
 
         <div class="asideChildren">
           <h5>Chức vụ</h5>
@@ -52,24 +57,16 @@
           <button @click="selectStatus(false)" :class="{ active: isStatus === false }">Khóa</button>
         </div>
 
-        <div class=" asideChildren">
-          <h5>Sắp xếp</h5>
-
-          <select v-model.trim="payload.pageable.sort" class=" form-select form-select-sm w-100">
-            <optgroup label="Theo tên">
-              <option value="name,asc">Tên A → Z</option>
-              <option value="name,desc">Tên Z → A</option>
-            </optgroup>
-          </select>
-
-        </div>
-
       </aside>
+
+      <button v-if="!isAsideOpen" class="btn p-0 open-btn" @click="toggleAside">
+        <i class="fas fa-angle-right"></i>
+      </button>
 
 
       <div class="card border-0 shadow-sm rounded-3 main">
 
-        <div class="m-2 d-flex gap-3 align-items-center justify-content-end">
+        <div class="mx-2 d-flex gap-3 align-items-center justify-content-end">
           <button class="btn btn-success col-md-1 " @click="$router.push('/admin/account/add')">+ Thêm</button>
           <!-- page -->
           <div class="sizePage p-2 d-flex align-items-center rounded-3 justify-content-end">
@@ -84,7 +81,7 @@
           </div>
         </div>
 
-        <div class="content">
+        <div>
 
           <div class="table-wrapper">
             <table class="table table-hover mb-0">
@@ -92,7 +89,11 @@
                 <tr class="text-uppercase table-primary small fw-bold">
                   <th>STT</th>
                   <th>Tên đăng nhập</th>
-                  <th>Họ tên</th>
+                  <th class="name" @click="selectSort()">
+                    Họ tên
+                    <i v-if="isSort" class="fa-solid fa-arrow-up ms-2"></i>
+                    <i v-else class="fa-solid fa-arrow-down ms-2"></i>
+                  </th>
                   <th>Email</th>
                   <th>Giới tính</th>
                   <th>Chức vụ</th>
@@ -152,10 +153,9 @@
               <span class="fs-5">Trang</span>
 
               <input type="text" v-model.number="currentPageInput" @keyup.enter="goToPage" min="1"
-                :max="pages.totalPages" class=" rounded-3">
+                :max="pages.totalPages" class=" rounded-3 form-page">
 
-              <button class="btn btn-sm fw-bold " :disabled="pages.number === 0"
-                @click="changePage(pages.number - 1)">
+              <button class="btn btn-sm fw-bold " :disabled="pages.number === 0" @click="changePage(pages.number - 1)">
                 &lt;
               </button>
 
@@ -225,7 +225,8 @@ const pages = ref({
   content: []
 })
 
-const totalUser = ref([]);
+const totalUser = ref({ totalUsers: 0, totalMales: 0, totalFemales: 0 });
+
 
 const users = ref([]);
 const user = ref();
@@ -234,6 +235,8 @@ const loading = ref(false);
 const error = ref('');
 const isGender = ref('');
 const isStatus = ref('');
+const isSort = ref(true);
+const isAsideOpen = ref(true);
 const confirmMessage = ref('')
 let confirmCallback = null
 
@@ -252,7 +255,20 @@ function selectStatus(value) {
   payload.value.status = value;
 }
 
+function selectSort() {
+  if (isSort.value) {
+    isSort.value = false;
+    payload.value.pageable.sort = 'name,desc';
+  } else {
+    isSort.value = true;
+    payload.value.pageable.sort = 'name,asc';
+  }
+}
 
+function toggleAside() {
+  isAsideOpen.value = !isAsideOpen.value;
+  console.log(isAsideOpen.value)
+}
 
 // Input số trang
 const currentPageInput = ref(1)
@@ -365,20 +381,74 @@ watch(
 }
 
 .side {
+  position: relative;
+  /* để .toggle-btn bám vào aside */
   max-width: 18%;
   height: calc(100vh - 200px);
-  overflow: auto;
+  /* overflow: auto; */
+  overflow: visible;
+  transition: all 0.3s ease;
 }
+
+.toggle-btn {
+  position: absolute;
+  top: 50%;
+  right: -16px;
+  /* đẩy nút ra ngoài aside */
+  transform: translateY(-50%);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  background: white;
+  border: 1px solid #ddd;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  z-index: 20;
+}
+
+.side:hover .toggle-btn {
+  opacity: 1;
+}
+
+.toggle-btn:hover {
+  border: 1px solid blue;
+  color: blue;
+}
+
+.open-btn {
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  transform: translate(-50%, -50%);
+  border-radius: 0 50% 50% 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  background: white;
+  border: 1px solid #ddd;
+  width: 32px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.open-btn:hover {
+  border: 1px solid blue;
+  color: blue;
+}
+
+
 
 .main {
   flex: 1 1 auto;
   min-width: 0;
-  height: calc(100vh - 200px);
+  /* height: calc(100vh - 190px); */
 }
 
-.main>.content {
-  overflow-y: auto;
-}
 
 .asideChildren {
   min-width: 200px;
@@ -402,7 +472,6 @@ watch(
   background-color: blue;
   color: white;
 }
-
 
 .badge-card {
   background: #fff;
@@ -450,13 +519,13 @@ watch(
   cursor: pointer;
 }
 
-.page>nav>.btn{
+.page>nav>.btn {
   height: 30px;
   font-size: 18px;
   border: none;
 }
 
-.page>nav>input {
+.form-page {
   border: none;
   width: 50px;
   height: 30px;
@@ -477,7 +546,6 @@ watch(
   overflow-x: auto;
 }
 
-
 .table-wrapper table {
   width: fit-content;
   min-width: 100%;
@@ -485,6 +553,10 @@ watch(
 
 .table {
   table-layout: fixed;
+}
+
+.name {
+  cursor: pointer;
 }
 
 .table th,
