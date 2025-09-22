@@ -56,7 +56,7 @@
 
             <div class="col-md-6">
               <label class="form-label">Số điện thoại<span class="text-danger">*</span></label>
-              <input type="text" v-model.number="form.phone" class="form-control" placeholder="Vui lòng nhập số điện thoại"
+              <input type="text" v-model.trim="form.phone" class="form-control" placeholder="Vui lòng nhập số điện thoại"
               max="10" required />
               <div class="invalid-feedback" v-if="error">{{ error }}</div>
             </div>

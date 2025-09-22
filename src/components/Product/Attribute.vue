@@ -14,9 +14,10 @@
                 </li>
 
             </ul>
+
             <div class="tab-content">
                 <div id="listAttribute" class="container active tab-pane">
-                    <div  class="d-flex flex-wrap gap-4 mt-3">
+                    <div class="d-flex flex-wrap gap-4 mt-3">
                         <nav>
                             <input type="checkbox" name="" id="">RAM
                         </nav>

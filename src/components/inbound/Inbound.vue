@@ -8,9 +8,9 @@
 
         <div class="mb-2 d-flex gap-2 flex-wrap">
           <button class="btn btn-sm" :class="chipCls('ALL')" @click="status='ALL'">Tất cả</button>
-          <button class="btn btn-sm" :class="chipCls('UPCOMING')" @click="status='UPCOMING'">Sắp xảy ra</button>
+          <button class="btn btn-sm" :class="chipCls('PENDING')" @click="status='PENDING'">Chờ xử lý</button>
           <button class="btn btn-sm" :class="chipCls('IN_PROGRESS')" @click="status='IN_PROGRESS'">Đang thực hiện</button>
-          <button class="btn btn-sm" :class="chipCls('DONE')" @click="status='DONE'">Hoàn tất</button>
+          <button class="btn btn-sm" :class="chipCls('COMPLETED')" @click="status='COMPLETED'">Hoàn tất</button>
         </div>
 
         <div class="list-group small">
@@ -22,11 +22,11 @@
             @click="openOrder(o)"
           >
             <div>
-              <div class="fw-bold">{{ o.code }}</div>
-              <div class="fw-semibold">{{ o.supplier }}</div>
+              <div class="fw-bold">{{ clip(o.code, 20) }}</div>
+              <div class="fw-semibold">{{ clip(o.supplier, 20) }}</div>
               <div class="badge bg-light text-dark mt-1">{{ toViStatus(o.status) }}</div>
             </div>
-            <small class="text-muted">{{ o.eta }}</small>
+            <small class="text-muted">{{ fmtDate(o.createdAt || o.eta) }}</small>
           </button>
 
           <div v-if="!loading && !filteredOrders.length" class="text-muted p-3">Không có phiếu phù hợp</div>
@@ -39,25 +39,32 @@
         <div class="section-card" v-if="selectedOrder">
           <div class="d-flex align-items-center justify-content-between px-3 pt-3 pb-2">
             <div class="fw-bold">
-              <div>{{ selectedOrder.code }} — <span class="text-muted">{{ selectedOrder.supplier }}</span></div>
-              <small class="text-muted">ETA: {{ selectedOrder.createdAt }} • Trạng thái: {{ toViStatus(selectedOrder.status) }}</small>
+              <div>{{ selectedOrder.code }} — <span class="text-muted">{{ clip(selectedOrder.supplier, 28) }}</span></div>
+              <small class="text-muted">
+                Ngày tạo: {{ fmtDate(selectedOrder.createdAt || selectedOrder.eta) }} • Trạng thái:
+                {{ toViStatus(selectedOrder.status) }}
+              </small>
             </div>
-            <button class="btn btn-outline-secondary btn-sm" @click="selectedOrder=null">← Quay lại</button>
+            <div class="d-flex gap-2">
+              <RouterLink class="btn btn-outline-primary btn-sm" to="/inbound/new">+ Tạo đơn mua</RouterLink>
+              <button class="btn btn-outline-secondary btn-sm" @click="selectedOrder=null">← Quay lại</button>
+            </div>
           </div>
 
           <!-- Toolbar -->
           <div class="px-3 pb-3 d-flex align-items-center flex-wrap gap-3">
             <div class="badge-card">
-              <div class="text-muted small">Tổng loại hàng hóa:</div>
+              <div class="text-muted small">Tổng dòng hàng hóa</div>
               <div class="num">{{ selectedOrder.items?.length || 0 }}</div>
             </div>
 
+            <!-- QUÉT NHANH -->
             <div class="flex-grow-1 d-flex align-items-center gap-2">
               <input
                 ref="quickInputRef"
                 v-model.trim="quickSerial"
                 @keyup.enter="handleQuickScan"
-                class="form-control"
+                class="form-control mono"
                 placeholder="Quét nhanh serial… (vd: iphone15prm-0001)"
               />
               <button class="btn btn-primary" @click="handleQuickScan">Quét</button>
@@ -69,42 +76,48 @@
             <table class="table table-hover mb-0 table-balanced">
               <colgroup>
                 <col style="width:12%"/><col style="width:28%"/><col style="width:14%"/>
-                <col style="width:12%"/><col style="width:20%"/><col style="width:7%;min-width:110px"/>
-                <col style="width:7%;min-width:110px"/>
+                <col style="width:12%"/><col style="width:20%"/><col style="width:14%"/>
               </colgroup>
 
               <thead class="thead-soft">
                 <tr class="text-uppercase fw-semibold">
-                  <th>SKU</th>
-                  <th>Tên hàng hóa</th>
-                  <th>Loại</th>
-                  <th>Hãng</th>
-                  <th>Màu</th>
-                  <th class="text-end">Số lượng</th>
-                  <th class="text-center">Quét serial</th>
+                  <th @click="toggleSort('sku')" class="cursor">
+                    SKU <SortIcon :dir="sortKey==='sku'?sortDir:null"/>
+                  </th>
+                  <th @click="toggleSort('name')" class="cursor">
+                    Tên hàng hóa <SortIcon :dir="sortKey==='name'?sortDir:null"/>
+                  </th>
+                  <th @click="toggleSort('categoryName')" class="cursor">
+                    Loại <SortIcon :dir="sortKey==='categoryName'?sortDir:null"/>
+                  </th>
+                  <th @click="toggleSort('brandName')" class="cursor">
+                    Hãng <SortIcon :dir="sortKey==='brandName'?sortDir:null"/>
+                  </th>
+                  <th @click="toggleSort('color')" class="cursor">
+                    Màu <SortIcon :dir="sortKey==='color'?sortDir:null"/>
+                  </th>
+                  <th class="text-end cursor" @click="toggleSort('orderQuantity')">
+                    Số lượng <SortIcon :dir="sortKey==='orderQuantity'?sortDir:null"/>
+                  </th>
                 </tr>
               </thead>
 
               <tbody>
-                <tr v-for="it in pagedItems" :key="it.sku">
+                <tr v-for="it in pagedSortedItems" :key="(it.id || it.sku)">
                   <td class="mono nowrap">{{ it.sku }}</td>
-                  <td class="nowrap">{{ it.name }}</td>
-                  <td class="nowrap">{{ it.categoryName }}</td>
-                  <td class="nowrap">{{ it.brandName }}</td>
-                  <td class="nowrap">{{ it.color || '—' }}</td>
-                  <td class="text-end nowrap">
+                  <td class="nowrap" :title="it.name">{{ clip(it.name, 24) }}</td>
+                  <td class="nowrap">{{ clip(it.categoryName, 18) }}</td>
+                  <td class="nowrap">{{ clip(it.brandName, 18) }}</td>
+                  <td class="nowrap">{{ clip(it.color || '—', 16) }}</td>
+                  <td class="text-end nowrap mono">
                     <span>{{ scannedCount(it.sku) }}/{{ it.orderQuantity }}</span>
                     <button class="btn btn-link btn-sm ms-1" title="Xem serial đã quét" @click="openSerialsModal(it.sku)">
                       <i class="fa-solid fa-eye"></i>
                     </button>
                   </td>
-                  <td class="text-center nowrap">
-                    <button class="btn btn-outline-primary" @click="handleRowScanWithGlobal(it)">Quét</button>
-                  </td>
                 </tr>
-
                 <tr v-if="!selectedOrder.items?.length">
-                  <td colspan="7" class="text-center text-muted py-3">Phiếu này chưa có dòng hàng</td>
+                  <td colspan="6" class="text-center text-muted py-3">Phiếu này chưa có dòng hàng</td>
                 </tr>
               </tbody>
             </table>
@@ -130,7 +143,8 @@
 
         <div v-else class="section-card">
           <div class="px-3 pt-3 pb-2 d-flex align-items-center justify-content-between">
-            <h5 class="fw-bold mb-0">Chọn 1 phiếu mua để bắt đầu quét</h5>
+            <h5 class="fw-bold mb-0">Chọn 1 phiếu mua (đơn hàng) để nhập</h5>
+            <RouterLink class="btn btn-outline-primary btn-sm" to="/inbound/new">+ Tạo đơn mua</RouterLink>
           </div>
           <div class="p-3 text-muted">Hãy chọn phiếu từ danh sách bên trái.</div>
         </div>
@@ -147,17 +161,13 @@
         <div class="table-responsive mt-2">
           <table class="table table-sm" translate="no">
             <thead>
-              <tr>
-                <th class="notranslate">Serial</th>
-                <th>Trạng thái</th>
-                <th>Vị trí (Bin)</th>
-              </tr>
+              <tr><th class="notranslate">Serial</th><th>Trạng thái</th><th>Vị trí (Bin)</th></tr>
             </thead>
             <tbody>
               <tr v-for="s in scannedBySku[modalSku]?.details || []" :key="s.serialNumber">
                 <td class="mono nowrap notranslate">{{ s.serialNumber }}</td>
                 <td class="nowrap">{{ s.status }}</td>
-                <td class="nowrap notranslate">{{ s.binId || '—' }}</td>
+                <td class="nowrap notranslate">{{ s.binId || s.warehouseId || '—' }}</td>
               </tr>
               <tr v-if="!scannedBySku[modalSku]?.details?.length">
                 <td colspan="3" class="text-center text-muted">Chưa có serial</td>
@@ -174,222 +184,267 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
-import { purchaseOrderService } from '../../services/purchaseOrderService'
-import { inventoryClient } from '../../services/inventoryClient'
-import { fire, EVENTS } from '../../services/eventBus'
+import { ref, computed, onMounted, watch } from "vue";
+import { RouterLink } from "vue-router";
+import { purchaseOrderService } from "../../services/purchaseOrderService";
+import { inventoryClient } from "../../services/inventoryClient";
+import { fire, EVENTS } from "../../services/eventBus";
 
-// ---------------- helpers ----------------
-const norm = s => String(s || '').trim()
-const normKey = s => norm(s).toLowerCase()
-const skuFromSerial = serial => String(serial || '').split('-')[0]?.trim()?.toLowerCase() || ''
-const inflight = new Set() // chống double-scan cùng serial
+/** sort icon */
+const SortIcon = {
+  name:"SortIcon",
+  props:{ dir:{ type:String, default:null } },
+  template:`<span class="sort-ico" :class="cls" aria-hidden="true">▲</span>`,
+  computed:{ cls(){ return { asc:this.dir==='asc', desc:this.dir==='desc', off:!this.dir } } }
+};
 
-// ---------------- state ----------------
-const orders = ref([])
-const loading = ref(true)
-const status = ref('ALL')
-const selectedOrder = ref(null)
+/* ---------- helpers ---------- */
+const clip=(s,n=20)=>s && s.length>n ? (s.slice(0,n)+'...') : (s||'');
+const fmtDate=d=>{ if(!d) return '—'; try{ if(typeof d==='string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) return d; const t=new Date(d); return isNaN(+t)?d:t.toISOString().slice(0,10) }catch{ return d } };
+const norm=s=>String(s||'').trim();
+const normKey=s=>norm(s).toLowerCase();
+const skuFromSerial=s=>String(s||'').split('-')[0]?.trim()?.toLowerCase()||'';
+const inflight=new Set();
 
-const quickSerial = ref('')
-const quickInputRef = ref(null)
+/* ---------- state ---------- */
+const orders=ref([]); const loading=ref(true); const status=ref('ALL'); const selectedOrder=ref(null);
+const quickSerial=ref(''); const quickInputRef=ref(null);
 
-const scannedBySku = ref({}) // { [lowerSku]: { count, serials:[lowerSerial], details:[{serialNumber,status,binId}] } }
-const modalSku = ref(null)
-const toastMsg = ref('')
-let toastTimer = null
+const scannedBySku=ref({}); // { [skuLower]: { count, serials:[lowerSerial], details:[...] } }
+const modalSku=ref(null); const toastMsg=ref(""); let toastTimer=null;
 
-// ---------------- paging ----------------
-const page = ref(1)
-const pageSize = ref(10)
-const pageSizeOptions = [5, 10, 20, 50]
-const totalItems = computed(() => selectedOrder.value?.items?.length || 0)
-const pageCount = computed(() => Math.max(1, Math.ceil(totalItems.value / pageSize.value)))
-const pagedItems = computed(() => {
-  const arr = selectedOrder.value?.items || []
-  const start = (page.value - 1) * pageSize.value
-  return arr.slice(start, start + pageSize.value)
-})
-watch([selectedOrder, pageSize], () => { page.value = 1 })
+/* ---------- paging ---------- */
+const page=ref(1); const pageSize=ref(10); const pageSizeOptions=[5,10,20,50];
+const totalItems=computed(()=> selectedOrder.value?.items?.length || 0);
+const pageCount=computed(()=> Math.max(1, Math.ceil(totalItems.value / pageSize.value)));
+watch([selectedOrder,pageSize], ()=>{ page.value=1 });
 
-// ---------------- ui utils ----------------
-const chipCls = s => ({ 'btn-outline-secondary': status.value !== s, 'btn-primary text-white': status.value === s })
-const toViStatus = s => ({ UPCOMING: 'Sắp xảy ra', IN_PROGRESS: 'Đang thực hiện', DONE: 'Hoàn tất' }[s] || s)
+/* ---------- sorting ---------- */
+const sortKey=ref('name'); const sortDir=ref('asc');
+function toggleSort(k){ if(sortKey.value===k) sortDir.value=sortDir.value==='asc'?'desc':'asc'; else { sortKey.value=k; sortDir.value='asc'; } }
+const valByKey=(it,k)=> (k==='orderQuantity' ? Number(it.orderQuantity||0) : (it?.[k] ?? ''));
+const sortedItems=computed(()=> {
+  const k=sortKey.value, d=sortDir.value; const arr=(selectedOrder.value?.items||[]).slice();
+  return arr.sort((a,b)=>{
+    const va=valByKey(a,k), vb=valByKey(b,k);
+    if(typeof va==='number' && typeof vb==='number') return d==='asc'?va-vb:vb-va;
+    const sa=String(va).toLowerCase(), sb=String(vb).toLowerCase();
+    if(sa<sb) return d==='asc'?-1:1;
+    if(sa>sb) return d==='asc'?1:-1;
+    return 0;
+  });
+});
+const pagedSortedItems=computed(()=>{
+  const start=(page.value-1)*pageSize.value;
+  return sortedItems.value.slice(start, start+pageSize.value);
+});
 
-const filteredOrders = computed(() => 
-status.value === 'ALL' ? orders.value : orders.value.filter(o => o.status === status.value)
-)
+/* ---------- filters ---------- */
+const chipCls=s=>({ 'btn-outline-secondary': status.value!==s, 'btn-primary text-white': status.value===s });
+const toViStatus=s=>{
+  const k=String(s||'').toUpperCase();
+  if(k==='PENDING' || k==='UPCOMING') return 'Chờ xử lý';
+  if(k==='IN_PROGRESS') return 'Đang thực hiện';
+  if(k==='COMPLETED' || k==='DONE') return 'Hoàn tất';
+  return s||'—';
+};
+const filteredOrders = computed(()=>{
+  if(status.value==='ALL') return orders.value;
+  return orders.value.filter(o=>{
+    const k=String(o.status||'').toUpperCase();
+    if(status.value==='PENDING')   return k==='PENDING' || k==='UPCOMING';
+    if(status.value==='COMPLETED') return k==='COMPLETED' || k==='DONE';
+    return k===status.value;
+  });
+});
 
-const scannedCount = sku => scannedBySku.value[String(sku || '').toLowerCase()]?.count || 0
-const canComplete = computed(() => selectedOrder.value?.items?.length && Object.values(scannedBySku.value).some(x => (x?.count || 0) > 0))
-const showToast = (msg = '') => { toastMsg.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toastMsg.value = '', 1800) }
+/* ---------- computed ---------- */
+const scannedCount = sku => scannedBySku.value[String(sku||'').toLowerCase()]?.count || 0;
+/* canComplete: chỉ cần có >=1 dòng đã quét */
+const canComplete = computed(()=> {
+  const m = scannedBySku.value;
+  return !!selectedOrder.value && Object.keys(m).some(k => (m[k]?.count || 0) > 0);
+});
 
-// ---------------- normalize PO item ----------------
-function normalizeOrder(order) {
-  const items = (order.items || []).map(x => ({
-    productId:    x.productId ?? x.product?.id ?? null,
-    sku:          x.sku ?? x.product?.sku ?? '',
-    name:         x.name ?? x.product?.name ?? '',
+/* ---------- modal ---------- */
+function openSerialsModal(sku) { modalSku.value = String(sku||'').toLowerCase(); }
+
+/* ---------- open order ---------- */
+async function openOrder(o){
+  try{
+    let full = o;
+    if(!Array.isArray(o.items) || !o.items.length){
+      full = await purchaseOrderService.getById(o.id, { includeItems:true });
+    }
+    selectedOrder.value = normalizeOrder(full);
+    scannedBySku.value = {};
+    page.value=1;
+  }catch{ showToast('Không tải được chi tiết phiếu'); }
+}
+function normalizeOrder(order){
+  const items = (order.items||[]).map(x=>({
+    id:  x.id ?? x.purchaseOrderItemId ?? null,        // cần cho endpoint scan
+    productId: x.productId ?? x.product?.id ?? null,
+    sku: x.sku ?? x.product?.sku ?? '',
+    name: x.name ?? x.product?.name ?? '',
     categoryName: x.categoryName ?? x.product?.categoryName ?? x.product?.category?.name ?? '',
-    brandName:    x.brandName ?? x.product?.brandName ?? x.product?.brand?.name ?? '',
-    color:        x.color ?? x.product?.color ?? '',
-    orderQuantity: x.orderQuantity ?? 0,     // <-- fix ở đây
-    scannedQuantity: x.scannedQuantity ?? 0, // <-- nếu muốn lấy luôn
-  }))
-  return { ...order, items }
+    brandName: x.brandName ?? x.product?.brandName ?? x.product?.brand?.name ?? '',
+    color: x.color ?? x.product?.color ?? '',
+    orderQuantity: Number(x.orderQuantity ?? x.qty ?? 0),
+    scannedQuantity: Number(x.scannedQuantity ?? 0),
+  }));
+  return { ...order, items };
 }
 
-// ---------------- modal & open order ----------------
-function openSerialsModal(sku) { modalSku.value = sku }
+/* ---------- scanning (top only) ---------- */
+async function handleQuickScan(){
+  const serial = norm(quickSerial.value); if(!serial) return;
+  if(!selectedOrder.value?.items?.length){ showToast('Chưa chọn phiếu'); return; }
 
-async function openOrder(o) {
-  try {
-    let full = o
-    if (!Array.isArray(o.items) || !o.items.length) {
-      full = await purchaseOrderService.getById(o.id, { includeItems: true })
+  const sku = skuFromSerial(serial);
+  const item = selectedOrder.value.items.find(x => String(x.sku||'').toLowerCase()===sku);
+  if(!item){ showToast('Serial không khớp SKU nào trong phiếu'); quickSerial.value=''; return; }
+
+  await scanSerialForItem(serial, item);
+  quickSerial.value='';
+  quickInputRef.value?.focus();
+}
+
+/** Quét 1 serial cho item – ưu tiên gọi BE /purchase-orders-items/{itemId}/scan */
+async function scanSerialForItem(serial, item){
+  const input = norm(serial); if(!input) return;
+
+  const reqKey=normKey(input);
+  if(inflight.has(reqKey)) return;
+  inflight.add(reqKey);
+
+  let detail=null;
+  try{
+    if(item?.id){ // BE có purchaseOrderItemId
+      const res = await purchaseOrderService.scanItem(item.id, input);
+      detail = res?.result ?? res; // Postman cho thấy có wrapper { code, result }
+    }else{
+      // fallback offline/ko có item.id
+      detail = await inventoryClient.scan(input);
     }
-    selectedOrder.value = normalizeOrder(full)
-    scannedBySku.value = {}
-    page.value = 1
-  } catch {
-    showToast('Không tải được chi tiết phiếu')
-  }
-}
-
-// ---------------- scan flows ----------------
-async function handleQuickScan() {
-  const serial = norm(quickSerial.value)
-  if (!serial) return
-  const sku = skuFromSerial(serial)
-  const item = selectedOrder.value?.items?.find(x => String(x.sku || '').toLowerCase() === sku)
-  if (!item) { showToast('Serial không khớp SKU nào trong phiếu này'); quickSerial.value = ''; return }
-  await scanSerialForItem(serial, item)
-  quickSerial.value = ''
-  quickInputRef.value?.focus()
-}
-
-async function handleRowScanWithGlobal(item) {
-  const serial = norm(quickSerial.value)
-  if (!serial) { showToast('Nhập/scan serial ở ô “Quét nhanh” trước'); quickInputRef.value?.focus(); return }
-  if (skuFromSerial(serial) !== String(item.sku).toLowerCase()) {
-    showToast(`Serial không khớp SKU dòng này (${item.sku})`); quickInputRef.value?.focus(); return
-  }
-  await scanSerialForItem(serial, item)
-  quickSerial.value = ''
-  quickInputRef.value?.focus()
-}
-
-async function scanSerialForItem(serial, item) {
-  const input = norm(serial); if (!input) return
-
-  const reqKey = normKey(input)
-  if (inflight.has(reqKey)) return
-  inflight.add(reqKey)
-
-  let detail
-  try {
-    detail = await inventoryClient.scan(input) // { id, serialNumber, status, productId, binId }
-  } catch (e) {
+  }catch(e){
     // demo offline (tuỳ chọn): VITE_FAKE_SCAN_ON_ERROR=true
-    if (String(import.meta.env?.VITE_FAKE_SCAN_ON_ERROR || '').toLowerCase() === 'true') {
-      detail = { serialNumber: input, status: 'INBOUND', productId: item.productId ?? null, binId: null }
-    } else {
-      showToast('Quét thất bại'); 
-      return
+    if(String(import.meta.env?.VITE_FAKE_SCAN_ON_ERROR||'').toLowerCase()==='true'){
+      detail = { serialNumber: input, status:'INBOUND', productId: item.productId ?? null, warehouseId: null, purchaseOrderItemId: item.id ?? null };
+    }else{
+      showToast('Quét thất bại');
+      inflight.delete(reqKey);
+      return;
     }
-  } finally {
-    inflight.delete(reqKey)
+  }finally{
+    inflight.delete(reqKey);
   }
 
-  const detailSN = norm(detail?.serialNumber ?? input)
-  const snKey = normKey(detailSN)
-  const skuKey = String(item.sku || '').toLowerCase()
-  const prefixMatches = skuFromSerial(detailSN) === skuKey
+  const detailSN = norm(detail?.serialNumber ?? input);
+  const snKey = normKey(detailSN);
+  const skuKey = String(item.sku||'').toLowerCase();
+  const prefixMatches = skuFromSerial(detailSN) === skuKey;
 
-  // Từ chối khi chắc chắn sai
+  // TỪ CHỐI KHI CHẮC CHẮN SAI (giữ behavior bản cũ)
   if (item.productId && detail?.productId
       && String(detail.productId) !== String(item.productId)
       && !prefixMatches) {
-    showToast('Serial thuộc sản phẩm khác dòng này')
-    return
+    showToast('Serial thuộc sản phẩm khác dòng này');
+    return;
   }
 
-  const store = scannedBySku.value[skuKey] || { count: 0, serials: [], details: [] }
-  if (store.serials.includes(snKey)) { showToast('Serial này đã quét trong phiếu'); return }
+  const store = scannedBySku.value[skuKey] || { count:0, serials:[], details:[] };
+  if (store.serials.includes(snKey)){ showToast('Serial này đã quét trong phiếu'); return; }
 
-  store.serials.push(snKey)
+  // không vượt quá số lượng đặt
+  const cur = store.count;
+  const max = Number(item.orderQuantity || 0);
+  if (cur >= max){ showToast('Dòng này đã đủ số lượng'); return; }
+
+  store.serials.push(snKey);
   store.details.unshift({
     serialNumber: detailSN,
     status: detail?.status || 'INBOUND',
-    binId: detail?.binId || null
-  })
-  store.count = store.serials.length
-  scannedBySku.value = { ...scannedBySku.value, [skuKey]: store }
+    binId: detail?.binId ?? null,
+    warehouseId: detail?.warehouseId ?? null,
+    productId: detail?.productId ?? item.productId ?? null,
+    purchaseOrderItemId: detail?.purchaseOrderItemId ?? item.id ?? null,
+    scannedBy: detail?.scannedBy ?? null,
+  });
+  store.count = store.serials.length;
+  scannedBySku.value = { ...scannedBySku.value, [skuKey]: store };
 
-  // bắn sự kiện cho Dashboard/Product/Product-detail tự reload
+  // nếu đang PENDING → chuyển sang IN_PROGRESS (UI)
+  const k = String(selectedOrder.value?.status||'').toUpperCase();
+  if(k==='PENDING') selectedOrder.value.status='IN_PROGRESS';
+
+  // bắn sự kiện cho các màn hình khác
   fire(EVENTS.INBOUND_SCANNED, {
     serial: detailSN,
     productId: detail?.productId ?? item.productId ?? null,
-    binId: detail?.binId ?? null,
-  })
+    binId: detail?.binId ?? detail?.warehouseId ?? null,
+  });
 
-  showToast('Đã quét ✓')
+  showToast('Đã quét ✓');
 }
 
-async function completeOrder() {
-  if (!selectedOrder.value) return
-  try {
-    await purchaseOrderService.complete(selectedOrder.value.id, { confirmedAt: new Date().toISOString() })
-    selectedOrder.value.status = 'DONE'
-    showToast('Đã nhập hàng & xác nhận phiếu')
-  } catch {
-    showToast('Nhập hàng thất bại')
-  }
+/* ---------- complete ---------- */
+async function completeOrder(){
+  if(!selectedOrder.value) return;
+  try{
+    await purchaseOrderService.complete(selectedOrder.value.id, { confirmedAt:new Date().toISOString() });
+    selectedOrder.value.status='COMPLETED';
+    fire(EVENTS.DASHBOARD_SHOULD_REFRESH);
+    showToast('Đã nhập hàng & xác nhận phiếu');
+  }catch{ showToast('Nhập hàng thất bại'); }
 }
 
-// ---------------- mount ----------------
-onMounted(async () => {
-  try { 
-    orders.value = await purchaseOrderService.list() 
-  }
-  catch { 
-    showToast('Không tải được danh sách phiếu') 
-  }
-  finally { loading.value = false }
-})
+/* ---------- toast & mount ---------- */
+function showToast(msg=''){ toastMsg.value=msg; clearTimeout(toastTimer); toastTimer=setTimeout(()=>toastMsg.value='',1600); }
+
+onMounted(async ()=>{
+  try{
+    // nếu cần lọc theo phiên/người dùng: purchaseOrderService.list({ userId: ... })
+    orders.value = await purchaseOrderService.list();
+  }catch{ showToast('Không tải được danh sách phiếu'); }
+  finally{ loading.value=false; }
+});
 </script>
 
 <style scoped>
-.pbox { display:flex; gap:16px; width:100%; }
-.side { width:320px; background:#fff; border-radius:14px; padding:14px; position:sticky; top:96px; height:calc(100vh - 110px); overflow:auto; }
-.brand { font-weight:700; font-size:18px; display:flex; align-items:center; margin-bottom:10px; }
-.main { flex:1; display:flex; flex-direction:column; gap:16px; }
-.section-card { background:#fff; border:1px solid #eef2f7; border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,0.03); }
+.pbox{ display:flex; gap:16px; width:100%; }
+.side{ width:320px; background:#fff; border-radius:14px; padding:14px; position:sticky; top:96px; height:calc(100vh - 110px); overflow:auto; }
+.brand{ font-weight:700; font-size:18px; display:flex; align-items:center; margin-bottom:10px; }
+.main{ flex:1; display:flex; flex-direction:column; gap:16px; }
+.section-card{ background:#fff; border:1px solid #eef2f7; border-radius:12px; box-shadow:0 1px 2px rgba(0,0,0,0.03); }
 
-.badge-card { background:#fff; border:1px solid #eef2f7; border-radius:10px; padding:8px 14px; text-align:center; display:inline-flex; flex-direction:column; min-width:140px; }
-.badge-card .num { font-weight:700; color:#1f2937; font-size:18px; }
+.badge-card{ background:#fff; border:1px solid #eef2f7; border-radius:10px; padding:8px 14px; text-align:center; display:inline-flex; flex-direction:column; min-width:140px; }
+.badge-card .num{ font-weight:700; color:#1f2937; font-size:18px; }
 
-.table-balanced th, .table-balanced td {
+.table-balanced th, .table-balanced td{
   vertical-align:middle; white-space:nowrap; overflow:visible; text-overflow:clip;
   height:56px; padding-top:12px; padding-bottom:12px;
 }
-.nowrap { white-space:nowrap; }
-
-.thead-soft th {
+.nowrap{ white-space:nowrap; }
+.thead-soft th{
   background:#cfe3ff; color:#0b1324; font-weight:600; letter-spacing:.2px;
   border-top:1px solid #9ec5fe; border-bottom:1px solid #9ec5fe;
 }
-.mono { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; }
+.mono{ font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace; }
 
-.pager-bar { display:flex; justify-content:flex-end; padding:10px 16px; gap:10px; border-top:1px solid #eef2f7; background:#fafbfc; }
+.pager-bar{ display:flex; justify-content:flex-end; padding:10px 16px; gap:10px; border-top:1px solid #eef2f7; background:#fafbfc; }
 
-.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:10000; }
-.toast-box { position:fixed; bottom:20px; right:20px; background:#111; color:#fff; padding:10px 14px; border-radius:8px; z-index:20000; }
+.modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:10000; }
+.toast-box{ position:fixed; bottom:20px; right:20px; background:#111; color:#fff; padding:10px 14px; border-radius:8px; z-index:20000; }
 
-.notranslate { -webkit-user-select:text; user-select:text; }
+.sort-ico{ display:inline-block; margin-left:6px; transition: transform .18s ease; opacity:.6; font-size:10px; }
+.sort-ico.off{ opacity:.25; transform: rotate(0deg); }
+.sort-ico.asc{ transform: rotate(0deg); }
+.sort-ico.desc{ transform: rotate(180deg); }
+.cursor{ cursor:pointer; }
 
-@media (max-width: 992px) {
-  .pbox { flex-direction:column; }
-  .side { width:100%; height:auto; position:static; }
+@media (max-width: 992px){
+  .pbox{ flex-direction:column; }
+  .side{ width:100%; height:auto; position:static; }
 }
 </style>
