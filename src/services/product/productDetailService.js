@@ -1,32 +1,9 @@
-// src/services/productDetailService.js
-import api from "./axios"
+import api from "../axios";
 
 export const productDetailService = {
-  // LIST by productId
-  async getAllProduct(productId) {
-    const response = await api.get('/api/product-details');
+  async getByProductId(id){
+    const response = await api.get(`/api/product-details/${id}`);
     return response.data?.result;
-  },
-
-  // GET by id
-  async getById(id) {
-    try {
-      const { data } = await api.get(`/api/product-details/${encodeURIComponent(id)}`)
-      const item = data?.result ?? data
-      if (item?.id) return item
-      // fallback: tìm trong sample
-      for (const arr of Object.values(sampleDetailsByProduct)) {
-        const found = arr.find(x => x.id === id)
-        if (found) return found
-      }
-      return null
-    } catch {
-      for (const arr of Object.values(sampleDetailsByProduct)) {
-        const found = arr.find(x => x.id === id)
-        if (found) return found
-      }
-      return null
-    }
   },
 
   // CREATE

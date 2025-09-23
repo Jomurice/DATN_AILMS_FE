@@ -26,7 +26,11 @@
 
     <div class="d-flex gap-4">
 
-      <aside class=" card d-flex gap-3 border-0 shadow-sm rounded-3 p-2 side">
+      <aside class=" card d-flex gap-3 border-0 shadow-sm rounded-3 p-2 side" v-if="isAsideOpen">
+
+        <button v-if="isAsideOpen" class="btn toggle-btn" @click="toggleAside">
+          <i class="fas fa-angle-left"></i>
+        </button>
 
         <div class="asideChildren">
           <tree-item v-if="menus" :node="menus" :toggle="toggle" :is-open="isOpen" :is-selected="isSelected"
@@ -56,6 +60,9 @@
 
         </div>
       </aside>
+      <button v-if="!isAsideOpen" class="btn p-0 open-btn" @click="toggleAside">
+        <i class="fas fa-angle-right"></i>
+      </button>
 
 
       <div class="main card border-0 shadow-sm rounded-3">
@@ -76,10 +83,14 @@
 
         <div class="table-wrapper">
           <table class="table table-hover mb-0">
-            <thead>
+            <thead class="scroll-body">
               <tr class="text-uppercase table-primary small fw-bold">
                 <th class="ps-4">Mã</th>
-                <th>Tên</th>
+                <th class="name" @click="selectSort()">
+                  Tên
+                  <i v-if="isSort" class="fa-solid fa-arrow-up ms-2"></i>
+                  <i v-else class="fa-solid fa-arrow-down ms-2"></i>
+                </th>
                 <th>Hãng</th>
                 <th>Loại</th>
                 <th>Trạng thái</th>
@@ -95,7 +106,7 @@
                 <td>{{ p.status }}</td>
                 <td class="text-center">
                   <button class="btn btn-sm btn-outline-info me-1" title="Chi tiết hàng hóa"
-                    @click="isDetailProduct = true, getProductById(p.productId)">
+                    @click="isDetailProduct = true, getByProductId(p.id)">
                     <i class="fas fa-eye"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-warning me-1" title="Sửa thông tin hàng hóa"
@@ -143,24 +154,9 @@
 
 
       <div v-if="isDetailProduct" class="d-flex align-items-center justify-content-center modal-overlay">
-        <div class="card w-50 p-2">
-          <div class="d-flex align-items-center justify-content-between">
-            <h3>Chi tiết hàng hóa</h3>
-            <p class="fs-4 exit" @click="exitModal()">X</p>
-          </div>
-          <!-- <nav class="product-info gap-4 mt-3">
-            <p><span class="fw-bold">Mã SKU:</span> {{ product.sku }}</p>
-            <p><span class="fw-bold">Tên:</span> {{ product.name }}</p>
-            <p><span class="fw-bold">Loại:</span> {{ product.categoryName }}</p>
-            <p><span class="fw-bold">Màu:</span></p>
-            <p><span class="fw-bold">Hãng:</span> {{ product.brandName }}</p>
-            <p><span class="fw-bold">Thuộc tính khác:</span></p>
-            <p><span class="fw-bold">Thông số kỹ thuật:</span> {{ product.specifications }}</p>
-          </nav> -->
-
-          <h3 class="text-danger text-center">Tính năng đang phát triển</h3>
-        </div>
+        <product-detail :node="product"  @close="isDetailProduct = false"/>
       </div>
+
       <div v-if="isLoading" class="modal-overlay text-center py-5">
         <div class="spinner-border text-info" role="status"></div>
         <div class="small mx-2 fs-5 text-info mt-2">Đang tải...</div>
@@ -172,27 +168,23 @@
 <script setup>
 import { ref, computed, onMounted, reactive } from 'vue'
 import TreeItem from '../menu/TreeItem.vue'
-import { productDetailService } from '../../services/productDetailService'
-import { productService } from '../../services/productService'
-import { categoryService } from '../../services/categoryService'
+import ProductDetail from './ProductDetail.vue'
+import { productService } from '../../services/product/productService'
 import { menuService } from '../../services/MenuService'
+import { productDetailService } from '../../services/product/productDetailService'
 
 const products = ref([]);
-const product = ref({});
-const categories = ref([]);
+const product = ref([]);
 const menus = ref([]);
 const isLoading = ref(true)
 const error = ref('')
 const isDetailProduct = ref(false);
 const isStatus = ref('all');
-const filters = ref({ keyword: '', category: '' })
-const applied = ref({ ...filters.value })
+const isSort = ref(true);
+const isAsideOpen = ref(true);
 const tableSort = ref('cat_asc')
 
-// const opened = ref(new Set())
-const selectedNode = ref({ type: 'all' })
 
-// Helpers
 const S = x => String(x ?? '')
 const unaccent = (s = '') => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
@@ -212,7 +204,11 @@ function toggle(id, children = []) {
   } else {
     openNodes.add(id);
   }
+}
 
+function toggleAside() {
+  isAsideOpen.value = !isAsideOpen.value;
+  console.log(isAsideOpen.value)
 }
 
 function closeChildrenRecursively(children) {
@@ -245,8 +241,6 @@ async function loadAll() {
   isLoading.value = true
   try {
     products.value = await productService.getAll();
-    // product.value = await productService.getById(product.value.productId);
-    // categories.value = await categoryService.getAll();
     menus.value = await menuService.getAllMenuTree();
 
   } catch (e) {
@@ -259,9 +253,9 @@ async function loadAll() {
 }
 
 
-async function getProductById(id) {
+async function getByProductId(id) {
   try {
-    product.value = await productService.getById(id);
+    product.value = await productDetailService.getByProductId(id);
     console.log(product.value);
   } catch (error) {
     console.log("error", error);
@@ -280,16 +274,71 @@ onMounted(() => {
 
 <style scoped>
 .side {
+  position: relative;
+  /* để .toggle-btn bám vào aside */
   max-width: 18%;
   height: calc(100vh - 200px);
-  overflow: auto;
+  /* overflow: auto; */
+  overflow: visible;
+  transition: all 0.3s ease;
+}
+
+.toggle-btn {
+  position: absolute;
+  top: 50%;
+  right: -16px;
+  /* đẩy nút ra ngoài aside */
+  transform: translateY(-50%);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  background: white;
+  border: 1px solid #ddd;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  z-index: 20;
+}
+
+.side:hover .toggle-btn {
+  opacity: 1;
+}
+
+.toggle-btn:hover {
+  border: 1px solid blue;
+  color: blue;
+}
+
+.open-btn {
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  transform: translate(-50%, -50%);
+  border-radius: 0 50% 50% 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  background: white;
+  border: 1px solid #ddd;
+  width: 32px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.open-btn:hover {
+  border: 1px solid blue;
+  color: blue;
 }
 
 .main {
   flex: 1 1 auto;
   min-width: 0;
-  height: calc(100vh - 200px);
-  overflow: auto;
+  /* height: calc(100vh - 200px);
+  overflow: auto; */
 }
 
 .product-info {
@@ -395,31 +444,41 @@ onMounted(() => {
 }
 
 .table-wrapper {
-  /* max-height: 400px;  */
-  overflow-y: auto;
+  overflow-x: auto;
 }
 
+.table-wrapper table {
+  width: fit-content;
+  min-width: 100%;
+}
+
+.table {
+  table-layout: fixed;
+}
 .name {
-  display: block;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  cursor: pointer;
 }
 
 /* Sticky header */
-.table thead th {
+/* .table thead th {
   position: sticky;
   top: 0;
   z-index: 2;
-}
+} */
 
 .table th,
 .table td {
-  width: 100px;
+  min-width: 200px;
   vertical-align: middle;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.scroll-body {
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 @media (max-width:992px) {

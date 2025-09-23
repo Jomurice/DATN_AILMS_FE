@@ -23,8 +23,10 @@ import CategoryForm from "../components/category/CategoryForm.vue";
 import Dashboard from "../components/dashboard/Dashboard.vue";
 
 import Inbound from "../components/inbound/Inbound.vue";
+import PurchaseOrderCreate from "../components/inbound/PurchaseOrderCreate.vue";
+import PurchaseOrderDetail from "../components/inbound/PurchaseOrderDetail.vue";
 import Outbound from "../components/outbound/Outbound.vue";
-import OrderProduct from "../components/order/OrderProduct.vue";
+
 
 
 import locationManager from "../components/location/locationManager.vue";
@@ -63,6 +65,8 @@ import locationManager from "../components/location/locationManager.vue";
 
       // Inbound & Outbound
       { path: "inbound", name: "inbound", meta: {title: 'Nhập hàng'}, component: Inbound},
+       { path: "inbound/new", name: "inbound-create", meta: { title: "Tạo đơn mua" }, component: PurchaseOrderCreate },
+      { path: "inbound/:id", name: "inbound-detail", meta: { title: "Chi tiết đơn mua" }, component: PurchaseOrderDetail, props: true },
       { path: "outbound", name: "outbound", meta: {title: 'Xuất hàng'}, component: Outbound},
 
       { path: ":pathMatch(.*)*", redirect: "/product" },
@@ -78,7 +82,6 @@ import locationManager from "../components/location/locationManager.vue";
     meta: {title: 'Quản lý'},
     component: HomeView,
     children:[
-      { path: "order-product", name: "admin-order-product", meta: {title: 'Đặt hàng'}, component: OrderProduct },
       { path: "account", name: "admin-account", meta: {title: 'Nhân sự'}, component: Accounts },
       { path: "account/add", name: "admin-account-add", meta: {title: 'Thêm'}, component: AccountForm },
       { path: "account/:id/edit", name: "admin-account-edit", meta: {title: 'Sửa'}, component: AccountForm, props: true },
