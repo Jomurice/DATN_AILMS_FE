@@ -3,8 +3,8 @@
 
     <div class="d-flex mb-2 align-items-center justify-content-between ">
 
-      <div class="col-md-3 p-0">
-        <input v-model="payload.name" @change="load()" type="text" class="form-control"
+      <div class="search p-0">
+        <input v-model.trim="payload.name" @change="load()" type="text" class="form-control"
           placeholder="Nhập tên nhân viên cần tìm" />
       </div>
 
@@ -28,7 +28,12 @@
 
     <div class="d-flex gap-4">
 
-      <aside class="card d-flex gap-3 border-0 p-2 shadow-sm rounded-3 side">
+      <aside class="card d-flex gap-3 border-0 p-2 shadow-sm rounded-3 side" v-if="isAsideOpen">
+
+        <!-- nút đóng hiện khi hover -->
+        <button v-if="isAsideOpen" class="btn toggle-btn" @click="toggleAside">
+          <i class="fas fa-angle-left"></i>
+        </button>
 
         <div class="asideChildren">
           <h5>Chức vụ</h5>
@@ -52,28 +57,20 @@
           <button @click="selectStatus(false)" :class="{ active: isStatus === false }">Khóa</button>
         </div>
 
-        <div class=" asideChildren">
-          <h5>Sắp xếp</h5>
-
-          <select v-model.trim="payload.pageable.sort" class=" form-select form-select-sm w-100">
-            <optgroup label="Theo tên">
-              <option value="name,asc">Tên A → Z</option>
-              <option value="name,desc">Tên Z → A</option>
-            </optgroup>
-          </select>
-
-        </div>
-
       </aside>
+
+      <button v-if="!isAsideOpen" class="btn p-0 open-btn" @click="toggleAside">
+        <i class="fas fa-angle-right"></i>
+      </button>
 
 
       <div class="card border-0 shadow-sm rounded-3 main">
 
-        <div class="m-2 d-flex gap-3 align-items-center justify-content-end">
+        <div class="mx-2 d-flex gap-3 align-items-center justify-content-end">
           <button class="btn btn-success col-md-1 " @click="$router.push('/admin/account/add')">+ Thêm</button>
           <!-- page -->
           <div class="sizePage p-2 d-flex align-items-center rounded-3 justify-content-end">
-            Số mục
+            <span>Số mục</span>
             <select v-model.number="payload.pageable.size" class="form-select mx-2 rounded-3">
               <option value="10">10</option>
               <option value="20">20</option>
@@ -84,101 +81,126 @@
           </div>
         </div>
 
-        <div class="table-wrapper">
+        <div>
 
-          <table class="table table-hover mb-0">
-            <thead>
-              <tr class="text-uppercase table-primary small fw-bold">
-                <th>STT</th>
-                <th class="ps-4">Tên đăng nhập</th>
-                <th>Họ tên</th>
-                <th>Email</th>
-                <th>Giới tính</th>
-                <th>Chức vụ</th>
-                <th>Trạng thái</th>
-                <th class="text-center">Hành động</th>
-              </tr>
-            </thead>
+          <div class="table-wrapper">
+            <table class="table table-hover mb-0">
+              <thead class="scroll-body">
+                <tr class="text-uppercase table-primary small fw-bold">
+                  <th>STT</th>
+                  <th>Tên đăng nhập</th>
+                  <th class="name" @click="selectSort()">
+                    Họ tên
+                    <i v-if="isSort" class="fa-solid fa-arrow-up ms-2"></i>
+                    <i v-else class="fa-solid fa-arrow-down ms-2"></i>
+                  </th>
+                  <th>Email</th>
+                  <th>Giới tính</th>
+                  <th>Chức vụ</th>
+                  <th>Trạng thái</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
+            </table>
+
+            <table class="table table-hover mb-0">
+              <colgroup></colgroup>
+              <tbody>
+                <tr v-for="(u, index) in users" :key="u.id">
+                  <td class="ps-4" :data-label="'STT'">{{ payload.pageable.page * payload.pageable.size + index + 1 }}
+                  </td>
+                  <td :data-label="'Tên đăng nhập'">{{ u.username }}</td>
+                  <td :data-label="'Họ và tên'">{{ u.name }}</td>
+                  <td :data-label="'Email'" :title="u.email">{{ u.email }}</td>
+                  <td :data-label="'Giới tính'">{{ u.gender ? 'Nam' : 'Nữ' }}</td>
+                  <td :data-label="'Chức vụ'">
+                    <span v-for="r in (u.roles || [])" :key="r" class="ps-2">{{ r }}</span>
+                  </td>
+                  <td :data-label="'Trạng thái'">
+                    <span :class="u.status ? 'badge bg-success' : 'badge bg-secondary'">
+                      {{ u.status ? 'Đang hoạt động' : 'Đã khoá' }}
+                    </span>
+                  </td>
+                  <td :data-label="'Hành động'">
+                    <div class="d-flex justify-content-center gap-2 flex-nowrap">
+                      <button class="btn btn-sm btn-outline-info me-1" title="Chi tiết"
+                        @click="$router.push(`/admin/account/${u.id}/detail`)">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                      <button class="btn btn-outline-warning" title="Sửa thông tin"
+                        @click="$router.push(`/admin/account/${u.id}/edit`)">
+                        <i class="fa-solid fa-user-pen"></i>
+                      </button>
+                      <button class="btn" :class="u.status ? 'btn-outline-danger' : 'btn-outline-success'"
+                        :title="u.status ? 'Khóa tài khoản' : 'Mở khóa tài khoản'" @click="changeStatus(u)" @load="">
+                        <i v-if="u.status" class="fas fa-user-slash"></i>
+                        <i v-else class="fas fa-user-check"></i>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
 
 
-            <tbody>
-              <tr v-for="(u, index) in users" :key="u.id">
-                <td class="ps-4" :data-label="'STT'">{{ payload.pageable.page * payload.pageable.size + index + 1 }}</td>
-                <td class="ps-4" :data-label="'Tên đăng nhập'">{{ u.username }}</td>
-                <td class="ps-4" :data-label="'Họ và tên'">{{ u.name }}</td>
-                <td :data-label="'Email'">{{ u.email }}</td>
-                <td :data-label="'Giới tính'">{{ u.gender ? 'Nam' : 'Nữ' }}</td>
-                <td :data-label="'Chức vụ'">
-                  <span v-for="r in (u.roles || [])" :key="r" class="badge bg-info me-1">{{ r }}</span>
-                </td>
-                <td :data-label="'Trạng thái'">
-                  <span :class="u.status ? 'badge bg-success' : 'badge bg-secondary'">
-                    {{ u.status ? 'Đang hoạt động' : 'Đã khoá' }}
-                  </span>
-                </td>
-                <td class="text-center" :data-label="'Hành động'">
-                  <div class="d-flex justify-content-center gap-2 flex-nowrap">
-                    <button class="btn btn-sm btn-outline-info me-1" title="Chi tiết"
-                      @click="$router.push(`/admin/account/${u.id}/detail`)">
-                      <i class="fas fa-eye"></i>
-                    </button>
-                    <button class="btn btn-outline-warning" title="Sửa thông tin"
-                      @click="$router.push(`/admin/account/${u.id}/edit`)">
-                      <i class="fa-solid fa-user-pen"></i>
-                    </button>
-                    <button class="btn" :class="u.status ? 'btn-outline-danger' : 'btn-outline-success'"
-                      :title="u.status ? 'Khóa tài khoản' : 'Mở khóa tài khoản'" @click="changeStatus(u)" @load="">
-                      <i v-if="u.status" class="fas fa-user-slash"></i>
-                      <i v-else class="fas fa-user-check"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
+                <tr v-if="!loading && users.length === 0">
+                  <td colspan="7" class="text-center text-muted py-4">Không có dữ liệu</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
 
+          <div class="page bg-danger-subtle p-2 d-flex align-items-center justify-content-end">
+            <nav class="d-flex fs-4 gap-2 align-items-center">
+              <span class="fs-5">Trang</span>
 
-              <tr v-if="!loading && users.length === 0">
-                <td colspan="7" class="text-center text-muted py-4">Không có dữ liệu</td>
-              </tr>
-            </tbody>
-          </table>
+              <input type="text" v-model.number="currentPageInput" @keyup.enter="goToPage" min="1"
+                :max="pages.totalPages" class=" rounded-3 form-page">
 
-          <div class="sizePage bg-danger-subtle p-2 d-flex align-items-center justify-content-end">
-
-            <nav v-if="pages?.totalPages > 1" class="page d-flex fs-4 gap-2">
-              <!-- Last -->
-              <p class="fw-bold" :class="{ 'text-muted': pages.number === 0 }" @click="changePage(pages.number - 1)">
+              <button class="btn btn-sm fw-bold " :disabled="pages.number === 0" @click="changePage(pages.number - 1)">
                 &lt;
-              </p>
+              </button>
 
-              <nav class="d-flex gap-2">
-                <p v-for="p in visiblePages" :key="p"
-                  :class="[{ 'fw-bold text-primary': p !== '...' && pages.number === p - 1 }, p === '...' ? 'text-muted' : '']"
-                  @click="p !== '...' && changePage(p - 1)" class="m-0">
-                  <span class="fs-5">{{ p }}</span>
-                </p>
-              </nav>
+              <span class="fs-5">{{ pages.number + 1 }} / {{ pages.totalPages }}</span>
 
-              <!-- Next -->
-              <p class="fw-bold" :class="{ 'text-muted': pages.number === pages.totalPages - 1 }"
+              <button class="btn btn-sm fw-bold" :disabled="pages.number === pages.totalPages - 1"
                 @click="changePage(pages.number + 1)">
                 &gt;
-              </p>
+              </button>
             </nav>
           </div>
+
+
+          <p v-if="error" class="text-danger small p-3">{{ error }}</p>
         </div>
 
-        <div v-if="loading" class="text-center py-5">
-          <div class="spinner-border text-dark" role="status"></div>
-          <div class="small text-muted mt-2">Đang tải...</div>
-        </div>
-
-        <p v-if="error" class="text-danger small p-3">{{ error }}</p>
       </div>
+
+
+      <!-- Modal xác nhận -->
+      <div class="modal fade" id="confirmModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-body text-center">
+              <p class="mb-4">{{ confirmMessage }}</p>
+              <div class="d-flex justify-content-center gap-3">
+                <button class="btn btn-secondary" @click="cancelConfirm">Hủy</button>
+                <button class="btn btn-success" @click="confirmAction">Xác nhận</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="loading" class="modal-overlay text-center py-5">
+        <div class="spinner-border text-info" role="status"></div>
+        <div class="small mx-2 fs-5 text-info mt-2">Đang tải...</div>
+      </div>
+
     </div>
   </div>
 </template>
 
 <script setup>
+
 import { ref, computed, onMounted, watch } from 'vue'
 import { debounce } from 'chart.js/helpers'
 import { userService } from '../../services/UserService'
@@ -197,9 +219,15 @@ const payload = ref({
   }
 });
 
-const totalUser = ref([]);
+const pages = ref({
+  number: 0,
+  totalPages: 10,
+  content: []
+})
 
-const pages = ref();
+const totalUser = ref({ totalUsers: 0, totalMales: 0, totalFemales: 0 });
+
+
 const users = ref([]);
 const user = ref();
 const roles = ref([]);
@@ -207,6 +235,11 @@ const loading = ref(false);
 const error = ref('');
 const isGender = ref('');
 const isStatus = ref('');
+const isSort = ref(true);
+const isAsideOpen = ref(true);
+const confirmMessage = ref('')
+let confirmCallback = null
+
 
 const unaccent = (s = '') => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
@@ -222,33 +255,60 @@ function selectStatus(value) {
   payload.value.status = value;
 }
 
+function selectSort() {
+  if (isSort.value) {
+    isSort.value = false;
+    payload.value.pageable.sort = 'name,desc';
+  } else {
+    isSort.value = true;
+    payload.value.pageable.sort = 'name,asc';
+  }
+}
+
+function toggleAside() {
+  isAsideOpen.value = !isAsideOpen.value;
+  console.log(isAsideOpen.value)
+}
+
+// Input số trang
+const currentPageInput = ref(1)
+
+// Khi người dùng nhập số trang
+function goToPage() {
+  let newPage = currentPageInput.value - 1
+  if (newPage < 0) newPage = 0
+  if (newPage >= pages.value.totalPages) newPage = pages.value.totalPages - 1
+  changePage(newPage)
+}
+
+// Thay đổi trang bằng nút Previous/Next
 function changePage(newPage) {
   if (newPage < 0 || newPage >= pages.value.totalPages) return
   payload.value.pageable.page = newPage
+  pages.value.number = newPage
+  currentPageInput.value = newPage + 1
+  // TODO: gọi API fetch dữ liệu mới ở đây
 }
 
-const visiblePages = computed(() => {
-  if (!pages.value) return []
-  const total = pages.value.totalPages
-  const current = pages.value.number + 1
-  const result = []
-
-  if (total <= 5) {
-    for (let i = 1; i <= total; i++) result.push(i)
-  } else {
-    if (current <= 4) {
-      result.push(1, 2, 3, 4, '...', total)
-    } else if (current >= total - 3) {
-      result.push(1, '...', total - 3, total - 2, total - 1, total)
-    } else {
-      result.push(1, '...', current - 1, current, current + 1, '...', total)
-    }
-  }
-
-  return result
-})
 
 
+function showConfirm(message, callback) {
+  confirmMessage.value = message
+  confirmCallback = callback
+  const modal = new bootstrap.Modal(document.getElementById('confirmModal'))
+  modal.show()
+}
+
+function confirmAction() {
+  if (confirmCallback) confirmCallback()
+  const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'))
+  modal.hide()
+}
+
+function cancelConfirm() {
+  const modal = bootstrap.Modal.getInstance(document.getElementById('confirmModal'))
+  modal.hide()
+}
 
 async function load() {
   loading.value = true
@@ -278,12 +338,15 @@ async function getUserById(id) {
 }
 
 async function changeStatus(user) {
-  if (user.status === true) {
-    await userService.unEnableUser(user.id);
-    console.log("khoas");
-  } else { await userService.enableUser(user.id); console.log("mo") }
-  console.log('changeStatus', user.value)
-  load();
+
+  const action = user.status
+    ? { msg: 'Bạn có chắc chắn muốn khóa tài khoản này không !', fn: userService.unEnableUser }
+    : { msg: 'Bạn có chắc chắn muốn mở khóa tài khoản này không !', fn: userService.enableUser };
+
+  showConfirm(action.msg, async () => {
+    await action.fn(user.id);
+    load();
+  });
 }
 
 
@@ -318,17 +381,74 @@ watch(
 }
 
 .side {
-  width: 18%;
+  position: relative;
+  /* để .toggle-btn bám vào aside */
+  max-width: 18%;
   height: calc(100vh - 200px);
-  overflow: auto;
+  /* overflow: auto; */
+  overflow: visible;
+  transition: all 0.3s ease;
 }
+
+.toggle-btn {
+  position: absolute;
+  top: 50%;
+  right: -16px;
+  /* đẩy nút ra ngoài aside */
+  transform: translateY(-50%);
+  border-radius: 50%;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  background: white;
+  border: 1px solid #ddd;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease-in-out;
+  z-index: 20;
+}
+
+.side:hover .toggle-btn {
+  opacity: 1;
+}
+
+.toggle-btn:hover {
+  border: 1px solid blue;
+  color: blue;
+}
+
+.open-btn {
+  position: absolute;
+  top: 50%;
+  left: 2px;
+  transform: translate(-50%, -50%);
+  border-radius: 0 50% 50% 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  background: white;
+  border: 1px solid #ddd;
+  width: 32px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.open-btn:hover {
+  border: 1px solid blue;
+  color: blue;
+}
+
+
 
 .main {
   flex: 1 1 auto;
   min-width: 0;
-  height: calc(100vh - 200px);
-  overflow: auto;
+  /* height: calc(100vh - 190px); */
 }
+
 
 .asideChildren {
   min-width: 200px;
@@ -353,7 +473,6 @@ watch(
   color: white;
 }
 
-
 .badge-card {
   background: #fff;
   border: 1px solid #eef2f7;
@@ -364,13 +483,29 @@ watch(
   text-align: center;
 }
 
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  background: rgba(0, 0, 0, 0.147);
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
 .badge-card .num {
   font-weight: 700;
   color: #1f2937;
 }
 
+.search {
+  width: 18%;
+}
+
 .form-control {
-  width: 270px;
   border: none;
   border-radius: 10px;
 }
@@ -379,18 +514,27 @@ watch(
   max-height: 650px;
 }
 
-.page>p {
+.page>nav>p {
   max-height: 10px;
   cursor: pointer;
-
 }
 
-.page>nav>p>span {
+.page>nav>.btn {
+  height: 30px;
+  font-size: 18px;
+  border: none;
+}
+
+.form-page {
+  border: none;
+  width: 50px;
+  height: 30px;
+  font-size: 18px;
+  text-align: center;
+}
+
+.numberPage>p>span {
   cursor: pointer;
-}
-
-.sizePage>.form-select {
-  max-width: 70px;
 }
 
 .btn {
@@ -399,23 +543,49 @@ watch(
 }
 
 .table-wrapper {
-  /* max-height: 400px;  */
-  overflow-y: auto;
+  overflow-x: auto;
 }
 
-/* Sticky header */
-.table thead th {
-  position: sticky;
-  top: 0;
-  z-index: 2;
+.table-wrapper table {
+  width: fit-content;
+  min-width: 100%;
 }
 
+.table {
+  table-layout: fixed;
+}
+
+.name {
+  cursor: pointer;
+}
 
 .table th,
+.table td {
+  width: 140px;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scroll-body {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+
+/* .table th,
 .table td {
   min-width: fit-content;
   vertical-align: middle;
   white-space: nowrap;
+} */
+
+@media (max-width: 1028px) {
+  .side {
+    display: none;
+  }
 }
 
 

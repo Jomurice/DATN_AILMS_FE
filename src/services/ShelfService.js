@@ -1,58 +1,76 @@
-import api from "./axios"
-
-let sampleShelves = [
-  { id: "01", name: "Shelf A1", code: "SHELF-A1", aisle:{ id:"01", name:"Aisle 1" }, bins: [
-    { id: "01", name: "Bin A1-01", code: "BIN-A1-S1", capacity: 100, currentQty: 20 }
-  ]},
-  { id: "02", name: "Shelf A2", code: "SHELF-A2", aisle:{ id:"01", name:"Aisle 1" }, bins: [] },
-]
+import api from "./axios";
 
 export const shelfService = {
-  async getAll(aid) {
-    try {
-      const { data } = await api.get(`/api/aisles/${encodeURIComponent(aid)}/shelves`)
-      const out = Array.isArray(data?.result) ? data.result : (Array.isArray(data) ? data : null)
-      return out ?? sampleShelves.filter(s=>s.aisle?.id===aid)
-    } catch { return sampleShelves.filter(s=>s.aisle?.id===aid) }
-  },
-
-async getByAisle(shelfId) {
-  try {
-    const { data } = await api.get(`/api/shelves/aisle/${encodeURIComponent(shelfId)}`);
-    return Array.isArray(data?.result) ? data.result : [];
-  } catch (err) {
-    console.error("shelfService.getByAisle error", err);
-    return [];
-  }
-},
-
-  async create(payload) {
-    try {
-      const { data } = await api.post(`/api/shelves`, payload)
-      return data?.result ?? data
-    } catch {
-      const item = { id: crypto.randomUUID?.() ?? Date.now().toString(16), ...payload, aisle:{ id: aid, name:"—" }, bins: [] }
-      sampleShelves = [item, ...sampleShelves]; return item
+  async getAll(aisleId) {
+    if (aisleId) {
+      const { data } = await api.get(`/api/shelves/aisle/${aisleId}`);
+      return data?.result ?? data ?? [];
     }
+    const { data } = await api.get(`/api/shelves`);
+    return data?.result ?? data ?? [];
   },
 
-  async update(id, payload) {
-    try {
-      const { data } = await api.put(`/api/shelves/${encodeURIComponent(id)}`, payload)
-      return data?.result ?? data
-    } catch {
-      sampleShelves = sampleShelves.map(x => x.id===id ? {
-        ...x,
-        name: payload.name ?? x.name,
-        code: payload.code ?? x.code,
-        aisle: payload.aisleId ? { id: payload.aisleId, name: x.aisle?.name ?? "—" } : x.aisle
-      } : x)
-      return sampleShelves.find(x=>x.id===id)
-    }
+  // GET /api/shelves/{shelfId}
+  async getById(shelfId) {
+    const { data } = await api.get(`/api/shelves/${shelfId}`);
+    return data?.result ?? data ?? null;
   },
 
-  async remove(id) {
-    try { await api.delete(`/api/shelves/${encodeURIComponent(id)}`); return true }
-    catch { sampleShelves = sampleShelves.filter(x=>x.id!==id); return true }
-  }
-}
+  // POST /api/shelves  (body cần aisleId)
+  async create(aisleId, payload) {
+    const body = { ...payload, aisleId };
+    const { data } = await api.post(`/api/shelves`, body);
+    return data?.result ?? data;
+  },
+
+  // PUT /api/shelves/{shelfId}
+  async update(shelfId, payload) {
+    const body = { name: payload.name, code: payload.code };
+    if (payload.aisleId) body.aisleId = payload.aisleId;
+    const { data } = await api.put(`/api/shelves/${shelfId}`, body);
+    return data?.result ?? data;
+  },
+
+  async remove(shelfId) {
+    // Swagger không có DELETE /api/shelves/{shelfId}
+    throw new Error("Backend chưa cung cấp DELETE /api/shelves/{shelfId}");
+    // await api.delete(`/api/shelves/${shelfId}`)
+    //  return true
+  },
+};
+
+// import api from "./axios"
+
+// export const shelfService = {
+//   // BE flat: chưa thấy endpoint filter => lấy all rồi lọc theo aisleId
+//   async getAll(aisleId) {
+//     const { data } = await api.get(`/api/shelves`)
+//     const list = data?.result ?? data ?? []
+//     return aisleId ? list.filter(s => String(s.aisleId) === String(aisleId)) : list
+//   },
+
+//   async getById(id) {
+//     const { data } = await api.get(`/api/shelves/${encodeURIComponent(id)}`)
+//     return data?.result ?? data ?? null
+//   },
+
+//   // Tạo mới: name, code, aisleId
+//   async create(aisleId, payload) {
+//     const body = { ...payload, aisleId }
+//     const { data } = await api.post(`/api/shelves`, body)
+//     return data?.result ?? data
+//   },
+
+//   // Cập nhật: name, code (+ tuỳ BE có cho đổi aisleId không; để tuỳ chọn)
+//   async update(id, payload) {
+//     const body = { name: payload.name, code: payload.code }
+//     if (payload.aisleId) body.aisleId = payload.aisleId
+//     const { data } = await api.put(`/api/shelves/${encodeURIComponent(id)}`, body)
+//     return data?.result ?? data
+//   },
+
+//   async remove(id) {
+//     await api.delete(`/api/shelves/${encodeURIComponent(id)}`)
+//     return true
+//   }
+// }

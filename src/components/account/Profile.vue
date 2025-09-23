@@ -1,91 +1,109 @@
 <template>
-  <div class="container mt-4">
-    <div class="row">
+  <div class="d-flex justify-content-center">
 
-      <div class="col-md-8">
-        <div class="card shadow-sm">
-          <h3 class="card-header bg-primary text-white">Thông tin cá nhân</h3>
-          <div class="card-body px-1">
-            <p class="profile-info">
-              <i class="fa-regular fa-user px-2"></i>
-              <span class="fw-bold">Username:</span> {{ user.username }}
-            </p>
-            <p class="profile-info">
-              <i class="fa-regular fa-id-card px-2"></i>
-              <span class="fw-bold">Họ tên:</span> {{ user.name }}
-            </p>
-            <p class="profile-info">
-              <i class="fa-solid fa-venus-mars px-2"></i>
-              <span class="fw-bold">Giới tính:</span> {{ user.gender ? 'Male' : 'Female' }}
-            </p>
-            <p class="profile-info">
-              <i class="fa-regular fa-calendar px-2"></i>
-              <span class="fw-bold">Ngày sinh:</span> {{ formatDate(user.dob) || "" }}
-            </p>
-            <p class="profile-info">
-              <i class="fa-solid fa-phone px-2"></i>
-              <span class="fw-bold">Điện thoại:</span> {{ user.phone }}
-            </p>
-            <p class="profile-info">
-              <i class="fa-regular fa-envelope px-2"></i>
-              <span class="fw-bold">Email:</span> {{ user.email }}
-            </p>
-            <p class="profile-info">
-              <i class="fa-solid fa-location-dot px-2"></i>
-              <span class="fw-bold">Địa chỉ:</span> {{ user.address }}
-            </p>
-            <p class="profile-info">
-              <i class="fa-solid fa-briefcase px-2"></i>
-              <span class="fw-bold">Role:</span>
-              <span class="font-semibold text-blue-600 px-1">{{
-                user.roles
-              }}</span>
-            </p>
-          </div>
-        </div>
-      </div>
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <h3 class="card-header bg-primary text-white">Thông tin cá nhân</h3>
+        <div class="card-body info px-1">
 
+          <p class="profile-info">
+            <i class="fa-regular fa-user px-2"></i>
+            <span class="fw-bold">Username:</span> {{ user.username }}
+          </p>
 
-      <div class="col-md-4">
-        <div class="card shadow-sm p-1 text-center">
-          <div class="card-body">
-            <img src="@/assets/attachment-3 (1).png" class="rounded-circle img-fluid mb-3"
-              style="width: 140px; height: 140px; object-fit: cover" alt="Ảnh nhân viên" />
-            <p class="fw-bold">{{ user.name }}</p>
-            <p>{{ user.email }}</p>
-            <hr />
+          <p class="profile-info">
+            <i class="fa-regular fa-id-card px-2"></i>
+            <span class="fw-bold">Họ tên:</span> {{ user.name }}
+          </p>
+
+          <p class="profile-info">
+            <i class="fa-solid fa-key px-2"></i>
+            <span class="fw-bold">Mật khẩu:</span>
             <button @click="isChangePassword = true" class="btn btn-warning">Đổi mật khẩu</button>
-          </div>
+          </p>
+
+          <p class="profile-info">
+            <i class="fa-solid fa-venus-mars px-2"></i>
+            <span class="fw-bold">Giới tính:</span> {{ user.gender ? 'Male' : 'Female' }}
+          </p>
+
+          <p class="profile-info">
+            <i class="fa-regular fa-calendar px-2"></i>
+            <span class="fw-bold">Ngày sinh:</span> {{ formatDate(user.dob) || "" }}
+          </p>
+
+          <p class="profile-info">
+            <i class="fa-solid fa-phone px-2"></i>
+            <span class="fw-bold">Điện thoại:</span> {{ user.phone }}
+          </p>
+
+          <p class="profile-info">
+            <i class="fa-regular fa-envelope px-2"></i>
+            <span class="fw-bold">Email:</span> {{ user.email }}
+          </p>
+
+          <p class="profile-info">
+            <i class="fa-solid fa-location-dot px-2"></i>
+            <span class="fw-bold">Địa chỉ:</span> {{ user.address }}
+          </p>
+
+          <p class="profile-info">
+            <i class="fa-solid fa-briefcase px-2"></i>
+            <span class="fw-bold">Role:</span>
+            <span class="font-semibold text-blue-600 px-1">{{ user.roles }}</span>
+          </p>
+
         </div>
       </div>
-
-
-      <div v-if="isChangePassword" class="modal-overlay">
-        <div class="modal-container">
-          <h2 class="modal-title">Change password</h2>
-          <form @submit.prevent="submitChangePassword">
-            <div class="modal-row">
-              <label class="modal-label">Mật khẩu cũ:</label>
-              <input type="password" v-model="changePasswordForm.oldPassword" class="modal-input" required />
-            </div>
-            <div class="modal-row">
-              <label class="modal-label">Mật khẩu mới:</label>
-              <input type="password" v-model="changePasswordForm.newPassword" class="modal-input" required />
-            </div>
-            <div class="modal-row">
-              <label class="modal-label">Xác nhận mật khẩu:</label>
-              <input type="password" v-model="changePasswordForm.confirmPassword" class="modal-input" required />
-            </div>
-            <nav v-if="changePasswordError" class="modal-error">{{ changePasswordError }}</nav>
-            <div class="modal-actions">
-              <button type="button" @click="exitModal()" class="border btn-exit">Thoát</button>
-              <button type="submit" class="border btn-update">Cập nhật</button>
-            </div>
-          </form>
-        </div>
-      </div>
-
     </div>
+
+    <div v-if="isChangePassword" class="modal-overlay">
+      <div class="modal-container">
+        <h2 class="modal-title">Đổi mật khẩu</h2>
+        <form @submit.prevent="submitChangePassword">
+
+          <div class="modal-row">
+            <label class="modal-label">Mật khẩu cũ:</label>
+            <div class="input-wrapper">
+              <input :type="showOldPassword ? 'text' : 'password'" v-model="changePasswordForm.oldPassword"
+                class="modal-input" required />
+              <i @click="showOldPassword = !showOldPassword" :class="showOldPassword ? 'fa fa-eye-slash' : 'fa fa-eye'">
+              </i>
+            </div>
+          </div>
+
+          <div class="modal-row">
+            <label class="modal-label">Mật khẩu mới:</label>
+            <div class="input-wrapper">
+              <input :type="showNewPassword ? 'text' : 'password'" v-model="changePasswordForm.newPassword"
+                class="modal-input" maxlength="30" required />
+              <i @click="showNewPassword = !showNewPassword" :class="showNewPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+            </div>
+          </div>
+
+          <div class="modal-row">
+            <label class="modal-label">Xác nhận mật khẩu:</label>
+            <div class="input-wrapper">
+              <input :type="showConfirmPassword ? 'text' : 'password'" v-model="changePasswordForm.confirmPassword"
+                class="modal-input" required />
+              <i @click="showConfirmPassword = !showConfirmPassword"
+                :class="showConfirmPassword ? 'fa fa-eye-slash' : 'fa fa-eye'">
+              </i>
+            </div>
+          </div>
+
+          <nav v-if="changePasswordError" class="modal-error">{{ changePasswordError }}</nav>
+
+          <div class="modal-actions">
+            <button type="button" @click="exitModal()" class="border btn-exit rounded-3">Thoát</button>
+            <button type="submit" class="border btn-update rounded-3">Cập nhật</button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+
   </div>
 </template>
 
@@ -115,6 +133,9 @@ const user = ref({
   roles: [],
   // avatar: ""
 });
+const showOldPassword = ref(false);
+const showNewPassword = ref(false);
+const showConfirmPassword = ref(false);
 
 //Phần modal
 const isChangePassword = ref(false);
@@ -152,22 +173,18 @@ const formatDate = (date) => {
 
 async function submitChangePassword() {
 
-    changePasswordError.value = "";
+  changePasswordError.value = "";
 
-  if (changePasswordForm.value.newPassword.length < 6) {
-    changePasswordError.value = "Mật khẩu mới phải có ít nhất 6 ký tự.";
-    return;
-  }
+  if (changePasswordForm.value.newPassword.length < 6)
+    return; changePasswordError.value = "Mật khẩu mới phải từ 6 - 30 ký tự.";
 
-  if (changePasswordForm.value.newPassword !== changePasswordForm.value.confirmPassword) {
-    changePasswordError.value = "Mật khẩu mới phải không giống mật khẩu confirm.";
-    return;
-  }
+  if (changePasswordForm.value.newPassword !== changePasswordForm.value.confirmPassword)
+    return; changePasswordError.value = "Mật khẩu xác nhận không khớp !";
 
   try {
     console.log(changePasswordForm.value)
     console.log(auth.token)
-    await passwordService.update(changePasswordForm.value,auth.token);
+    await passwordService.update(changePasswordForm.value, auth.token);
     changePasswordError.value = "Đổi mật khẩu thành công!";
     localStorage.removeItem("accessToken");
     router.push('/');
@@ -176,7 +193,7 @@ async function submitChangePassword() {
     changePasswordError.value = "Đổi mật khẩu thất bại.";
     console.error("Error changing password:", error);
   }
-  
+
   isChangePassword.value = false;
 }
 
@@ -203,18 +220,10 @@ body {
   background: #f3f4f6;
 }
 
-.container {
-  /* width: 100%; */
-  padding: 20px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.img {
-  width: 30%;
-  max-height: 350px;
-  border-radius: 800px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.info {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 20px;
 }
 
 .profile {
@@ -225,17 +234,18 @@ body {
 
 .profile-info {
   font-size: 18px;
-  color: #333;
+  color: #333333db;
   line-height: 2.5;
 }
 
 .btn {
   background-color: #f59e0b;
   color: white;
-  padding: 10px 20px;
+  padding: 5px 10px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
+  margin-left: 10px;
   transition: background-color 0.3s ease;
 }
 
@@ -258,7 +268,7 @@ body {
 }
 
 .modal-container {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(31, 31, 31, 0.63);
   padding: 2rem;
   border-radius: 12px;
   width: 400px;
@@ -290,6 +300,30 @@ body {
   border: 1px solid #ccc;
 }
 
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.input-wrapper .modal-input {
+  width: 100%;
+  padding-right: 35px; /* chừa chỗ cho icon */
+}
+
+.input-wrapper i {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: gray;
+}
+
+.input-wrapper i:hover {
+  color: blue;
+}
+
+
 .modal-actions {
   display: flex;
   justify-content: flex-end;
@@ -297,7 +331,7 @@ body {
 }
 
 .modal-error {
-  color: #fa610f;
+  color: red;
   margin-top: 1rem;
   font-weight: bold;
 }
