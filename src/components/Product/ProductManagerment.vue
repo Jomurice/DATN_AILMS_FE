@@ -1,10 +1,12 @@
 <template>
-  <div class="pbox">
+  <div>
 
-    <div class="d-flex mb-2 justify-content-between">
-      <div class=" col-md-3 p-0">
-        <input v-model="filters.keyword" type="text" class="form-control" placeholder="Nhập tên hàng hóa" />
+    <div class="d-flex mb-2 align-items-center justify-content-between">
+
+      <div class=" search p-0">
+        <input type="text" class="form-control" placeholder="Nhập tên hàng hóa" />
       </div>
+
       <h2>Hàng hóa</h2>
 
       <div class="d-flex gap-2">
@@ -98,14 +100,14 @@
                   </button>
                   <button class="btn btn-sm btn-outline-warning me-1" title="Sửa thông tin hàng hóa"
                     @click="$router.push(`/product/${p.id}/edit`)">
-                    <i class="fas fa-edit"></i> 
+                    <i class="fas fa-edit"></i>
                   </button>
                   <button class="btn btn-sm btn-outline-danger" @click="removeProduct(p.id)" title="Ẩn hàng hóa">
                     <i class="fas fa-eye-slash"></i>
                   </button>
                 </td>
               </tr>
-              <tr v-if="!loading && products.length === 0">
+              <tr v-if="!isLoading && products.length === 0">
                 <td colspan="6" class="text-center text-muted py-4">Không có dữ liệu</td>
               </tr>
             </tbody>
@@ -135,36 +137,35 @@
             </nav>
           </div>
 
-          <div v-if="loading" class="text-center py-5">
-            <div class="spinner-border text-dark" role="status"></div>
-            <div class="small text-muted mt-2">Đang tải dữ liệu...</div>
-          </div>
-
           <p v-if="error" class="text-danger small p-3">{{ error }}</p>
         </div>
       </div>
-    </div>
 
 
-    <div v-if="isDetailProduct" class="d-flex align-items-center justify-content-center modal-overlay">
-      <div class="card w-50 p-2">
-        <div class="d-flex align-items-center justify-content-between">
-          <h3>Chi tiết hàng hóa</h3>
-          <p class="fs-4 exit" @click="exitModal()">X</p>
+      <div v-if="isDetailProduct" class="d-flex align-items-center justify-content-center modal-overlay">
+        <div class="card w-50 p-2">
+          <div class="d-flex align-items-center justify-content-between">
+            <h3>Chi tiết hàng hóa</h3>
+            <p class="fs-4 exit" @click="exitModal()">X</p>
+          </div>
+          <!-- <nav class="product-info gap-4 mt-3">
+            <p><span class="fw-bold">Mã SKU:</span> {{ product.sku }}</p>
+            <p><span class="fw-bold">Tên:</span> {{ product.name }}</p>
+            <p><span class="fw-bold">Loại:</span> {{ product.categoryName }}</p>
+            <p><span class="fw-bold">Màu:</span></p>
+            <p><span class="fw-bold">Hãng:</span> {{ product.brandName }}</p>
+            <p><span class="fw-bold">Thuộc tính khác:</span></p>
+            <p><span class="fw-bold">Thông số kỹ thuật:</span> {{ product.specifications }}</p>
+          </nav> -->
+
+          <h3 class="text-danger text-center">Tính năng đang phát triển</h3>
         </div>
-        <nav class="product-info gap-4 mt-3">
-          <p><span class="fw-bold">Mã SKU:</span> {{ product.sku }}</p>
-          <p><span class="fw-bold">Tên:</span> {{ product.name }}</p>
-          <p><span class="fw-bold">Loại:</span> {{ product.categoryName }}</p>
-          <p><span class="fw-bold">Màu:</span></p>
-          <p><span class="fw-bold">Hãng:</span> {{ product.brandName }}</p>
-          <p><span class="fw-bold">Thuộc tính khác:</span></p>
-          <p><span class="fw-bold">Thông số kỹ thuật:</span> {{ product.specifications }}</p>
-        </nav>
+      </div>
+      <div v-if="isLoading" class="modal-overlay text-center py-5">
+        <div class="spinner-border text-info" role="status"></div>
+        <div class="small mx-2 fs-5 text-info mt-2">Đang tải...</div>
       </div>
     </div>
-
-
   </div>
 </template>
 
@@ -180,7 +181,7 @@ const products = ref([]);
 const product = ref({});
 const categories = ref([]);
 const menus = ref([]);
-const loading = ref(true)
+const isLoading = ref(true)
 const error = ref('')
 const isDetailProduct = ref(false);
 const isStatus = ref('all');
@@ -241,6 +242,7 @@ function selectNode(node) {
 
 
 async function loadAll() {
+  isLoading.value = true
   try {
     products.value = await productService.getAll();
     // product.value = await productService.getById(product.value.productId);
@@ -250,7 +252,7 @@ async function loadAll() {
   } catch (e) {
     error.value = e?.message || 'Lỗi tải dữ liệu'
   } finally {
-    loading.value = false
+    isLoading.value = false
   }
 
   console.log(isDetailProduct.value)
@@ -277,14 +279,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
-/* .pbox {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-} */
-
 .side {
-  width: 18%;
+  max-width: 18%;
   height: calc(100vh - 200px);
   overflow: auto;
 }
@@ -301,6 +297,20 @@ onMounted(() => {
   grid-template-columns: 1fr 1fr;
   gap: 10px 20px;
 }
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  background: rgba(0, 0, 0, 0.147);
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
 
 .asideChildren {
   min-width: 200px;
@@ -325,19 +335,6 @@ onMounted(() => {
   color: white;
 }
 
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
 .exit {
   cursor: pointer !important;
 }
@@ -350,8 +347,12 @@ onMounted(() => {
   font-size: 18px;
 }
 
+.search {
+  flex: 0 0 18%;
+}
+
 .form-control {
-  width: 270px;
+  width: 100%;
   border: none;
   border-radius: 10px;
 }
@@ -398,6 +399,13 @@ onMounted(() => {
   overflow-y: auto;
 }
 
+.name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Sticky header */
 .table thead th {
   position: sticky;
@@ -407,7 +415,11 @@ onMounted(() => {
 
 .table th,
 .table td {
+  width: 100px;
   vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 @media (max-width:992px) {

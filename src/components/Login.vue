@@ -1,56 +1,44 @@
 <template>
   <div class="container-fluid vh-100 d-flex justify-content-center align-items-center p-0 m-0">
     <div class="row w-100 h-100 m-0 shadow-none border-0">
-      
-      
+
+
       <div class="col-lg-8 d-none d-lg-flex bg-light justify-content-center align-items-center p-0 m-0">
         <img src="/src/assets/hinh2.png" class="img-fluid h-100 w-100" alt="illustration" />
       </div>
 
-      
+
       <div class="col-12 col-lg-4 d-flex flex-column justify-content-center p-5" style="background-color: #ffffff;">
         <h2 class="fw-bold text-primary mb-4 text-center">ĐĂNG NHẬP</h2>
 
         <form @submit.prevent="handleLogin">
-          
+
           <div class="mb-3">
             <label for="username" class="form-label">Tài Khoản :</label>
-            <input
-              type="text"
-              id="username"
-              v-model="username"
-              @input="clearError('username')"   
-              class="form-control"
-              :class="{ 'is-invalid': errors.username }"
-              placeholder="Nhập username"
-            />
+            <input type="text" id="username" v-model="username" @input="clearError('username')" class="form-control"
+              :class="{ 'is-invalid': errors.username }" placeholder="Nhập username" />
             <div class="invalid-feedback">{{ errors.username }}</div>
           </div>
 
-         
           <div class="mb-3">
             <label for="password" class="form-label">Mật Khẩu :</label>
-            <input
-              type="password"
-              id="password"
-              v-model="password"
-              @input="clearError('password')"   
-              class="form-control"
-              :class="{ 'is-invalid': errors.password }"
-              placeholder="Nhập mật khẩu"
-            />
+            <div class="input-wrapper">
+              <input :type="showPassword ? 'text' : 'password'" id="password" v-model="password" @input="clearError('password')" 
+              class="form-control modal-input" :class="{ 'is-invalid': errors.password }" placeholder="Nhập mật khẩu" />
+              <i @click="showPassword = !showPassword":class="showPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
+            </div>
             <div class="invalid-feedback">{{ errors.password }}</div>
           </div>
 
           <router-link to="/forgot-password" class="link">Quên mật khẩu ?</router-link>
-          
+
           <div v-if="apiError" class="alert alert-danger py-2">{{ apiError }}</div>
 
-          
+
           <button type="submit" class="btn btn-primary w-100" :disabled="loading">
             <span v-if="loading" class="spinner-border spinner-border-sm me-2"></span>
             Đăng nhập
-          
+
           </button>
         </form>
       </div>
@@ -72,6 +60,7 @@ const password = ref("");
 const errors = ref({});
 const apiError = ref("");
 const loading = ref(false);
+const showPassword = ref(false);
 
 
 const clearError = (field) => {
@@ -109,12 +98,12 @@ const handleLogin = async () => {
 
   loading.value = true;
   try {
-    const data = await authService.login(username.value, password.value) 
+    const data = await authService.login(username.value, password.value)
     console.log(data)
     auth.setToken(data.result?.token);
     router.push("/profile");
   } catch (error) {
-    if(error.response?.data?.message === 'User blocked'){apiError.value = "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với quản lý để được hỗ trợ !";}
+    if (error.response?.data?.message === 'User blocked') { apiError.value = "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với quản lý để được hỗ trợ !"; }
     else apiError.value = "Tên đăng nhập hoặc mật khẩu không đúng !";
 
   } finally {
@@ -140,13 +129,39 @@ const handleLogin = async () => {
   text-decoration: none;
   border-radius: 6px;
 }
+
 .link:hover {
   color: rgb(47, 47, 243);
 }
 
+.input-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.input-wrapper .modal-input {
+  width: 100%;
+  padding-right: 35px; /* chừa chỗ cho icon */
+}
+
+.input-wrapper i {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  cursor: pointer;
+  color: gray;
+}
+
+.input-wrapper i:hover {
+  color: blue;
+}
+
+
 h2 {
   font-size: 2rem;
 }
+
 @media (max-width: 768px) {
   h2 {
     font-size: 1.5rem;

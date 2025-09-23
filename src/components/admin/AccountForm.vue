@@ -13,13 +13,13 @@
             <div class="col-md-6">
               <label class="form-label">Tên đăng nhập <span class="text-danger">*</span></label>
               <input v-model.trim="form.username" class="form-control" placeholder="Vui lòng nhập tên đăng nhập"
-                required />
+                maxlength="20" required />
             </div>
             
             <div class="col-md-6">
               <label class="form-label">Họ và tên <span class="text-danger">*</span></label>
               <input v-model.trim="form.name" class="form-control" placeholder="Vui long nhập họ và tên"
-               required />
+              maxlength="50" required />
             </div>
 
             <div class="col-md-6">
@@ -39,25 +39,25 @@
             <div class="col-md-6">
               <label class="form-label">Email <span class="text-danger">*</span></label>
               <input type="email" v-model.trim="form.email" class="form-control" placeholder="Vui lòng nhập địa chỉ email"
-               required />
+              maxlength="50" required />
             </div>
 
             <div class="col-md-6" v-if="!isEdit">
               <label class="form-label">Mật khẩu <span class="text-danger">*</span></label>
               <input type="password" v-model.trim="form.password" class="form-control" placeholder="Vui long nhập mật khẩu" 
-               required />
+              maxlength="30" required />
             </div>
 
             <div class="col-md-6" v-if="!isEdit">
               <label class="form-label">Xác nhận mật khẩu <span class="text-danger">*</span></label>
               <input type="password" v-model.trim="passwordConfirm" class="form-control" placeholder="Vui long nhập mật khẩu"
-               required />
+              maxlength="30" required />
             </div>
 
             <div class="col-md-6">
               <label class="form-label">Số điện thoại<span class="text-danger">*</span></label>
-              <input type="text" v-model.trim="form.phone" class="form-control" placeholder="Vui lòng nhập số điện thoại"
-               required />
+              <input type="text" v-model.number="form.phone" class="form-control" placeholder="Vui lòng nhập số điện thoại"
+              max="10" required />
               <div class="invalid-feedback" v-if="error">{{ error }}</div>
             </div>
 
@@ -79,7 +79,7 @@
             <div class="col-12">
               <label class="form-label">Địa chỉ<span class="text-danger">*</span></label>
               <textarea v-model.trim="form.address" rows="3" class="form-control" placeholder="Vui lòng nhập địa chỉ"
-                required></textarea>
+              maxlength="255"  required></textarea>
             </div>
 
             <div class="col-12 d-flex gap-2">

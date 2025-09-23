@@ -11,9 +11,13 @@
           <RouterLink class="tab" to="/warehouse" exact-active-class="active">Kho</RouterLink>
           <RouterLink class="tab" to="/report" exact-active-class="active">Báo cáo</RouterLink>
           <RouterLink class="tab" to="/admin/account" exact-active-class="active">Nhân sự</RouterLink>
-          <RouterLink class="tab" to="/warehouses" exact-active-class="active"> new warehouse</RouterLink>
+          <RouterLink class="tab" to="/warehousess" exact-active-class="active"> new warehouse</RouterLink>
+          <RouterLink class="tab" to="/warehouse-form" exact-active-class="active">Warehouse form</RouterLink>
           <RouterLink class="tab" to="/report" exact-active-class="active">Tổng quát</RouterLink>
           <RouterLink class="tab" to="/report" exact-active-class="active">Khác</RouterLink>
+          <RouterLink class="tab" to="/admin/order-product" exact-active-class="active">Đặt hàng</RouterLink>
+          <!-- <RouterLink class="tab" to="/report" exact-active-class="active">Tổng quát</RouterLink>
+          <RouterLink class="tab" to="/report" exact-active-class="active">Khác</RouterLink> -->
         </div>
       </div>
     </nav>

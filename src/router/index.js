@@ -27,6 +27,8 @@ import Dashboard from "../components/dashboard/Dashboard.vue";
 
 import Inbound from "../components/inbound/Inbound.vue";
 import Outbound from "../components/outbound/Outbound.vue";
+import OrderProduct from "../components/order/OrderProduct.vue";
+import WarehouseForm from "../components/NewWarehouse/WarehouseForm..vue";
 
  const routes = [
   { path: "/", redirect: "/login" },
@@ -53,7 +55,8 @@ import Outbound from "../components/outbound/Outbound.vue";
       { path: "category/add", name: "category-add", meta: {title: 'Thêm'}, component: CategoryForm },
       { path: "category/:id/detail", name: "category-detail", meta: {title: 'Sửa'}, component: CategoryForm, props: true },
 
-      { path: "/warehouses", name: "Warehouses", component: Warehouse },
+      { path: "/warehousess", name: "Warehouses", component: WarehouseMenu },
+      { path: "/warehouse-form", name: "WarehousesForm", component: WarehouseForm },
       // Warehouse chain
       { path: "warehouse", name: "warehouse", meta: {title: 'Kho'}, component: Warehouse },
       { path: "warehouse/:wid/zone", name: "zone", meta: {title: 'Khu'}, component: Zone, props: true },
@@ -75,6 +78,7 @@ import Outbound from "../components/outbound/Outbound.vue";
     meta: {title: 'Quản lý'},
     component: HomeView,
     children:[
+      { path: "order-product", name: "admin-order-product", meta: {title: 'Đặt hàng'}, component: OrderProduct },
       { path: "account", name: "admin-account", meta: {title: 'Nhân sự'}, component: Accounts },
       { path: "account/add", name: "admin-account-add", meta: {title: 'Thêm'}, component: AccountForm },
       { path: "account/:id/edit", name: "admin-account-edit", meta: {title: 'Sửa'}, component: AccountForm, props: true },
