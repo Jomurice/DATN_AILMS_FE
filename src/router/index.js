@@ -28,6 +28,9 @@ import PurchaseOrderDetail from "../components/inbound/PurchaseOrderDetail.vue";
 import Outbound from "../components/outbound/Outbound.vue";
 
 
+
+import locationManager from "../components/location/locationManager.vue";
+
  const routes = [
   { path: "/", redirect: "/login" },
   { path: "/login", name: "login", component: Login },
@@ -67,6 +70,9 @@ import Outbound from "../components/outbound/Outbound.vue";
       { path: "outbound", name: "outbound", meta: {title: 'Xuất hàng'}, component: Outbound},
 
       { path: ":pathMatch(.*)*", redirect: "/product" },
+
+      // locationManager 
+      {path:"location", name: "location", meta:{title: 'Quản lý vị trí kho'}, component: locationManager },
     ],
   },
 
