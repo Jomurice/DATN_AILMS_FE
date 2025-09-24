@@ -26,7 +26,8 @@ import Inbound from "../components/inbound/Inbound.vue";
 import PurchaseOrderCreate from "../components/inbound/PurchaseOrderCreate.vue";
 import PurchaseOrderDetail from "../components/inbound/PurchaseOrderDetail.vue";
 import Outbound from "../components/outbound/Outbound.vue";
-
+import OutboundOrderCreate from "../components/outbound/OutboundOrderCreate.vue";
+import OutboundOrderDetail from "../components/outbound/OutboundOrderDetail.vue";
 
 
 import locationManager from "../components/location/locationManager.vue";
@@ -68,7 +69,8 @@ import locationManager from "../components/location/locationManager.vue";
        { path: "inbound/new", name: "inbound-create", meta: { title: "Tạo đơn mua" }, component: PurchaseOrderCreate },
       { path: "inbound/:id", name: "inbound-detail", meta: { title: "Chi tiết đơn mua" }, component: PurchaseOrderDetail, props: true },
       { path: "outbound", name: "outbound", meta: {title: 'Xuất hàng'}, component: Outbound},
-
+      { path: "outbound/new", name: "outbound-create", meta: { title: "Tạo phiếu xuất" }, component: OutboundOrderCreate },
+{ path: "outbound/:id", name: "outbound-detail", meta: { title: "Chi tiết phiếu xuất" }, component: OutboundOrderDetail, props: true },
       { path: ":pathMatch(.*)*", redirect: "/product" },
 
       // locationManager 

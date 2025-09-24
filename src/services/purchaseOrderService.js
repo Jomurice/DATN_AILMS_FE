@@ -1,4 +1,3 @@
-// src/services/purchaseOrderService.js
 import api from "./axios";
 import { fire, EVENTS } from "./eventBus";
 
@@ -50,35 +49,32 @@ let sampleOrders = [
 ];
 
 export const purchaseOrderService = {
-  /** List PO (có thể filter theo userId) */
+  /** List purchase orders */
   async list(params = {}) {
     try {
       const { data } = await api.get("/api/purchase-orders", { params });
       const out = Array.isArray(data?.result) ? data.result : data;
       return out ?? [];
     } catch (e) {
-      console.warn("[PO] list fail -> use mock", e);
-      if (params?.userId) {
-        return sampleOrders.filter(o => String(o.userId) === String(params.userId));
-      }
+      console.warn("[PO] list fail -> mock", e);
+      if (params?.userId) return sampleOrders.filter(o => String(o.userId) === String(params.userId));
       return sampleOrders;
     }
   },
 
-  /** Lấy chi tiết PO (bao gồm items/purchase_order_detail) */
+  /** Get detail (include items) */
   async getById(id, params = {}) {
     try {
       const { data } = await api.get(`/api/purchase-orders/${encodeURIComponent(id)}`, { params });
       return data?.result ?? data;
     } catch (e) {
-      console.warn("[PO] getById fail -> use mock", e);
+      console.warn("[PO] getById fail -> mock", e);
       return sampleOrders.find(x => x.id === id) ?? null;
     }
   },
 
-  /** Tạo purchase_order (HEADER ONLY) – chưa có items */
+  /** Create order (header + items) */
   async create(payload) {
-    // payload: { code, supplier, status, createdAt, userId }
     try {
       const { data } = await api.post("/api/purchase-orders", payload);
       return data?.result ?? data;
@@ -92,18 +88,28 @@ export const purchaseOrderService = {
         createdAt: payload.createdAt || new Date().toISOString().slice(0,10),
         updatedAt: null,
         userId: payload.userId || "mock-user",
-        items: []
+        items: (payload.items || []).map((it,i)=>({
+          id: `itm-${Date.now()}-${i}`,
+          productId: it.productId,
+          sku: String(it.productId).slice(0,8),
+          name: "Unknown",
+          categoryName: "",
+          brandName: "",
+          color: "",
+          orderQuantity: Number(it.orderQuantity || 0),
+          scannedQuantity: 0
+        }))
       };
       sampleOrders.push(mock);
       return mock;
     }
   },
 
-  /** Thêm 1 item vào PO (tạo purchase_order_detail) */
+  /** Add item (BE: POST /api/purchase-orders-items/{orderId}) */
   async addItem(orderId, { productId, orderQuantity }) {
     try {
       const { data } = await api.post(
-        `/api/purchase-orders/${encodeURIComponent(orderId)}/items`,
+        `/api/purchase-orders-items/${encodeURIComponent(orderId)}`,
         { productId, orderQuantity }
       );
       return data?.result ?? data;
@@ -116,7 +122,7 @@ export const purchaseOrderService = {
         next.items.push({
           id: `itm-${Date.now()}`,
           productId,
-          sku: (productId || "").slice(0, 8), // mock
+          sku: (productId || "").slice(0, 8),
           name: "Unknown",
           categoryName: "",
           brandName: "",
@@ -131,7 +137,20 @@ export const purchaseOrderService = {
     }
   },
 
-  /** Hoàn tất PO */
+  /** Scan 1 serial for a PO item (BE: POST /api/purchase-orders-items/{itemId}/scan?serial=...) */
+  async scanItem(purchaseOrderItemId, serial) {
+    const path = `/api/purchase-orders-items/${encodeURIComponent(purchaseOrderItemId)}/scan`;
+    try {
+      const { data } = await api.post(path, null, { params: { serial } });
+      return data?.result ?? data;
+    } catch (e1) {
+      console.warn("[PO] scanItem(serial) failed, try serialNumber", e1);
+      const { data } = await api.post(path, null, { params: { serialNumber: serial } });
+      return data?.result ?? data;
+    }
+  },
+
+  /** Complete order (prefer POST /complete, fallback PUT status) */
   async complete(id, payload = {}) {
     try {
       const { data } = await api.post(`/api/purchase-orders/${encodeURIComponent(id)}/complete`, payload);
@@ -139,12 +158,19 @@ export const purchaseOrderService = {
       fire(EVENTS.DASHBOARD_SHOULD_REFRESH);
       return res;
     } catch (e) {
-      console.warn("[PO] complete fail -> mock DONE", e);
-      sampleOrders = sampleOrders.map(x =>
-        x.id === id ? { ...x, status: "COMPLETED", updatedAt: new Date().toISOString() } : x
-      );
-      fire(EVENTS.DASHBOARD_SHOULD_REFRESH);
-      return true;
+      console.warn("[PO] complete fail -> fallback PUT status=COMPLETED", e);
+      try {
+        const { data } = await api.put(`/api/purchase-orders/${encodeURIComponent(id)}`, { status: "COMPLETED" });
+        fire(EVENTS.DASHBOARD_SHOULD_REFRESH);
+        return data?.result ?? data;
+      } catch (e2) {
+        console.warn("[PO] fallback PUT fail -> mock COMPLETED", e2);
+        sampleOrders = sampleOrders.map(x =>
+          x.id === id ? { ...x, status: "COMPLETED", updatedAt: new Date().toISOString() } : x
+        );
+        fire(EVENTS.DASHBOARD_SHOULD_REFRESH);
+        return true;
+      }
     }
   },
 //   async complete(id, payload) {
@@ -169,6 +195,7 @@ export const purchaseOrderService = {
 //   }
 // }
   /** (Optional) update header */
+  /** Update header */
   async update(id, payload) {
     try {
       const { data } = await api.put(`/api/purchase-orders/${encodeURIComponent(id)}`, payload);
@@ -182,13 +209,13 @@ export const purchaseOrderService = {
     }
   },
 
-  /** Lấy list sản phẩm để chọn */
+  /** Products list (for selectors) */
   async listProducts() {
     try {
       const { data } = await api.get("/api/products");
       return data?.result ?? data ?? [];
     } catch (e) {
-      console.warn("[PO] listProducts fail -> mock empty", e);
+      console.warn("[PO] listProducts fail -> []", e);
       return [];
     }
   },
