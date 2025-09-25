@@ -255,15 +255,14 @@ async function loadAll() {
 
 async function getByProductId(id) {
   try {
-    product.value = await productDetailService.getByProductId(id);
+    product.value = await productService.getById(id);
+    console.log( 'dsad',product.value);
+    const p = await productDetailService.getByProductId(product.value.id);
+    if(p) product.value = { ...product.value, ...p };
     console.log(product.value);
   } catch (error) {
     console.log("error", error);
   }
-}
-
-function exitModal() {
-  isDetailProduct.value = false;
 }
 
 onMounted(() => {
@@ -275,7 +274,6 @@ onMounted(() => {
 <style scoped>
 .side {
   position: relative;
-  /* để .toggle-btn bám vào aside */
   max-width: 18%;
   height: calc(100vh - 200px);
   /* overflow: auto; */

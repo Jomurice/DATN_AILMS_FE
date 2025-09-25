@@ -66,11 +66,11 @@
 
       <div class="card border-0 shadow-sm rounded-3 main">
 
-        <div class="mx-2 d-flex gap-3 align-items-center justify-content-end">
-          <button class="btn btn-success col-md-1 " @click="$router.push('/admin/account/add')">+ Thêm</button>
+        <div class="m-2 d-flex gap-3 align-items-center justify-content-end">
+          <button class="btn btn-success btn-sm col-md-1 " @click="$router.push('/admin/account/add')">+ Thêm</button>
           <!-- page -->
           <div class="sizePage p-2 d-flex align-items-center rounded-3 justify-content-end">
-            <span>Số mục</span>
+            Số mục
             <select v-model.number="payload.pageable.size" class="form-select mx-2 rounded-3">
               <option value="10">10</option>
               <option value="20">20</option>
@@ -80,6 +80,8 @@
             </select>
           </div>
         </div>
+
+
 
         <div>
 
@@ -514,6 +516,10 @@ watch(
   max-height: 650px;
 }
 
+.sizePage>.form-select {
+  max-width: 70px;
+}
+
 .page>nav>p {
   max-height: 10px;
   cursor: pointer;
@@ -573,14 +579,6 @@ watch(
   top: 0;
   z-index: 10;
 }
-
-
-/* .table th,
-.table td {
-  min-width: fit-content;
-  vertical-align: middle;
-  white-space: nowrap;
-} */
 
 @media (max-width: 1028px) {
   .side {
