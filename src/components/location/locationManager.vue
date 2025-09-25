@@ -25,7 +25,6 @@ async function getAllCity() {
   }
 }
 
-// ------------------- WARD ----------------------------------
 
 async function getLocationByLocation(locationId) {
   try {
@@ -81,10 +80,13 @@ async function updateCity() {
   }
 }
 
+// ------------------- WARD ----------------------------------
+
 const wardForm = ref({
   name: '',
   address: ''
 });
+
 
 async function createWard() {
   if (!selectCityId.value) {
@@ -125,7 +127,8 @@ async function updateWard() {
   try {
     await locationService.updateLocation(editWardForm.value.id, {
       name: editWardForm.value.name,
-      address: editWardForm.value.address
+      address: editWardForm.value.address,
+      parentId: selectCityId.value,
     });
 
     await getLocationByLocation(selectCityId.value);
