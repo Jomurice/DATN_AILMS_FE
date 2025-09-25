@@ -11,19 +11,12 @@ export const orderService = {
     },
 
     async getById(id){
-        try {
-            const response = await api.get(`/api/purchase-orders/${id}`);
-            return response.data?.result;
-        } catch (error) {
-            return error.data?.code;
-        }
+        const response = await api.get(`/api/purchase-orders/${id}`);
+        return response.data?.result;
     },
 
     async create(payload){
-        try {
-            return await api.post('/api/purchase',payload);
-        } catch (error) {
-            return error.data?.code;
-        }
+        const response = await api.post('/api/purchase-orders',payload);
+        return response.data?.result?.id;
     }
 }
