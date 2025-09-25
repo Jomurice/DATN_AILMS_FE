@@ -8,6 +8,7 @@
           <RouterLink class="tab" to="/category" exact-active-class="active">Loại hàng</RouterLink>
           <RouterLink class="tab" to="/inbound/new" exact-active-class="active">Đơn mua</RouterLink>
           <RouterLink class="tab" to="/inbound" exact-active-class="active">Nhập hàng</RouterLink>
+          <RouterLink class="tab" to="/outbound/new" exact-active-class="active">Đơn xuất</RouterLink>
           <RouterLink class="tab" to="/outbound" exact-active-class="active">Xuất hàng</RouterLink>
           <RouterLink class="tab" to="/warehouse" exact-active-class="active">Kho</RouterLink>
           <RouterLink class="tab" to="/report" exact-active-class="active">Báo cáo</RouterLink>
