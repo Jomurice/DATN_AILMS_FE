@@ -544,7 +544,7 @@ watch(
 }
 
 .btn {
-  max-height: 40px;
+  
   min-width: 40px;
 }
 

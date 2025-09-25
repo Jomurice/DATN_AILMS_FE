@@ -9,7 +9,7 @@
       </div>
 
       <div class="btn border-primary btn-outline-primary btn-sm">
-        <label for="file" class="m-0" >Excel/CSV</label>
+        <label for="file" class="m-0" ><i class="fas fa-file-import"></i> Excel/CSV</label>
         <input id="file" type="file" accept=".xlsx,.xls,.csv" @change="onImport" hidden />
       </div>
      </div>
@@ -361,7 +361,6 @@ async function createOrderItem() {
   try {
     const newItem = await orderDetailService.create(form.value, getOrderId());
     orderItems.value.push(newItem);
-
     load();
     alert("Thêm sản phẩm thành công!");
   } catch (error) {
@@ -548,10 +547,12 @@ onMounted(() => {
 }
 
 .btn {
+  max-width: 130px;
+  max-height: 40px;
   padding: 8px 12px;
   border-radius: 10px;
   cursor: pointer;
-  font-weight: 600;
+  font-size: 15px;
 }
 
 
