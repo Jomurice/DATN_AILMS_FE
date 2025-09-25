@@ -1,4 +1,3 @@
-<!-- src/pages/inventory/Inbound.vue -->
 <template>
   <div class="container-fluid px-3 py-4">
     <div class="pbox">
@@ -7,10 +6,10 @@
         <div class="brand"><i class="fa-solid fa-receipt me-2"></i>Đơn mua (Phiếu nhập)</div>
 
         <div class="mb-2 d-flex gap-2 flex-wrap">
-          <button class="btn btn-sm" :class="chipCls('ALL')" @click="status='ALL'">Tất cả</button>
-          <button class="btn btn-sm" :class="chipCls('PENDING')" @click="status='PENDING'">Chờ xử lý</button>
-          <button class="btn btn-sm" :class="chipCls('IN_PROGRESS')" @click="status='IN_PROGRESS'">Đang thực hiện</button>
-          <button class="btn btn-sm" :class="chipCls('COMPLETED')" @click="status='COMPLETED'">Hoàn tất</button>
+          <button class="btn btn-sm" :class="chip('ALL')" @click="status='ALL'">Tất cả</button>
+          <button class="btn btn-sm" :class="chip('PENDING')" @click="status='PENDING'">Chờ xử lý</button>
+          <button class="btn btn-sm" :class="chip('IN_PROGRESS')" @click="status='IN_PROGRESS'">Đang thực hiện</button>
+          <button class="btn btn-sm" :class="chip('COMPLETED')" @click="status='COMPLETED'">Hoàn tất</button>
         </div>
 
         <div class="list-group small">
@@ -22,11 +21,11 @@
             @click="openOrder(o)"
           >
             <div>
-              <div class="fw-bold">{{ clip(o.code, 20) }}</div>
-              <div class="fw-semibold">{{ clip(o.supplier, 20) }}</div>
-              <div class="badge bg-light text-dark mt-1">{{ toViStatus(o.status) }}</div>
+              <div class="fw-bold">{{ cut(o.code, 20) }}</div>
+              <div class="fw-semibold">{{ cut(o.supplier, 20) }}</div>
+              <div class="badge bg-light text-dark mt-1">{{ viStatus(o.status) }}</div>
             </div>
-            <small class="text-muted">{{ fmtDate(o.createdAt || o.eta) }}</small>
+            <small class="text-muted">{{ d(o.createdAt || o.eta) }}</small>
           </button>
 
           <div v-if="!loading && !filteredOrders.length" class="text-muted p-3">Không có phiếu phù hợp</div>
@@ -39,10 +38,10 @@
         <div class="section-card" v-if="selectedOrder">
           <div class="d-flex align-items-center justify-content-between px-3 pt-3 pb-2">
             <div class="fw-bold">
-              <div>{{ selectedOrder.code }} — <span class="text-muted">{{ clip(selectedOrder.supplier, 28) }}</span></div>
+              <div>{{ selectedOrder.code }} — <span class="text-muted">{{ cut(selectedOrder.supplier, 28) }}</span></div>
               <small class="text-muted">
-                Ngày tạo: {{ fmtDate(selectedOrder.createdAt || selectedOrder.eta) }} • Trạng thái:
-                {{ toViStatus(selectedOrder.status) }}
+                Ngày tạo: {{ d(selectedOrder.createdAt || selectedOrder.eta) }} • Trạng thái:
+                {{ viStatus(selectedOrder.status) }}
               </small>
             </div>
             <div class="d-flex gap-2">
@@ -71,44 +70,22 @@
             </div>
           </div>
 
-          <!-- Table -->
+          <!-- Table (gọn, không sort/pagination) -->
           <div class="table-responsive">
             <table class="table table-hover mb-0 table-balanced">
-              <colgroup>
-                <col style="width:12%"/><col style="width:28%"/><col style="width:14%"/>
-                <col style="width:12%"/><col style="width:20%"/><col style="width:14%"/>
-              </colgroup>
-
               <thead class="thead-soft">
                 <tr class="text-uppercase fw-semibold">
-                  <th @click="toggleSort('sku')" class="cursor">
-                    SKU <SortIcon :dir="sortKey==='sku'?sortDir:null"/>
-                  </th>
-                  <th @click="toggleSort('name')" class="cursor">
-                    Tên hàng hóa <SortIcon :dir="sortKey==='name'?sortDir:null"/>
-                  </th>
-                  <th @click="toggleSort('categoryName')" class="cursor">
-                    Loại <SortIcon :dir="sortKey==='categoryName'?sortDir:null"/>
-                  </th>
-                  <th @click="toggleSort('brandName')" class="cursor">
-                    Hãng <SortIcon :dir="sortKey==='brandName'?sortDir:null"/>
-                  </th>
-                  <th @click="toggleSort('color')" class="cursor">
-                    Màu <SortIcon :dir="sortKey==='color'?sortDir:null"/>
-                  </th>
-                  <th class="text-end cursor" @click="toggleSort('orderQuantity')">
-                    Số lượng <SortIcon :dir="sortKey==='orderQuantity'?sortDir:null"/>
-                  </th>
+                  <th>SKU</th><th>Tên hàng hóa</th><th>Loại</th><th>Hãng</th>
+                  <th>Màu</th><th class="text-end">Số lượng</th>
                 </tr>
               </thead>
-
               <tbody>
-                <tr v-for="it in pagedSortedItems" :key="(it.id || it.sku)">
+                <tr v-for="it in (selectedOrder.items||[])" :key="(it.id || it.sku)">
                   <td class="mono nowrap">{{ it.sku }}</td>
-                  <td class="nowrap" :title="it.name">{{ clip(it.name, 24) }}</td>
-                  <td class="nowrap">{{ clip(it.categoryName, 18) }}</td>
-                  <td class="nowrap">{{ clip(it.brandName, 18) }}</td>
-                  <td class="nowrap">{{ clip(it.color || '—', 16) }}</td>
+                  <td class="nowrap" :title="it.name">{{ cut(it.name, 28) }}</td>
+                  <td class="nowrap">{{ cut(it.categoryName, 18) }}</td>
+                  <td class="nowrap">{{ cut(it.brandName, 18) }}</td>
+                  <td class="nowrap">{{ cut(it.color || '—', 16) }}</td>
                   <td class="text-end nowrap mono">
                     <span>{{ scannedCount(it.sku) }}/{{ it.orderQuantity }}</span>
                     <button class="btn btn-link btn-sm ms-1" title="Xem serial đã quét" @click="openSerialsModal(it.sku)">
@@ -121,19 +98,6 @@
                 </tr>
               </tbody>
             </table>
-          </div>
-
-          <!-- Pager -->
-          <div class="pager-bar">
-            <div class="d-flex align-items-center gap-2">
-              <span class="small text-muted">Số mục</span>
-              <select v-model.number="pageSize" class="form-select form-select-sm w-auto">
-                <option v-for="n in pageSizeOptions" :key="n" :value="n">{{ n }}</option>
-              </select>
-              <button class="btn btn-sm btn-outline-secondary" :disabled="page<=1" @click="page--">&lt;</button>
-              <span class="px-2">{{ page }}</span>
-              <button class="btn btn-sm btn-outline-secondary" :disabled="page>=pageCount" @click="page++">&gt;</button>
-            </div>
           </div>
 
           <div class="px-3 py-3 d-flex justify-content-end">
@@ -184,92 +148,55 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted } from "vue";
 import { RouterLink } from "vue-router";
-import { purchaseOrderService } from "../../services/purchaseOrderService";
-import { inventoryClient } from "../../services/inventoryClient";
-import { fire, EVENTS } from "../../services/eventBus";
+import { purchaseOrderService } from "@/services/purchaseOrderService";
+import { inventoryClient } from "@/services/inventoryClient";
+import { fire, EVENTS } from "@/services/eventBus";
 
-/** sort icon */
-const SortIcon = {
-  name:"SortIcon",
-  props:{ dir:{ type:String, default:null } },
-  template:`<span class="sort-ico" :class="cls" aria-hidden="true">▲</span>`,
-  computed:{ cls(){ return { asc:this.dir==='asc', desc:this.dir==='desc', off:!this.dir } } }
-};
+/* ========== helpers ========== */
+const cut = (s,n=20)=> s && s.length>n ? (s.slice(0,n)+'...') : (s||'');
+const d = (x)=> { if(!x) return '—'; try{ if(typeof x==='string' && /^\d{4}-\d{2}-\d{2}$/.test(x)) return x; const t=new Date(x); return isNaN(+t)?x:t.toISOString().slice(0,10);}catch{return x} };
+const key = (s)=> String(s||'').trim().toLowerCase();
+const skuFromSerial = (s)=> String(s||'').split('-')[0]?.trim()?.toLowerCase()||'';
+const inflight = new Set();
 
-/* ---------- helpers ---------- */
-const clip=(s,n=20)=>s && s.length>n ? (s.slice(0,n)+'...') : (s||'');
-const fmtDate=d=>{ if(!d) return '—'; try{ if(typeof d==='string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) return d; const t=new Date(d); return isNaN(+t)?d:t.toISOString().slice(0,10) }catch{ return d } };
-const norm=s=>String(s||'').trim();
-const normKey=s=>norm(s).toLowerCase();
-const skuFromSerial=s=>String(s||'').split('-')[0]?.trim()?.toLowerCase()||'';
-const inflight=new Set();
+/* ========== state ========== */
+const orders = ref([]); const loading = ref(true);
+const status = ref('ALL');
+const selectedOrder = ref(null);
+const quickSerial = ref(''); const quickInputRef = ref(null);
+const scannedBySku = ref({}); // { [skuLower]: { count, serials:[lowerSerial], details:[...] } }
+const modalSku = ref(null);
+const toastMsg = ref(""); let toastTimer=null;
 
-/* ---------- state ---------- */
-const orders=ref([]); const loading=ref(true); const status=ref('ALL'); const selectedOrder=ref(null);
-const quickSerial=ref(''); const quickInputRef=ref(null);
-
-const scannedBySku=ref({}); // { [skuLower]: { count, serials:[lowerSerial], details:[...] } }
-const modalSku=ref(null); const toastMsg=ref(""); let toastTimer=null;
-
-/* ---------- paging ---------- */
-const page=ref(1); const pageSize=ref(10); const pageSizeOptions=[5,10,20,50];
-const totalItems=computed(()=> selectedOrder.value?.items?.length || 0);
-const pageCount=computed(()=> Math.max(1, Math.ceil(totalItems.value / pageSize.value)));
-watch([selectedOrder,pageSize], ()=>{ page.value=1 });
-
-/* ---------- sorting ---------- */
-const sortKey=ref('name'); const sortDir=ref('asc');
-function toggleSort(k){ if(sortKey.value===k) sortDir.value=sortDir.value==='asc'?'desc':'asc'; else { sortKey.value=k; sortDir.value='asc'; } }
-const valByKey=(it,k)=> (k==='orderQuantity' ? Number(it.orderQuantity||0) : (it?.[k] ?? ''));
-const sortedItems=computed(()=> {
-  const k=sortKey.value, d=sortDir.value; const arr=(selectedOrder.value?.items||[]).slice();
-  return arr.sort((a,b)=>{
-    const va=valByKey(a,k), vb=valByKey(b,k);
-    if(typeof va==='number' && typeof vb==='number') return d==='asc'?va-vb:vb-va;
-    const sa=String(va).toLowerCase(), sb=String(vb).toLowerCase();
-    if(sa<sb) return d==='asc'?-1:1;
-    if(sa>sb) return d==='asc'?1:-1;
-    return 0;
-  });
-});
-const pagedSortedItems=computed(()=>{
-  const start=(page.value-1)*pageSize.value;
-  return sortedItems.value.slice(start, start+pageSize.value);
-});
-
-/* ---------- filters ---------- */
-const chipCls=s=>({ 'btn-outline-secondary': status.value!==s, 'btn-primary text-white': status.value===s });
-const toViStatus=s=>{
-  const k=String(s||'').toUpperCase();
+/* ========== filters ========== */
+const chip = (s)=> ({ 'btn-outline-secondary': status.value!==s, 'btn-primary text-white': status.value===s });
+const viStatus = (s)=> {
+  const k = String(s||'').toUpperCase();
   if(k==='PENDING' || k==='UPCOMING') return 'Chờ xử lý';
   if(k==='IN_PROGRESS') return 'Đang thực hiện';
   if(k==='COMPLETED' || k==='DONE') return 'Hoàn tất';
   return s||'—';
 };
-const filteredOrders = computed(()=>{
-  if(status.value==='ALL') return orders.value;
-  return orders.value.filter(o=>{
-    const k=String(o.status||'').toUpperCase();
-    if(status.value==='PENDING')   return k==='PENDING' || k==='UPCOMING';
-    if(status.value==='COMPLETED') return k==='COMPLETED' || k==='DONE';
+const filteredOrders = computed(() => {
+  if (status.value==='ALL') return orders.value;
+  return orders.value.filter(o => {
+    const k = String(o.status||'').toUpperCase();
+    if (status.value==='PENDING')   return k==='PENDING' || k==='UPCOMING';
+    if (status.value==='COMPLETED') return k==='COMPLETED' || k==='DONE';
     return k===status.value;
   });
 });
 
-/* ---------- computed ---------- */
-const scannedCount = sku => scannedBySku.value[String(sku||'').toLowerCase()]?.count || 0;
-/* canComplete: chỉ cần có >=1 dòng đã quét */
-const canComplete = computed(()=> {
+/* ========== computed ========== */
+const scannedCount = (sku)=> scannedBySku.value[key(sku)]?.count || 0;
+const canComplete = computed(() => {
   const m = scannedBySku.value;
   return !!selectedOrder.value && Object.keys(m).some(k => (m[k]?.count || 0) > 0);
 });
 
-/* ---------- modal ---------- */
-function openSerialsModal(sku) { modalSku.value = String(sku||'').toLowerCase(); }
-
-/* ---------- open order ---------- */
+/* ========== open order ========== */
 async function openOrder(o){
   try{
     let full = o;
@@ -278,12 +205,11 @@ async function openOrder(o){
     }
     selectedOrder.value = normalizeOrder(full);
     scannedBySku.value = {};
-    page.value=1;
-  }catch{ showToast('Không tải được chi tiết phiếu'); }
+  }catch{ toast('Không tải được chi tiết phiếu'); }
 }
 function normalizeOrder(order){
   const items = (order.items||[]).map(x=>({
-    id:  x.id ?? x.purchaseOrderItemId ?? null,        // cần cho endpoint scan
+    id:  x.id ?? x.purchaseOrderItemId ?? null,
     productId: x.productId ?? x.product?.id ?? null,
     sku: x.sku ?? x.product?.sku ?? '',
     name: x.name ?? x.product?.name ?? '',
@@ -291,79 +217,61 @@ function normalizeOrder(order){
     brandName: x.brandName ?? x.product?.brandName ?? x.product?.brand?.name ?? '',
     color: x.color ?? x.product?.color ?? '',
     orderQuantity: Number(x.orderQuantity ?? x.qty ?? 0),
-    scannedQuantity: Number(x.scannedQuantity ?? 0),
   }));
   return { ...order, items };
 }
 
-/* ---------- scanning (top only) ---------- */
+/* ========== scan ========== */
 async function handleQuickScan(){
-  const serial = norm(quickSerial.value); if(!serial) return;
-  if(!selectedOrder.value?.items?.length){ showToast('Chưa chọn phiếu'); return; }
+  const serial = String(quickSerial.value||'').trim(); if(!serial) return;
+  if(!selectedOrder.value?.items?.length){ toast('Chưa chọn phiếu'); return; }
 
   const sku = skuFromSerial(serial);
-  const item = selectedOrder.value.items.find(x => String(x.sku||'').toLowerCase()===sku);
-  if(!item){ showToast('Serial không khớp SKU nào trong phiếu'); quickSerial.value=''; return; }
+  const item = selectedOrder.value.items.find(x => key(x.sku)===sku);
+  if(!item){ toast('Serial không khớp SKU nào trong phiếu'); quickSerial.value=''; return; }
 
   await scanSerialForItem(serial, item);
-  quickSerial.value='';
-  quickInputRef.value?.focus();
+  quickSerial.value=''; quickInputRef.value?.focus();
 }
 
-/** Quét 1 serial cho item – ưu tiên gọi BE /purchase-orders-items/{itemId}/scan */
 async function scanSerialForItem(serial, item){
-  const input = norm(serial); if(!input) return;
+  const s = String(serial||'').trim(); if(!s) return;
+  const sKey = key(s); if(inflight.has(sKey)) return; inflight.add(sKey);
 
-  const reqKey=normKey(input);
-  if(inflight.has(reqKey)) return;
-  inflight.add(reqKey);
-
-  let detail=null;
+  let detail = null;
   try{
-    if(item?.id){ // BE có purchaseOrderItemId
-      const res = await purchaseOrderService.scanItem(item.id, input);
-      detail = res?.result ?? res; // Postman cho thấy có wrapper { code, result }
+    if(item?.id){
+      const res = await purchaseOrderService.scanItem(item.id, s);
+      detail = res?.result ?? res;
     }else{
-      // fallback offline/ko có item.id
-      detail = await inventoryClient.scan(input);
+      detail = await inventoryClient.scan(s);
     }
   }catch(e){
-    // demo offline (tuỳ chọn): VITE_FAKE_SCAN_ON_ERROR=true
+    // fallback demo offline (tuỳ .env)
     if(String(import.meta.env?.VITE_FAKE_SCAN_ON_ERROR||'').toLowerCase()==='true'){
-      detail = { serialNumber: input, status:'INBOUND', productId: item.productId ?? null, warehouseId: null, purchaseOrderItemId: item.id ?? null };
+      detail = { serialNumber: s, status:'INBOUND', productId: item.productId ?? null, warehouseId: null, purchaseOrderItemId: item.id ?? null };
     }else{
-      showToast('Quét thất bại');
-      inflight.delete(reqKey);
-      return;
+      toast('Quét thất bại'); inflight.delete(sKey); return;
     }
-  }finally{
-    inflight.delete(reqKey);
-  }
+  }finally{ inflight.delete(sKey); }
 
-  const detailSN = norm(detail?.serialNumber ?? input);
-  const snKey = normKey(detailSN);
-  const skuKey = String(item.sku||'').toLowerCase();
-  const prefixMatches = skuFromSerial(detailSN) === skuKey;
+  const sn = String(detail?.serialNumber ?? s).trim(); const snKey = key(sn);
+  const skuKey = key(item.sku);
+  const prefixOK = skuFromSerial(sn) === skuKey;
 
-  // TỪ CHỐI KHI CHẮC CHẮN SAI (giữ behavior bản cũ)
-  if (item.productId && detail?.productId
-      && String(detail.productId) !== String(item.productId)
-      && !prefixMatches) {
-    showToast('Serial thuộc sản phẩm khác dòng này');
-    return;
+  if (item.productId && detail?.productId && String(detail.productId)!==String(item.productId) && !prefixOK) {
+    toast('Serial thuộc sản phẩm khác dòng này'); return;
   }
 
   const store = scannedBySku.value[skuKey] || { count:0, serials:[], details:[] };
-  if (store.serials.includes(snKey)){ showToast('Serial này đã quét trong phiếu'); return; }
+  if (store.serials.includes(snKey)){ toast('Serial này đã quét trong phiếu'); return; }
 
-  // không vượt quá số lượng đặt
-  const cur = store.count;
-  const max = Number(item.orderQuantity || 0);
-  if (cur >= max){ showToast('Dòng này đã đủ số lượng'); return; }
+  const cur = store.count, max = Number(item.orderQuantity||0);
+  if (cur >= max){ toast('Dòng này đã đủ số lượng'); return; }
 
   store.serials.push(snKey);
   store.details.unshift({
-    serialNumber: detailSN,
+    serialNumber: sn,
     status: detail?.status || 'INBOUND',
     binId: detail?.binId ?? null,
     warehouseId: detail?.warehouseId ?? null,
@@ -374,39 +282,35 @@ async function scanSerialForItem(serial, item){
   store.count = store.serials.length;
   scannedBySku.value = { ...scannedBySku.value, [skuKey]: store };
 
-  // nếu đang PENDING → chuyển sang IN_PROGRESS (UI)
-  const k = String(selectedOrder.value?.status||'').toUpperCase();
-  if(k==='PENDING') selectedOrder.value.status='IN_PROGRESS';
+  if (String(selectedOrder.value?.status||'').toUpperCase()==='PENDING') selectedOrder.value.status='IN_PROGRESS';
 
-  // bắn sự kiện cho các màn hình khác
   fire(EVENTS.INBOUND_SCANNED, {
-    serial: detailSN,
+    serial: sn,
     productId: detail?.productId ?? item.productId ?? null,
     binId: detail?.binId ?? detail?.warehouseId ?? null,
   });
 
-  showToast('Đã quét ✓');
+  toast('Đã quét ✓');
 }
 
-/* ---------- complete ---------- */
+/* ========== complete ========== */
 async function completeOrder(){
   if(!selectedOrder.value) return;
   try{
     await purchaseOrderService.complete(selectedOrder.value.id, { confirmedAt:new Date().toISOString() });
     selectedOrder.value.status='COMPLETED';
     fire(EVENTS.DASHBOARD_SHOULD_REFRESH);
-    showToast('Đã nhập hàng & xác nhận phiếu');
-  }catch{ showToast('Nhập hàng thất bại'); }
+    toast('Đã nhập hàng & xác nhận phiếu');
+  }catch{ toast('Nhập hàng thất bại'); }
 }
 
-/* ---------- toast & mount ---------- */
-function showToast(msg=''){ toastMsg.value=msg; clearTimeout(toastTimer); toastTimer=setTimeout(()=>toastMsg.value='',1600); }
+/* ========== modal & toast & mount ========== */
+function openSerialsModal(sku){ modalSku.value = key(sku); }
+function toast(msg=''){ toastMsg.value=msg; clearTimeout(toastTimer); toastTimer=setTimeout(()=>toastMsg.value='',1600); }
 
 onMounted(async ()=>{
-  try{
-    // nếu cần lọc theo phiên/người dùng: purchaseOrderService.list({ userId: ... })
-    orders.value = await purchaseOrderService.list();
-  }catch{ showToast('Không tải được danh sách phiếu'); }
+  try{ orders.value = await purchaseOrderService.list(); }
+  catch{ toast('Không tải được danh sách phiếu'); }
   finally{ loading.value=false; }
 });
 </script>
@@ -421,27 +325,13 @@ onMounted(async ()=>{
 .badge-card{ background:#fff; border:1px solid #eef2f7; border-radius:10px; padding:8px 14px; text-align:center; display:inline-flex; flex-direction:column; min-width:140px; }
 .badge-card .num{ font-weight:700; color:#1f2937; font-size:18px; }
 
-.table-balanced th, .table-balanced td{
-  vertical-align:middle; white-space:nowrap; overflow:visible; text-overflow:clip;
-  height:56px; padding-top:12px; padding-bottom:12px;
-}
+.table-balanced th, .table-balanced td{ vertical-align:middle; white-space:nowrap; height:56px; }
 .nowrap{ white-space:nowrap; }
-.thead-soft th{
-  background:#cfe3ff; color:#0b1324; font-weight:600; letter-spacing:.2px;
-  border-top:1px solid #9ec5fe; border-bottom:1px solid #9ec5fe;
-}
-.mono{ font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Courier New",monospace; }
-
-.pager-bar{ display:flex; justify-content:flex-end; padding:10px 16px; gap:10px; border-top:1px solid #eef2f7; background:#fafbfc; }
+.thead-soft th{ background:#cfe3ff; color:#0b1324; font-weight:600; letter-spacing:.2px; border-top:1px solid #9ec5fe; border-bottom:1px solid #9ec5fe; }
+.mono{ font-family: ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace; }
 
 .modal-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:10000; }
 .toast-box{ position:fixed; bottom:20px; right:20px; background:#111; color:#fff; padding:10px 14px; border-radius:8px; z-index:20000; }
-
-.sort-ico{ display:inline-block; margin-left:6px; transition: transform .18s ease; opacity:.6; font-size:10px; }
-.sort-ico.off{ opacity:.25; transform: rotate(0deg); }
-.sort-ico.asc{ transform: rotate(0deg); }
-.sort-ico.desc{ transform: rotate(180deg); }
-.cursor{ cursor:pointer; }
 
 @media (max-width: 992px){
   .pbox{ flex-direction:column; }

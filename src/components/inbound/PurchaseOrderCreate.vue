@@ -1,4 +1,3 @@
-<!-- src/pages/inventory/PurchaseOrderCreate.vue -->
 <template>
   <div>
     <div class="head">
@@ -22,12 +21,10 @@
           <label class="lbl">Mã đơn</label>
           <input v-model.trim="order.code" class="ipt" placeholder="VD: HD-2025-0001" disabled />
         </div>
-
         <div class="col">
           <label class="lbl">Nhà phân phối</label>
           <input v-model.trim="order.supplier" class="ipt" placeholder="Tên nhà phân phối" />
         </div>
-
         <div class="col">
           <label class="lbl">Ngày tạo</label>
           <input v-model="order.createdAt" type="date" class="ipt" disabled />
@@ -40,7 +37,6 @@
       <div class="section-head">
         <h3>Thêm sản phẩm</h3>
       </div>
-
       <ul class="nav nav-tabs" role="tablist">
         <li class="nav-item">
           <a class="nav-link active" href="#listProducts" data-bs-toggle="tab">Danh sách hàng hóa</a>
@@ -85,7 +81,6 @@
                 {{ clip(p.name, 28) }}
               </option>
             </select>
-
           </div>
         </div>
 
@@ -129,7 +124,6 @@
       </div>
     </div>
 
-    <!-- Submit -->
     <div class="bar">
       <button class="btn" :class="orderItems === 0 ? 'btn-secondary' : 'btn-primary'"
         :disabled="submitting || orderService.length === 0" @click="submit">
@@ -148,12 +142,10 @@ import { productService } from "../../services/product/productService";
 import { tokenService } from "../../services/TokenService";
 import { storeToRefs } from "pinia";
 
-
 const router = useRouter();
 const auth = tokenService();
 auth.loadToken();
 storeToRefs(auth);
-
 
 const order = ref({
   code: "",
@@ -186,8 +178,8 @@ function getOrderId() {
   return localStorage.getItem("order");
 }
 
-/* -------- add/remove lines -------- */
-function validateAdd() {
+/* add/remove lines */
+function validateAdd(){
   err.value = "";
   if (!form.value.productId) {
     err.value = "Chưa chọn sản phẩm.";
@@ -237,62 +229,44 @@ async function onImport(ev) {
         const wb = XLSX.read(buf);
         const ws = wb.Sheets[wb.SheetNames[0]];
         rows = XLSX.utils.sheet_to_json(ws); // [{SKU:'abc', QTY:10}, ...]
-      } else {
-        const txt = await file.text();
-        rows = csvToJson(txt);
+      }else{
+        rows = csvToJson(await file.text());
       }
-    } else {
-      const txt = await file.text();
-      rows = csvToJson(txt);
+    }else{
+      rows = csvToJson(await file.text());
     }
-
-    let added = 0;
-    rows.forEach((r) => {
-      const sku = String(r.SKU ?? r.sku ?? "").trim();
-      const q = Number(r.QTY ?? r.qty ?? r.quantity ?? 0);
-      if (!sku || !q || q < 1) return;
-      const p = products.value.find(x => String(x.sku || "").toLowerCase() === sku.toLowerCase());
-      if (!p) return;
-      const ex = form.value.items.find(x => x.productId === p.id);
-      if (ex) ex.orderQuantity = Math.min(9999, (ex.orderQuantity || 0) + q);
-      else {
-        form.value.items.push({
-          productId: p.id,
-          orderQuantity: Math.min(9999, q),
-          sku: p.sku,
-          name: p.name,
-          categoryName: p.categoryName,
-          brandName: p.brandName,
-          color: p.color,
-        });
-      }
+    let added=0;
+    rows.forEach(r=>{
+      const sku=String(r.SKU??r.sku??"").trim();
+      const q=Number(r.QTY??r.qty??r.quantity??0);
+      if(!sku || !q || q<1) return;
+      const p = products.value.find(x => String(x.sku||"").toLowerCase()===sku.toLowerCase());
+      if(!p) return;
+      const ex = form.value.items.find(x => x.productId===p.id);
+      if(ex) ex.orderQuantity = Math.min(9999, (ex.orderQuantity||0)+q);
+      else form.value.items.push({
+        productId: p.id, orderQuantity: Math.min(9999,q),
+        sku:p.sku, name:p.name, categoryName:p.categoryName, brandName:p.brandName, color:p.color,
+      });
       added++;
     });
     alert(`Đã nhập ${added} dòng từ file.`);
-  } catch (e) {
-    console.error(e);
-    alert("Không đọc được file. Hãy kiểm tra cột SKU và QTY.");
-  } finally {
-    ev.target.value = "";
-  }
+  }catch(e){ console.error(e); alert("Không đọc được file. Kiểm tra cột SKU và QTY."); }
+  finally{ ev.target.value=""; }
 }
 
 function csvToJson(text) {
   const lines = text.split(/\r?\n/).filter(Boolean);
-  if (lines.length < 2) return [];
-  const headers = splitCSVLine(lines[0]);
-  const out = [];
-  for (let i = 1; i < lines.length; i++) {
-    const parts = splitCSVLine(lines[i]);
-    const obj = {};
-    headers.forEach((h, idx) => (obj[h] = parts[idx]));
+  if(lines.length<2) return [];
+  const headers = splitCSVLine(lines[0]); const out=[];
+  for(let i=1;i<lines.length;i++){
+    const parts = splitCSVLine(lines[i]); const obj={};
+    headers.forEach((h,idx)=> (obj[h]=parts[idx]));
     out.push(obj);
   }
   return out;
 }
-function splitCSVLine(line) {
-  return line.split(",").map(x => x.replace(/^"|"$/g, "").trim());
-}
+function splitCSVLine(line){ return line.split(",").map(x=>x.replace(/^"|"$/g,"").trim()); }
 
 /* -------- submit -------- */
 async function submit() {
@@ -305,35 +279,20 @@ async function submit() {
     code: form.value.code.trim(),
     supplier: form.value.supplier.trim(),
     status: "PENDING",
-    createdAt: form.value.createdAt,         // yyyy-MM-dd
-    userId: userId.value,                    // <-- thêm userId
-    createdBy: createdBy.value?.trim() || null, // <-- tên hiển thị (BE có thể bỏ qua)
-    items: form.value.items.map(x => ({
-      productId: x.productId,
-      orderQuantity: x.orderQuantity,
-    })),
+    createdAt: form.value.createdAt,
+    userId: userId.value,
+    createdBy: creatorName.value,
+    items: form.value.items.map(x => ({ productId: x.productId, orderQuantity: x.orderQuantity })),
   };
 
   submitting.value = true;
-  try {
-    let res;
-    if (typeof purchaseOrderService.create === "function") {
-      res = await purchaseOrderService.create(payload);
-    } else {
-      const { data } = await api.post("/api/purchase-orders", payload);
-      res = data?.result ?? data;
-    }
-
+  try{
+    const res = await purchaseOrderService.create(payload);
     const id = res?.id;
     alert("Tạo đơn thành công!");
-    if (id) router.push(`/inbound/${encodeURIComponent(id)}`);
-    else router.push("/inbound");
-  } catch (e) {
-    console.error(e);
-    alert("Lỗi khi tạo đơn.");
-  } finally {
-    submitting.value = false;
-  }
+    if(id) router.push(`/inbound/${encodeURIComponent(id)}`); else router.push("/inbound");
+  }catch(e){ console.error(e); alert("Lỗi khi tạo đơn."); }
+  finally{ submitting.value=false; }
 }
 
 async function createOrder() {
