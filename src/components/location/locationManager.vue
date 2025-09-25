@@ -1,30 +1,165 @@
-```vue
+<script setup>
+import { onMounted, ref } from "vue";
+import { locationService } from "../../services/locationService";
+
+const cities = ref([]);
+const wards = ref([]);
+const selectCityId = ref(null);
+const cityForm = ref({
+  name: "",
+  address: "",
+});
+
+const editCityForm = ref({
+  id: null,
+  name: "",
+  address: "",
+});
+
+async function getAllCity() {
+  try {
+    cities.value = await locationService.getAllLocation();
+    console.log(cities.value);
+  } catch (err) {
+    console.log("Error load cities: ", err);
+  }
+}
+
+// ------------------- WARD ----------------------------------
+
+async function getLocationByLocation(locationId) {
+  try {
+    wards.value = [];
+    const response = await locationService.getLocationById(locationId);
+    wards.value = response.children || [];
+    console.log("ward data: ", wards.value);
+  } catch (err) {
+    console.log("Error get location by id", err);
+  }
+}
+
+async function createCity() {
+  try {
+    await locationService.createLocation(cityForm.value);
+    cityForm.value = { name: "", address: "" };
+    getAllCity();
+  } catch (err) {
+    console.log("Error create city");
+  }
+}
+
+function openEditModal(city) {
+  console.log("city from table:", city);
+  editCityForm.value = {
+    id: city.id,
+    name: city.name,
+    address: city.address,
+  };
+  console.log(editCityForm.value);
+}
+
+async function updateCity() {
+  console.log("Prep update: ", editCityForm.value);
+  try {
+    const responseUp = await locationService.updateLocation(
+      editCityForm.value.id,
+      {
+        name: editCityForm.value.name,
+        address: editCityForm.value.address,
+      }
+    );
+
+    console.log("update", responseUp);
+    getAllCity();
+
+    const modal = bootstrap.Modal.getInstance(
+      document.getElementById("editLocationModal")
+    );
+    modal?.hide();
+  } catch (err) {
+    console.log("Error update city:", err);
+  }
+}
+
+const wardForm = ref({
+  name: '',
+  address: ''
+});
+
+async function createWard() {
+  if (!selectCityId.value) {
+    console.log("City ID not selected");
+    return;
+  }
+
+  try {
+    await locationService.createLocation({
+      name: wardForm.value.name,
+      address: wardForm.value.address,
+      parentId: selectCityId.value,
+    });
+
+    wardForm.value = { name: "", address: "" };
+
+    await getLocationByLocation(selectCityId.value);
+  } catch (err) {
+    console.log("Error create ward:", err);
+  }
+}
+
+const editWardForm = ref({
+  id: null,
+  name: "",
+  address: ""
+});
+
+function openEditWardModal(w) {
+  editWardForm.value = {
+    id: w.id,
+    name: w.name,
+    address: w.address
+  };
+}
+
+async function updateWard() {
+  try {
+    await locationService.updateLocation(editWardForm.value.id, {
+      name: editWardForm.value.name,
+      address: editWardForm.value.address
+    });
+
+    await getLocationByLocation(selectCityId.value);
+    const modal = bootstrap.Modal.getInstance(
+      document.getElementById("editWardModal")
+    );
+    modal?.hide();
+  } catch (err) {
+    console.log("Error update ward:", err);
+  }
+}
+
+
+onMounted(() => {
+  getAllCity();
+});
+</script>
+
 <template>
-  <div class="container py-5" style="max-width: 1000px;">
-    <!-- Header -->
+  <div class="container py-5" style="max-width: 1000px">
+    
     <div class="d-flex align-items-center justify-content-between mb-4">
       <div class="d-flex align-items-center gap-2">
-        <!-- Thanh tìm kiếm -->
         <div class="position-relative">
-          <input
-            v-model.trim="searchQuery"
-            type="text"
-            class="form-control"
-            placeholder="Nhập tên tỉnh hoặc địa chỉ..."
-            maxlength="100"
-            :class="{ 'is-invalid': searchQuery && filteredTinhs.length === 0 }"
-          />
-          <div class="invalid-feedback" v-if="searchQuery && filteredTinhs.length === 0">
-            Không tìm thấy tỉnh nào.
-          </div>
+          <input type="text" class="form-control" placeholder="Nhập tên tỉnh" maxlength="100" />
         </div>
       </div>
-      <button class="btn btn-success" @click="showAddTinhModal = true">
+
+      <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addLocationModal">
         + Thêm địa chỉ
       </button>
     </div>
 
-    <!-- Bảng danh sách tỉnh -->
+    <!-- Table city -->
     <div class="card border-0 shadow-sm">
       <div class="card-body p-4">
         <h5 class="fw-bold mb-3">Danh sách tỉnh</h5>
@@ -32,33 +167,35 @@
         <table class="table table-hover align-middle mb-0">
           <thead class="table-light">
             <tr>
+              <th>STT</th>
               <th>Tên tỉnh</th>
               <th>Địa chỉ</th>
-              <th class="text-center" style="width: 100px;">Hành động</th>
+              <th class="text-center" style="width: 100px">Hành động</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(tinh, index) in filteredTinhs" :key="tinh.id">
-              <td>{{ tinh.tenTinh }}</td>
-              <td>{{ tinh.diaChi }}</td>
+            <tr v-for="(c, index) in cities" :key="index">
+              <td>{{ index + 1 }}</td>
+              <td>{{ c.name }}</td>
+              <td>{{ c.address }}</td>
               <td class="text-center">
                 <div class="dropdown">
-                  <button
-                    class="btn btn-sm btn-link text-dark"
-                    type="button"
-                    data-bs-toggle="dropdown"
-                    aria-expanded="false"
-                  >
+                  <button class="btn btn-sm btn-link text-dark" type="button" data-bs-toggle="dropdown"
+                    aria-expanded="false">
                     <span class="fw-bold fs-5">⋮</span>
                   </button>
                   <ul class="dropdown-menu">
                     <li>
-                      <a class="dropdown-item" href="#" @click.prevent="openEditTinhModal(index)">
+                      <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#editLocationModal"
+                        @click="openEditModal(c)">
                         Chỉnh sửa
                       </a>
                     </li>
                     <li>
-                      <a class="dropdown-item" href="#" @click.prevent="openPhuongModal(index)">
+                      <a class="dropdown-item" href="#" data-bs-toggle="modal" data-bs-target="#wardModal" @click="
+                        selectCityId = c.id;
+                      getLocationByLocation(c.id);
+                      ">
                         Phường trực thuộc
                       </a>
                     </li>
@@ -66,389 +203,204 @@
                 </div>
               </td>
             </tr>
-            <tr v-if="filteredTinhs.length === 0">
-              <td colspan="3" class="text-center text-muted py-3">
-                {{ searchQuery ? 'Không tìm thấy tỉnh nào' : 'Chưa có tỉnh nào' }}
-              </td>
+            <tr>
+              <!-- <td colspan="3" class="text-center text-muted py-3">
+                Chưa có tỉnh nào
+              </td> -->
             </tr>
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- Modal thêm tỉnh -->
-    <div class="modal fade" :class="{ 'show d-block': showAddTinhModal }" tabindex="-1" role="dialog">
-      <div class="modal-dialog" role="document">
+    <!-- Modal create city -->
+    <div class="modal fade" id="addLocationModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
           <div class="modal-header">
             <h5 class="modal-title fw-bold">Thêm địa chỉ</h5>
-            <button type="button" class="btn-close" @click="closeAddTinhModal"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <form @submit.prevent="themTinh">
+            <form @submit.prevent="createCity">
               <div class="mb-3">
                 <label class="form-label">Tỉnh/Thành phố <span class="text-danger">*</span></label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model.trim="newTinh.tenTinh"
-                  placeholder="Nhập tỉnh/thành phố"
-                  maxlength="100"
-                  :class="{ 'is-invalid': errors.tenTinh }"
-                  required
-                />
-                <div class="invalid-feedback" v-if="errors.tenTinh">{{ errors.tenTinh }}</div>
+                <input v-model.trim="cityForm.name" type="text" class="form-control"
+                  placeholder="Nhập tỉnh/thành phố" />
               </div>
               <div class="mb-3">
                 <label class="form-label">Địa chỉ <span class="text-danger">*</span></label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model.trim="newTinh.diaChi"
-                  placeholder="Nhập địa chỉ"
-                  maxlength="200"
-                  :class="{ 'is-invalid': errors.diaChi }"
-                  required
-                />
-                <div class="invalid-feedback" v-if="errors.diaChi">{{ errors.diaChi }}</div>
+                <input v-model.trim="cityForm.address" type="text" class="form-control" placeholder="Nhập địa chỉ" />
               </div>
-              <div v-if="error" class="alert alert-danger">{{ error }}</div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                  Hủy
+                </button>
+                <button type="submit" class="btn btn-success">Thêm</button>
+              </div>
             </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" @click="closeAddTinhModal">Hủy</button>
-            <button
-              type="button"
-              class="btn btn-success"
-              @click="themTinh"
-              :disabled="submitting"
-            >
-              <span v-if="submitting" class="spinner-border spinner-border-sm me-1"></span>
-              Thêm
-            </button>
           </div>
         </div>
       </div>
     </div>
-    <div class="modal-backdrop fade" :class="{ 'show': showAddTinhModal }" v-if="showAddTinhModal" @click="closeAddTinhModal"></div>
 
-    <!-- Modal chỉnh sửa tỉnh -->
-    <div class="modal fade" :class="{ 'show d-block': showEditTinhModal }" tabindex="-1" role="dialog">
-      <div class="modal-dialog" role="document">
+    <!-- Modal update city -->
+    <div class="modal fade" id="editLocationModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow">
           <div class="modal-header">
             <h5 class="modal-title fw-bold">Chỉnh sửa tỉnh</h5>
-            <button type="button" class="btn-close" @click="closeEditTinhModal"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <form @submit.prevent="capNhatTinh">
+            <form @submit.prevent="updateCity">
               <div class="mb-3">
-                <label class="form-label">Tỉnh/Thành phố <span class="text-danger">*</span></label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model.trim="editTinh.tenTinh"
-                  placeholder="Nhập tỉnh/thành phố"
-                  maxlength="100"
-                  :class="{ 'is-invalid': errors.tenTinh }"
-                  required
-                />
-                <div class="invalid-feedback" v-if="errors.tenTinh">{{ errors.tenTinh }}</div>
+                <label class="form-label">Tỉnh/Thành phố</label>
+                <input v-model.trim="editCityForm.name" type="text" class="form-control" />
               </div>
               <div class="mb-3">
-                <label class="form-label">Địa chỉ <span class="text-danger">*</span></label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model.trim="editTinh.diaChi"
-                  placeholder="Nhập địa chỉ"
-                  maxlength="200"
-                  :class="{ 'is-invalid': errors.diaChi }"
-                  required
-                />
-                <div class="invalid-feedback" v-if="errors.diaChi">{{ errors.diaChi }}</div>
+                <label class="form-label">Địa chỉ</label>
+                <input v-model.trim="editCityForm.address" type="text" class="form-control" />
               </div>
-              <div v-if="error" class="alert alert-danger">{{ error }}</div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                  Hủy
+                </button>
+                <button type="submit" class="btn btn-success">Cập nhật</button>
+              </div>
             </form>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" @click="closeEditTinhModal">Hủy</button>
-            <button
-              type="button"
-              class="btn btn-success"
-              @click="capNhatTinh"
-              :disabled="submitting"
-            >
-              <span v-if="submitting" class="spinner-border spinner-border-sm me-1"></span>
-              Cập nhật
-            </button>
           </div>
         </div>
       </div>
     </div>
-    <div class="modal-backdrop fade" :class="{ 'show': showEditTinhModal }" v-if="showEditTinhModal" @click="closeEditTinhModal"></div>
 
-    <!-- Modal phường trực thuộc -->
-    <div class="modal fade" :class="{ 'show d-block': showPhuongModal }" tabindex="-1" role="dialog">
-      <div class="modal-dialog" role="document">
+    <!-- Modal table ward -->
+
+    <div class="modal fade" id="wardModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered modal-xxl">
         <div class="modal-content border-0 shadow">
           <div class="modal-header">
             <h5 class="modal-title fw-bold">Phường trực thuộc</h5>
-            <button type="button" class="btn-close" @click="closePhuongModal"></button>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
           </div>
           <div class="modal-body">
-            <form @submit.prevent="themPhuong" class="mb-4">
-              <div class="mb-3">
-                <label class="form-label">Xã/Phường <span class="text-danger">*</span></label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model.trim="newPhuong.tenPhuong"
-                  placeholder="Nhập xã/phường"
-                  maxlength="100"
-                  :class="{ 'is-invalid': errors.tenPhuong }"
-                  required
-                />
-                <div class="invalid-feedback" v-if="errors.tenPhuong">{{ errors.tenPhuong }}</div>
+
+            <form class="row g-3 mb-4" @submit.prevent="createWard">
+              <div class="col-md-5">
+                <label class="form-label">Xã/Phường</label>
+                <input v-model.trim="wardForm.name" type="text" class="form-control" placeholder="Nhập xã/phường" />
               </div>
-              <div class="mb-3">
-                <label class="form-label">Địa số nhà <span class="text-danger">*</span></label>
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model.trim="newPhuong.diaSoNha"
-                  placeholder="Nhập địa số nhà"
-                  maxlength="200"
-                  :class="{ 'is-invalid': errors.diaSoNha }"
-                  required
-                />
-                <div class="invalid-feedback" v-if="errors.diaSoNha">{{ errors.diaSoNha }}</div>
+              <div class="col-md-5">
+                <label class="form-label">Địa số nhà</label>
+                <input v-model.trim="wardForm.address" type="text" class="form-control" placeholder="Nhập địa số nhà" />
               </div>
-              <div v-if="error" class="alert alert-danger">{{ error }}</div>
-              <div class="d-flex justify-content-end gap-2">
-                <button type="button" class="btn btn-outline-secondary" @click="closePhuongModal">Hủy</button>
-                <button
-                  type="button"
-                  class="btn btn-success"
-                  @click="themPhuong"
-                  :disabled="submitting"
-                >
-                  <span v-if="submitting" class="spinner-border spinner-border-sm me-1"></span>
-                  Thêm
+              <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-success w-100">
+                  + Thêm
                 </button>
               </div>
             </form>
-            <h6 class="fw-bold mb-3">Danh sách phường</h6>
-            <ul class="list-group">
-              <li
-                v-for="(phuong, pIndex) in currentTinh.phuongs"
-                :key="pIndex"
-                class="list-group-item d-flex justify-content-between align-items-center"
-              >
-                {{ phuong.tenPhuong }} - {{ phuong.diaSoNha }}
-                <button class="btn btn-sm btn-outline-danger" @click="xoaPhuong(pIndex)">Xóa</button>
-              </li>
-              <li v-if="!currentTinh.phuongs || currentTinh.phuongs.length === 0" class="list-group-item text-muted">
-                Chưa có phường nào
-              </li>
-            </ul>
+
+            <!-- table ward -->
+            <table class="table table-bordered align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th style="width: 10%">STT</th>
+                  <th style="width: 30%">Tên Phường</th>
+                  <th style="width: 40%">Địa chỉ</th>
+                  <th class="text-center" style="width: 20%">Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(w, index) in wards" :key="index">
+                  <td>{{ index + 1 }}</td>
+                  <td>{{ w?.name }}</td>
+                  <td>{{ w?.address }}</td>
+                  <td class="text-center">
+                    <button @click="openEditWardModal(w)" class="btn btn-sm btn-primary me-2" data-bs-toggle="modal"
+                      data-bs-target="#editWardModal">
+                      Cập nhật
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger">Xóa</button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
     </div>
-    <div class="modal-backdrop fade" :class="{ 'show': showPhuongModal }" v-if="showPhuongModal" @click="closePhuongModal"></div>
+
+    <!-- Modal update ward -->
+    <div class="modal fade" id="editWardModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+          <div class="modal-header">
+            <h5 class="modal-title fw-bold">Cập nhật phường</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+          </div>
+          <div class="modal-body">
+            <form @submit.prevent="updateWard">
+              <div class="mb-3">
+                <label class="form-label">Xã/Phường</label>
+                <input v-model.trim="editWardForm.name" type="text" class="form-control" />
+              </div>
+              <div class="mb-3">
+                <label class="form-label">Địa số nhà</label>
+                <input v-model.trim="editWardForm.address" type="text" class="form-control" />
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                  Hủy
+                </button>
+                <button type="submit" class="btn btn-success">Lưu</button>
+              </div>
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
-<script>
-import axios from 'axios';
-
-export default {
-  data() {
-    return {
-      showAddTinhModal: false,
-      showEditTinhModal: false,
-      showPhuongModal: false,
-      newTinh: { tenTinh: '', diaChi: '' },
-      editTinh: { tenTinh: '', diaChi: '', id: null },
-      newPhuong: { tenPhuong: '', diaSoNha: '' },
-      tinhs: [], // Danh sách tỉnh từ API
-      selectedTinhIndex: null,
-      currentTinh: { phuongs: [] },
-      searchQuery: '',
-      submitting: false,
-      error: '',
-      errors: {
-        tenTinh: '',
-        diaChi: '',
-        tenPhuong: '',
-        diaSoNha: ''
-      }
-    };
-  },
-  computed: {
-    filteredTinhs() {
-      if (!this.searchQuery) {
-        return this.tinhs;
-      }
-      const query = this.searchQuery.toLowerCase().trim();
-      return this.tinhs.filter(tinh =>
-        (tinh.tenTinh?.toLowerCase() || '').includes(query) ||
-        (tinh.diaChi?.toLowerCase() || '').includes(query)
-      );
-    }
-  },
-  created() {
-    this.fetchTinhs();
-  },
-  methods: {
-    fetchTinhs() {
-      // gắn API GET ở đây
-    },
-    async themTinh() {
-      this.errors.tenTinh = '';
-      this.errors.diaChi = '';
-      this.error = '';
-      this.submitting = true;
-
-      if (!this.newTinh.tenTinh) {
-        this.errors.tenTinh = 'Vui lòng nhập tỉnh/thành phố.';
-        this.submitting = false;
-        return;
-      }
-      if (!this.newTinh.diaChi) {
-        this.errors.diaChi = 'Vui lòng nhập địa chỉ.';
-        this.submitting = false;
-        return;
-      }
-
-      try {
-        // gắn API POST ở đây
-      
-        this.closeAddTinhModal();
-      } catch (err) {
-        this.error = err.response?.data?.message || 'Thêm tỉnh thất bại!';
-      } finally {
-        this.submitting = false;
-      }
-    },
-    openEditTinhModal(index) {
-      this.selectedTinhIndex = index;
-      this.editTinh = { ...this.tinhs[index] };
-      this.showEditTinhModal = true;
-    },
-    async capNhatTinh() {
-      this.errors.tenTinh = '';
-      this.errors.diaChi = '';
-      this.error = '';
-      this.submitting = true;
-
-      if (!this.editTinh.tenTinh) {
-        this.errors.tenTinh = 'Vui lòng nhập tỉnh/thành phố.';
-        this.submitting = false;
-        return;
-      }
-      if (!this.editTinh.diaChi) {
-        this.errors.diaChi = 'Vui lòng nhập địa chỉ.';
-        this.submitting = false;
-        return;
-      }
-
-      try {
-        // gắn API PUT ở đây
-       
-        this.closeEditTinhModal();
-      } catch (err) {
-        this.error = err.response?.data?.message || 'Cập nhật tỉnh thất bại!';
-      } finally {
-        this.submitting = false;
-      }
-    },
-    openPhuongModal(index) {
-      this.selectedTinhIndex = index;
-      this.currentTinh = { ...this.tinhs[index], phuongs: this.tinhs[index].phuongs || [] };
-      this.showPhuongModal = true;
-    },
-    async themPhuong() {
-      this.errors.tenPhuong = '';
-      this.errors.diaSoNha = '';
-      this.error = '';
-      this.submitting = true;
-
-      if (!this.newPhuong.tenPhuong) {
-        this.errors.tenPhuong = 'Vui lòng nhập xã/phường.';
-        this.submitting = false;
-        return;
-      }
-      if (!this.newPhuong.diaSoNha) {
-        this.errors.diaSoNha = 'Vui lòng nhập địa số nhà.';
-        this.submitting = false;
-        return;
-      }
-
-      try {
-        //  gắn API POST ở đây
-        
-        this.newPhuong = { tenPhuong: '', diaSoNha: '' };
-      } catch (err) {
-        this.error = err.response?.data?.message || 'Thêm phường thất bại!';
-      } finally {
-        this.submitting = false;
-      }
-    },
-    async xoaPhuong(pIndex) {
-      if (confirm('Bạn có chắc chắn muốn xóa phường này?')) {
-        this.error = '';
-        this.submitting = true;
-        try {
-          // gắn API DELETE ở đây
-       
-        } catch (err) {
-          this.error = err.response?.data?.message || 'Xóa phường thất bại!';
-        } finally {
-          this.submitting = false;
-        }
-      }
-    },
-    closeAddTinhModal() {
-      this.newTinh = { tenTinh: '', diaChi: '' };
-      this.errors.tenTinh = '';
-      this.errors.diaChi = '';
-      this.error = '';
-      this.showAddTinhModal = false;
-    },
-    closeEditTinhModal() {
-      this.editTinh = { tenTinh: '', diaChi: '', id: null };
-      this.errors.tenTinh = '';
-      this.errors.diaChi = '';
-      this.error = '';
-      this.showEditTinhModal = false;
-      this.selectedTinhIndex = null;
-    },
-    closePhuongModal() {
-      this.newPhuong = { tenPhuong: '', diaSoNha: '' };
-      this.errors.tenPhuong = '';
-      this.errors.diaSoNha = '';
-      this.error = '';
-      this.showPhuongModal = false;
-      this.selectedTinhIndex = null;
-    }
-  }
-};
-</script>
-
 <style scoped>
-.modal {
-  display: none;
-}
-.modal.show {
-  display: block;
-}
 .card {
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
+
 .dropdown-menu {
   min-width: 150px;
+}
+
+#wardModal .modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 1rem;
+}
+
+
+#wardModal .modal-dialog.modal-xxl {
+  max-width: 90vw;
+  width: 90vw;
+}
+
+@media (min-width: 1200px) {
+  #wardModal .modal-dialog.modal-xxl {
+    max-width: 1100px;
+  }
+}
+
+
+#wardModal table {
+  width: 100%;
+}
+
+
+#wardModal .modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding-right: 1rem;
 }
 </style>
