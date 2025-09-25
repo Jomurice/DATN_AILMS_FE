@@ -33,7 +33,7 @@
       <div class="card border-0 shadow-sm rounded-3 main">
 
         <div class="m-2 d-flex gap-3 align-items-center justify-content-end">
-          <button class="btn btn-success col-md-1 " @click="$router.push('/category/add')">+ Thêm</button>
+          <button class="btn btn-success btn-sm col-md-1 " @click="$router.push('/category/add')">+ Thêm</button>
           <!-- page -->
           <div class="sizePage p-2 d-flex align-items-center rounded-3 justify-content-end">
             Số mục
