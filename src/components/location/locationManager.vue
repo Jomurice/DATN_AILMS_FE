@@ -81,7 +81,7 @@ const editWardErrors = computed(() => {
   return e;
 });
 
-/* ===== actions: city ===== */
+/* ------------- CITY--------- */
 async function createCity() {
   citySubmit.value = true;
   if (Object.keys(cityErrors.value).length) return;
@@ -123,7 +123,7 @@ async function removeCity(id) {
   } catch (err) { console.log("Error delete city:", err); }
 }
 
-/* ===== actions: ward ===== */
+/* ---------------------- WARD -----------*/
 async function createWard() {
   wardSubmit.value = true;
   if (Object.keys(wardErrors.value).length) return;
@@ -152,8 +152,10 @@ async function updateWard() {
     await locationService.updateLocation(editWardForm.value.id, {
       name: editWardForm.value.name,
       address: editWardForm.value.address,
+      parentId: selectCityId.value
     });
     await getLocationByLocation(selectCityId.value);
+    getAllCity();
     bootstrap.Modal.getInstance(document.getElementById("editWardModal"))?.hide();
     alert("Cập nhật phường thành công!");
   } catch (err) { console.log("Error update ward:", err); }
@@ -167,7 +169,7 @@ async function removeWard(id) {
   } catch (err) { console.log("Error delete ward:", err); }
 }
 
-/* ===== mount ===== */
+
 onMounted(getAllCity);
 </script>
 
