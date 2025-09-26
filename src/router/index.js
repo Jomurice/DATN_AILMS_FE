@@ -30,6 +30,7 @@ import OutboundOrderDetail from "../components/outbound/OutboundOrderDetail.vue"
 
 
 import locationManager from "../components/location/locationManager.vue";
+import WarehouseCreateForm from "../components/NewWarehouse/WarehouseCreateForm.vue";
 
  const routes = [
   { path: "/", redirect: "/login" },
@@ -59,7 +60,13 @@ import locationManager from "../components/location/locationManager.vue";
       { path: "/warehouses", name: "Warehouses", component: Warehouse },
       // Warehouse chain
       { path: "warehouse", name: "warehouse", meta: {title: 'Kho'}, component: Warehouse },
+
       
+
+      
+      { path: "/warehousesmenu", name: "WarehousesMenu", component: WarehouseMenu },
+      { path: "/warehouses/create",name: "WarehouseCreate",component: WarehouseCreateForm,},
+
       // Inbound & Outbound
       { path: "inbound", name: "inbound", meta: {title: 'Nhập hàng'}, component: Inbound},
        { path: "inbound/new", name: "inbound-create", meta: { title: "Tạo đơn mua" }, component: PurchaseOrderCreate },
