@@ -4,13 +4,28 @@ import { defineStore } from "pinia";
 export const tokenService = defineStore("auth", {
     state: () => ({
         token: null,
-        user: null,
+        user: null, // payload decode
     }),
+    getters: {
+        userId: (state) =>
+            state.user?.id ||
+            state.user?.userId ||
+            state.user?.uid ||
+            state.user?.sub ||
+            "",
+
+        userName: (state) =>
+            state.user?.username ||
+            state.user?.preferred_username ||
+            state.user?.name ||
+            state.user?.email ||
+            state.user?.sub || // fallback cuối
+            "",
+    },
     actions: {
         setToken(token) {
             this.token = token;
             localStorage.setItem("accessToken", token);
-
             try {
                 this.user = jwtDecode(token);
             } catch (e) {
@@ -29,4 +44,4 @@ export const tokenService = defineStore("auth", {
             localStorage.removeItem("accessToken");
         },
     },
-})
+});

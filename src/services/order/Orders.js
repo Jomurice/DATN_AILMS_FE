@@ -16,7 +16,6 @@ export const orderService = {
     },
 
     async create(payload){
-        const response = await api.post('/api/purchase-orders',payload);
-        return response.data?.result?.id;
+         await api.post('/api/purchase-orders',payload);
     }
 }

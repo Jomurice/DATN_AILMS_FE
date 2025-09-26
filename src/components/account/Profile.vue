@@ -121,7 +121,7 @@ const auth = tokenService();
 auth.loadToken();
 storeToRefs(auth);
 
-const userId = auth.user.id;
+const userId = auth.userId;
 const user = ref({
   username: "",
   name: "",

@@ -236,6 +236,16 @@ function selectNode(node) {
   selectedNodeId.value = node.id;
 }
 
+function selectSort() {
+  if (isSort.value) {
+    isSort.value = false;
+    payload.value.pageable.sort = 'name,desc';
+  } else {
+    isSort.value = true;
+    payload.value.pageable.sort = 'name,asc';
+  }
+}
+
 
 async function loadAll() {
   isLoading.value = true
