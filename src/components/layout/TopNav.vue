@@ -10,11 +10,11 @@
           <RouterLink class="tab" to="/inbound" exact-active-class="active">Nhập hàng</RouterLink>
           <RouterLink class="tab" to="/outbound/new" exact-active-class="active">Đơn xuất</RouterLink>
           <RouterLink class="tab" to="/outbound" exact-active-class="active">Xuất hàng</RouterLink>
-          <RouterLink class="tab" to="/warehouse" exact-active-class="active">Kho</RouterLink>
+          <RouterLink class="tab" to="/warehousesmenu" exact-active-class="active">Kho</RouterLink>
           <RouterLink class="tab" to="/report" exact-active-class="active">Báo cáo</RouterLink>
           <RouterLink class="tab" to="/admin/account" exact-active-class="active">Nhân sự</RouterLink>
           <RouterLink class="tab" to="/location" exact-active-class="active">Địa chỉ</RouterLink>
-          <RouterLink class="tab" to="/warehousesmenu">Menu</RouterLink>
+          
           <!-- <RouterLink class="tab" to="/report" exact-active-class="active">Tổng quát</RouterLink>
           <RouterLink class="tab" to="/report" exact-active-class="active">Khác</RouterLink> -->
         </div>
