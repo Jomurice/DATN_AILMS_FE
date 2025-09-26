@@ -1,51 +1,32 @@
-import api from "./axios";
+import api from './axios';
 
 export const warehouseService = {
-  async getAll() {
-    const { data } = await api.get("/api/warehouses");
-    return data?.result ?? data ?? [];
+
+  async getAllWarehouses() {
+    const response = await api.get('/api/warehouses');
+    return response.data.result;
   },
-  async getById(warehouseId) {
-    const { data } = await api.get(`/api/warehouses/${warehouseId}`);
-    return data?.result ?? data ?? null;
+
+  async getTreeByLocation(locationId) {
+    const response = await api.get(`/api/warehouses/tree/location/${locationId}`);
+    return response.data.result;
   },
-  async create(payload) {
-    const { data } = await api.post(`/api/warehouses`, payload);
-    return data?.result ?? data;
+
+ 
+  async getWarehouseById(warehouseId) {
+    const response = await api.get(`/api/warehouses/${warehouseId}`);
+    return response.data.result;
   },
-  async update(warehouseId, payload) {
-    const { data } = await api.put(`/api/warehouses/${warehouseId}`, payload);
-    return data?.result ?? data;
+
+
+  async createWarehouse(payload) {
+    const response = await api.post('/api/warehouses', payload);
+    return response.data.result;
   },
-  async remove(warehouseId) {
-    // Swagger hiện không có DELETE /api/warehouses/{warehouseId}
-    throw new Error("Backend chưa cung cấp DELETE /api/warehouses/{warehouseId}");
-    // await api.delete(`/api/warehouses/${warehouseId}`)
-    //  return true
+
+
+  async updateWarehouse(warehouseId, payload) {
+    const response = await api.put(`/api/warehouses/${warehouseId}`, payload);
+    return response.data.result;
   },
 };
-
-// import api from "./axios"
-
-// export const warehouseService = {
-//   async getAll() {
-//     const { data } = await api.get("/api/warehouses")
-//     return data?.result ?? data ?? []
-//   },
-//   async getById(id) {
-//     const { data } = await api.get(`/api/warehouses/${encodeURIComponent(id)}`)
-//     return data?.result ?? data ?? null
-//   },
-//   async create(payload) {
-//     const { data } = await api.post(`/api/warehouses`, payload)
-//     return data?.result ?? data
-//   },
-//   async update(id, payload) {
-//     const { data } = await api.put(`/api/warehouses/${encodeURIComponent(id)}`, payload)
-//     return data?.result ?? data
-//   },
-//   async remove(id) {
-//     await api.delete(`/api/warehouses/${encodeURIComponent(id)}`)
-//     return true
-//   }
-// }
