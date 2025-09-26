@@ -124,6 +124,7 @@ export const purchaseOrderService = {
           productId,
           sku: (productId || "").slice(0, 8),
           name: "Unknown",
+          status:'PENDING',
           categoryName: "",
           brandName: "",
           color: "",
@@ -137,18 +138,28 @@ export const purchaseOrderService = {
     }
   },
 
-  /** Scan 1 serial for a PO item (BE: POST /api/purchase-orders-items/{itemId}/scan?serial=...) */
-  async scanItem(purchaseOrderItemId, serial) {
-    const path = `/api/purchase-orders-items/${encodeURIComponent(purchaseOrderItemId)}/scan`;
-    try {
-      const { data } = await api.post(path, null, { params: { serial } });
-      return data?.result ?? data;
-    } catch (e1) {
-      console.warn("[PO] scanItem(serial) failed, try serialNumber", e1);
-      const { data } = await api.post(path, null, { params: { serialNumber: serial } });
-      return data?.result ?? data;
-    }
-  },
+/** Scan 1 serial for a PO item (BE: POST /api/purchase-orders-items/{itemId}/scan?serial=...) */
+async scanItem(purchaseOrderItemId, serial, userId) {
+  const path = `/api/purchase-orders-items/${encodeURIComponent(purchaseOrderItemId)}/scan`;
+  try {
+    const { data } = await api.post(path, null, { 
+      params: { 
+        serial, 
+        userId // thêm userId vào query params
+      } 
+    });
+    return data?.result ?? data;
+  } catch (e1) {
+    console.warn("[PO] scanItem(serial) failed, try serialNumber", e1);
+    const { data } = await api.post(path, null, { 
+      params: { 
+        serialNumber: serial, 
+        userId // thêm userId ở fallback luôn
+      } 
+    });
+    return data?.result ?? data;
+  }
+},
 
   /** Complete order (prefer POST /complete, fallback PUT status) */
   async complete(id, payload = {}) {
