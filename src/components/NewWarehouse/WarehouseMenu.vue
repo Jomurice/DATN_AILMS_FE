@@ -1,79 +1,83 @@
 <script setup>
-import { ref, computed } from "vue";
+import { ref, onMounted } from "vue";
+import { locationService } from "../../services/locationService";
 
 const sidebarOpen = ref(true);
-const search = ref("");
+const cities = ref([]);
 
-const cities = {
-  HCM: ["Tân Phú", "Tân Bình"],
-  "Hà Nội": [],
-  "Cà Mau": [],
-  "Bạc Liêu": [],
-};
+async function loadCities() {
+  try {
+    const all = await locationService.getAllLocation();
+    for (const city of all) {
+      const detail = await locationService.getLocationById(city.id);
+      city.children = detail.children || [];
+    }
+    cities.value = all;
+  } catch (err) {
+    console.error("❌ Error loading cities:", err);
+  }
+}
 
-const warehouses = ref([
-  { name: "WH-HCM", code: "WH-TP", location: "Tân Phú", created: "20/09/2025", quantity: 10 },
-  { name: "WH-HN", code: "WH-01", location: "Hà Nội", created: "18/09/2025", quantity: 5 },
-]);
-
-const filteredWarehouses = computed(() =>
-  warehouses.value.filter((wh) =>
-    wh.name.toLowerCase().includes(search.value.toLowerCase())
-  )
-);
-
-const totalProducts = computed(() =>
-  warehouses.value.reduce((sum, wh) => sum + wh.quantity, 0)
-);
+onMounted(() => {
+  loadCities();
+});
 </script>
-
-
 
 <template>
   <div class="d-flex vh-100">
-    <!-- Sidebar -->
-    <div v-if="sidebarOpen" class="bg-light border-end p-3" style="width: 250px;">
-      <h5 class="fw-bold mb-3">Kho hàng</h5>
-      <ul class="list-unstyled">
-        <li v-for="(districts, city) in cities" :key="city">
-          <details>
-            <summary class="fw-semibold">{{ city }}</summary>
-            <ul class="ms-3 text-secondary">
-              <li v-for="(d, i) in districts" :key="i">+ {{ d }}</li>
-            </ul>
-          </details>
-        </li>
-      </ul>
+    <div class="d-flex flex-column">
+      
+      <div class="bg-light border-end p-2 text-center">
+        <button
+          class="btn btn-sm btn-outline-secondary w-100"
+          @click="sidebarOpen = !sidebarOpen"
+        >
+          <span v-if="sidebarOpen">✖</span>
+          <span v-else>☰</span>
+        </button>
+      </div>
+
+    
+      <transition name="slide">
+        <div v-if="sidebarOpen" class="bg-light border-end p-3 sidebar flex-grow-1">
+          <h5 class="fw-bold mb-3"> Danh sách địa chỉ</h5>
+          <ul class="list-unstyled">
+            <li v-for="city in cities" :key="city.id">
+              <details>
+                <summary class="fw-semibold">{{ city.name }}</summary>
+                <ul class="ms-3 text-secondary">
+                  <li v-for="ward in city.children" :key="ward.id" class="py-1">
+                    + {{ ward.name }}
+                  </li>
+                  <li v-if="!city.children?.length" class="text-muted fst-italic">
+                    (Không có phường)
+                  </li>
+                </ul>
+              </details>
+            </li>
+          </ul>
+        </div>
+      </transition>
     </div>
 
-    <!-- Main content -->
+ 
     <div class="flex-grow-1 d-flex flex-column">
-      <!-- Top bar -->
-      <div class="d-flex justify-content-between align-items-center bg-white border-bottom p-2">
-        <div class="d-flex align-items-center gap-2">
-          <button class="btn btn-sm btn-outline-secondary" @click="sidebarOpen = !sidebarOpen">
-            <span v-if="sidebarOpen">✖</span>
-            <span v-else>☰</span>
-          </button>
-
+     
+      <div class="d-flex align-items-center bg-white border-bottom p-2 justify-content-between">
+        <div class="d-flex align-items-center gap-3">
           <div class="input-group input-group-sm" style="max-width: 250px;">
             <span class="input-group-text">🔍</span>
-            <input
-              v-model="search"
-              type="text"
-              class="form-control"
-              placeholder="Tìm kiếm..."
-            />
+            <input type="text" class="form-control" placeholder="Tìm kiếm..." />
           </div>
         </div>
 
         <div class="d-flex align-items-center gap-3">
-          <span class="fw-semibold">Số lượng sản phẩm: {{ totalProducts }}</span>
+          <span class="fw-semibold">Số lượng sản phẩm: 0</span>
           <button class="btn btn-sm btn-primary">+</button>
         </div>
       </div>
 
-      <!-- Table -->
+     
       <div class="p-3 overflow-auto">
         <table class="table table-bordered table-striped align-middle">
           <thead class="table-light">
@@ -87,13 +91,13 @@ const totalProducts = computed(() =>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="(wh, index) in filteredWarehouses" :key="wh.code">
-              <td>{{ index + 1 }}</td>
-              <td>{{ wh.name }}</td>
-              <td>{{ wh.code }}</td>
-              <td>{{ wh.location }}</td>
-              <td>{{ wh.created }}</td>
-              <td>{{ wh.quantity }}</td>
+            <tr>
+              <td>1</td>
+              <td>Tên kho</td>
+              <td>WH001</td>
+              <td>Hà Nội</td>
+              <td>2025-09-25</td>
+              <td>100</td>
             </tr>
           </tbody>
         </table>
@@ -102,3 +106,23 @@ const totalProducts = computed(() =>
   </div>
 </template>
 
+<style scoped>
+.sidebar {
+  width: 250px;
+  min-width: 250px;
+  max-width: 250px;
+  overflow-y: auto;
+  transition: all 0.3s ease;
+}
+
+
+.slide-enter-active,
+.slide-leave-active {
+  transition: all 0.3s ease;
+}
+.slide-enter-from,
+.slide-leave-to {
+  opacity: 0;
+  transform: translateX(-100%);
+}
+</style>
