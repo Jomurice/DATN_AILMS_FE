@@ -9,10 +9,6 @@ import Accounts from "../components/admin/AccountManagerment.vue";
 import AccountForm from "../components/admin/AccountForm.vue";
 
 import Warehouse from "../components/warehouseManagement/Warehouse.vue";
-import Zone from "../components/warehouseManagement/Zone.vue";
-import Aisle from "../components/warehouseManagement/Aisle.vue";
-import Shelf from "../components/warehouseManagement/Shelf.vue";
-import Bin from "../components/warehouseManagement/Bin.vue";
 
 
 import WarehouseMenu from "../components/NewWarehouse/WarehouseMenu.vue";
@@ -34,6 +30,7 @@ import OutboundOrderDetail from "../components/outbound/OutboundOrderDetail.vue"
 
 
 import locationManager from "../components/location/locationManager.vue";
+import WarehouseCreateForm from "../components/NewWarehouse/WarehouseCreateForm.vue";
 
  const routes = [
   { path: "/", redirect: "/login" },
@@ -63,10 +60,12 @@ import locationManager from "../components/location/locationManager.vue";
       { path: "/warehouses", name: "Warehouses", component: Warehouse },
       // Warehouse chain
       { path: "warehouse", name: "warehouse", meta: {title: 'Kho'}, component: Warehouse },
-      { path: "warehouse/:wid/zone", name: "zone", meta: {title: 'Khu'}, component: Zone, props: true },
-      { path: "warehouse/:wid/zone/:zid/aisle", name: "aisle", meta: {title: 'Dãy'}, component: Aisle, props: true },
-      { path: "warehouse/:wid/zone/:zid/aisle/:aid/shelf", name: "shelf", meta: {title: 'Kệ'}, component: Shelf, props: true },
-      { path: "warehouse/:wid/zone/:zid/aisle/:aid/shelf/:sid/bin", name: "bin", meta: {title: 'Ô'}, component: Bin, props: true },
+
+      
+
+      
+      { path: "/warehousesmenu", name: "WarehousesMenu", component: WarehouseMenu },
+      { path: "/warehouses/create",name: "WarehouseCreate",component: WarehouseCreateForm,},
 
       // Inbound & Outbound
       { path: "inbound", name: "inbound", meta: {title: 'Nhập hàng'}, component: Inbound},

@@ -65,6 +65,7 @@
                 @keyup.enter="handleQuickScan"
                 class="form-control mono"
                 placeholder="Quét nhanh serial… (vd: iphone15prm-0001)"
+                :disabled="!canScan" 
               />
               <button class="btn btn-primary" @click="handleQuickScan">Quét</button>
             </div>
@@ -88,7 +89,9 @@
                   <td class="nowrap">{{ cut(it.color || '—', 16) }}</td>
                   <td class="text-end nowrap mono">
                     <span>{{ scannedCount(it.sku) }}/{{ it.orderQuantity }}</span>
-                    <button class="btn btn-link btn-sm ms-1" title="Xem serial đã quét" @click="openSerialsModal(it.sku)">
+                    <button class="btn btn-link btn-sm ms-1" 
+                            title="Xem serial đã quét" 
+                            @click="openSerialsModal(it.sku, it.productId)">
                       <i class="fa-solid fa-eye"></i>
                     </button>
                   </td>
@@ -101,7 +104,7 @@
           </div>
 
           <div class="px-3 py-3 d-flex justify-content-end">
-            <button class="btn btn-success" :disabled="!canComplete" @click="completeOrder">Nhập hàng</button>
+            <button class="btn btn-success" :disabled="!canComplete" @click="completeOrder" > Nhập hàng</button>
           </div>
         </div>
 
@@ -116,31 +119,37 @@
     </div>
 
     <!-- Modal: Serial đã quét -->
-    <div v-if="modalSku" class="modal-overlay d-flex align-items-center justify-content-center">
-      <div class="card w-50 p-2 notranslate" translate="no">
-        <div class="d-flex align-items-center justify-content-between">
-          <h5 class="mb-0">Đã quét Serial — SKU: {{ modalSku }}</h5>
-          <button class="btn btn-sm btn-outline-secondary" @click="modalSku=null">Đóng</button>
-        </div>
-        <div class="table-responsive mt-2">
-          <table class="table table-sm" translate="no">
-            <thead>
-              <tr><th class="notranslate">Serial</th><th>Trạng thái</th><th>Vị trí (Bin)</th></tr>
-            </thead>
-            <tbody>
-              <tr v-for="s in scannedBySku[modalSku]?.details || []" :key="s.serialNumber">
-                <td class="mono nowrap notranslate">{{ s.serialNumber }}</td>
-                <td class="nowrap">{{ s.status }}</td>
-                <td class="nowrap notranslate">{{ s.binId || s.warehouseId || '—' }}</td>
-              </tr>
-              <tr v-if="!scannedBySku[modalSku]?.details?.length">
-                <td colspan="3" class="text-center text-muted">Chưa có serial</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
+<!-- Modal: Serial đã quét -->
+<div v-if="modalSku" class="modal-overlay d-flex align-items-center justify-content-center">
+  <div class="card w-50 p-2 notranslate" translate="no">
+    <div class="d-flex align-items-center justify-content-between">
+      <h5 class="mb-0">Đã quét Serial — SKU: {{ modalSku }}</h5>
+      <button class="btn btn-sm btn-outline-secondary" @click="modalSku=null">Đóng</button>
     </div>
+    <div class="table-responsive mt-2">
+      <table class="table table-sm" translate="no">
+        <thead>
+          <tr>
+            <th class="notranslate">Serial</th>
+            <th>Trạng thái</th>
+            <th>Vị trí (Bin)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr v-for="s in modalSerials" :key="s.serialNumber">
+            <td class="mono nowrap notranslate">{{ s.serialNumber }}</td>
+            <td class="nowrap">{{ s.status }}</td>
+            <td class="nowrap notranslate">{{ s.binId || s.warehouseId || '—' }}</td>
+          </tr>
+          <tr v-if="!modalSerials.length">
+            <td colspan="3" class="text-center text-muted">Chưa có serial</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 
     <!-- Toast -->
     <div v-if="toastMsg" class="toast-box">{{ toastMsg }}</div>
@@ -151,165 +160,252 @@
 import { ref, computed, onMounted } from "vue";
 import { RouterLink } from "vue-router";
 import { purchaseOrderService } from "@/services/purchaseOrderService";
-import { inventoryClient } from "@/services/inventoryClient";
+import { tokenService } from "@/services/TokenService";
 import { fire, EVENTS } from "@/services/eventBus";
+import api from "@/services/axios";   // ✅ import đúng axios instance
+
+const auth = tokenService();
+const userId = ref('')
 
 /* ========== helpers ========== */
-const cut = (s,n=20)=> s && s.length>n ? (s.slice(0,n)+'...') : (s||'');
-const d = (x)=> { if(!x) return '—'; try{ if(typeof x==='string' && /^\d{4}-\d{2}-\d{2}$/.test(x)) return x; const t=new Date(x); return isNaN(+t)?x:t.toISOString().slice(0,10);}catch{return x} };
-const key = (s)=> String(s||'').trim().toLowerCase();
-const skuFromSerial = (s)=> String(s||'').split('-')[0]?.trim()?.toLowerCase()||'';
+const cut = (s, n=20) => s && s.length > n ? s.slice(0, n) + '...' : (s || '');
+const d = x => {
+  if(!x) return '—';
+  try {
+    if(typeof x === 'string' && /^\d{4}-\d{2}-\d{2}/.test(x)) return x;
+    const t = new Date(x);
+    return isNaN(+t) ? x : t.toISOString().slice(0,10);
+  } catch { return x; }
+};
+const key = s => String(s||'').trim().toLowerCase();
+const skuFromSerial = s => String(s||'').split('-')[0]?.trim()?.toLowerCase() || '';
 const inflight = new Set();
 
 /* ========== state ========== */
-const orders = ref([]); const loading = ref(true);
+const orders = ref([]);
+const loading = ref(true);
 const status = ref('ALL');
 const selectedOrder = ref(null);
-const quickSerial = ref(''); const quickInputRef = ref(null);
-const scannedBySku = ref({}); // { [skuLower]: { count, serials:[lowerSerial], details:[...] } }
+const quickSerial = ref('');
+const quickInputRef = ref(null);
+const scannedBySku = ref({}); 
 const modalSku = ref(null);
-const toastMsg = ref(""); let toastTimer=null;
+const toastMsg = ref(""); 
+let toastTimer = null;
+const modalSerials = ref([]);     // danh sách serials hiển thị trong modal
 
 /* ========== filters ========== */
-const chip = (s)=> ({ 'btn-outline-secondary': status.value!==s, 'btn-primary text-white': status.value===s });
-const viStatus = (s)=> {
+const chip = s => ({ 'btn-outline-secondary': status.value!==s, 'btn-primary text-white': status.value===s });
+const viStatus = s => {
   const k = String(s||'').toUpperCase();
-  if(k==='PENDING' || k==='UPCOMING') return 'Chờ xử lý';
+  if(k==='PENDING'||k==='UPCOMING') return 'Chờ xử lý';
   if(k==='IN_PROGRESS') return 'Đang thực hiện';
-  if(k==='COMPLETED' || k==='DONE') return 'Hoàn tất';
+  if(k==='COMPLETED'||k==='DONE') return 'Hoàn tất';
   return s||'—';
 };
 const filteredOrders = computed(() => {
-  if (status.value==='ALL') return orders.value;
+  if(status.value==='ALL') return orders.value;
   return orders.value.filter(o => {
     const k = String(o.status||'').toUpperCase();
-    if (status.value==='PENDING')   return k==='PENDING' || k==='UPCOMING';
-    if (status.value==='COMPLETED') return k==='COMPLETED' || k==='DONE';
+    if(status.value==='PENDING') return k==='PENDING'||k==='UPCOMING';
+    if(status.value==='COMPLETED') return k==='COMPLETED'||k==='DONE';
     return k===status.value;
   });
 });
 
 /* ========== computed ========== */
-const scannedCount = (sku)=> scannedBySku.value[key(sku)]?.count || 0;
+const scannedCount = sku => scannedBySku.value[key(sku)]?.count || 0;
 const canComplete = computed(() => {
+  if (!selectedOrder.value) return false;
+
+  const statusUp = String(selectedOrder.value.status || '').toUpperCase();
+  if (statusUp === 'COMPLETED' || statusUp === 'DONE') return false;
+
   const m = scannedBySku.value;
-  return !!selectedOrder.value && Object.keys(m).some(k => (m[k]?.count || 0) > 0);
+  return Object.keys(m).some(k => (m[k]?.count || 0) > 0);
 });
+
 
 /* ========== open order ========== */
 async function openOrder(o){
-  try{
+  try {
     let full = o;
-    if(!Array.isArray(o.items) || !o.items.length){
-      full = await purchaseOrderService.getById(o.id, { includeItems:true });
+    if(!Array.isArray(o.items)||!o.items.length){
+      full = await purchaseOrderService.getById(o.id,{ includeItems:true });
     }
     selectedOrder.value = normalizeOrder(full);
+
+    // ✅ khởi tạo scannedBySku từ dữ liệu đã quét
     scannedBySku.value = {};
-  }catch{ toast('Không tải được chi tiết phiếu'); }
+    for (const item of selectedOrder.value.items || []) {
+      const skuKey = key(item.sku);
+      scannedBySku.value[skuKey] = {
+        count: item.scannedQuantity || (item.scannedSerials?.length || 0),
+        details: item.scannedSerials?.map(s => ({
+          serialNumber: s.serialNumber,
+          status: s.status,
+          binId: s.binId
+        })) || []
+      };
+    }
+  } catch {
+    toast('Không tải được chi tiết phiếu');
+  }
 }
+
 function normalizeOrder(order){
-  const items = (order.items||[]).map(x=>({
-    id:  x.id ?? x.purchaseOrderItemId ?? null,
+  const items = (order.items||[]).map(x => ({
+    id: x.id ?? x.purchaseOrderItemId ?? null,
     productId: x.productId ?? x.product?.id ?? null,
     sku: x.sku ?? x.product?.sku ?? '',
     name: x.name ?? x.product?.name ?? '',
     categoryName: x.categoryName ?? x.product?.categoryName ?? x.product?.category?.name ?? '',
     brandName: x.brandName ?? x.product?.brandName ?? x.product?.brand?.name ?? '',
     color: x.color ?? x.product?.color ?? '',
-    orderQuantity: Number(x.orderQuantity ?? x.qty ?? 0),
+    orderQuantity: Number(x.orderQuantity ?? x.qty ?? 0)
   }));
   return { ...order, items };
 }
 
-/* ========== scan ========== */
-async function handleQuickScan(){
-  const serial = String(quickSerial.value||'').trim(); if(!serial) return;
-  if(!selectedOrder.value?.items?.length){ toast('Chưa chọn phiếu'); return; }
+/* ========== quick scan ========== */
+async function handleQuickScan() {
+  const serial = String(quickSerial.value || '').trim();
+  if (!serial) return;
 
-  const sku = skuFromSerial(serial);
-  const item = selectedOrder.value.items.find(x => key(x.sku)===sku);
-  if(!item){ toast('Serial không khớp SKU nào trong phiếu'); quickSerial.value=''; return; }
-
-  await scanSerialForItem(serial, item);
-  quickSerial.value=''; quickInputRef.value?.focus();
-}
-
-async function scanSerialForItem(serial, item){
-  const s = String(serial||'').trim(); if(!s) return;
-  const sKey = key(s); if(inflight.has(sKey)) return; inflight.add(sKey);
-
-  let detail = null;
-  try{
-    if(item?.id){
-      const res = await purchaseOrderService.scanItem(item.id, s);
-      detail = res?.result ?? res;
-    }else{
-      detail = await inventoryClient.scan(s);
-    }
-  }catch(e){
-    // fallback demo offline (tuỳ .env)
-    if(String(import.meta.env?.VITE_FAKE_SCAN_ON_ERROR||'').toLowerCase()==='true'){
-      detail = { serialNumber: s, status:'INBOUND', productId: item.productId ?? null, warehouseId: null, purchaseOrderItemId: item.id ?? null };
-    }else{
-      toast('Quét thất bại'); inflight.delete(sKey); return;
-    }
-  }finally{ inflight.delete(sKey); }
-
-  const sn = String(detail?.serialNumber ?? s).trim(); const snKey = key(sn);
-  const skuKey = key(item.sku);
-  const prefixOK = skuFromSerial(sn) === skuKey;
-
-  if (item.productId && detail?.productId && String(detail.productId)!==String(item.productId) && !prefixOK) {
-    toast('Serial thuộc sản phẩm khác dòng này'); return;
+  if (!selectedOrder.value?.items?.length) {
+    toast("Chưa chọn phiếu");
+    return;
   }
 
-  const store = scannedBySku.value[skuKey] || { count:0, serials:[], details:[] };
-  if (store.serials.includes(snKey)){ toast('Serial này đã quét trong phiếu'); return; }
+  try {
+    const item = selectedOrder.value.items.find(i =>
+      serial.toLowerCase().includes(i.sku.toLowerCase())
+    );
 
-  const cur = store.count, max = Number(item.orderQuantity||0);
-  if (cur >= max){ toast('Dòng này đã đủ số lượng'); return; }
+    if (!item) {
+      toast("Serial không khớp với SKU nào trong phiếu");
+      return;
+    }
 
-  store.serials.push(snKey);
-  store.details.unshift({
-    serialNumber: sn,
-    status: detail?.status || 'INBOUND',
-    binId: detail?.binId ?? null,
-    warehouseId: detail?.warehouseId ?? null,
-    productId: detail?.productId ?? item.productId ?? null,
-    purchaseOrderItemId: detail?.purchaseOrderItemId ?? item.id ?? null,
-    scannedBy: detail?.scannedBy ?? null,
-  });
-  store.count = store.serials.length;
-  scannedBySku.value = { ...scannedBySku.value, [skuKey]: store };
+    await api.post(
+      `/api/purchase-orders-items/${item.id}/scan`,
+      {},
+      { params: { serial, userId: userId.value } }
+    );
 
-  if (String(selectedOrder.value?.status||'').toUpperCase()==='PENDING') selectedOrder.value.status='IN_PROGRESS';
+    toast("Quét thành công!");
 
-  fire(EVENTS.INBOUND_SCANNED, {
-    serial: sn,
-    productId: detail?.productId ?? item.productId ?? null,
-    binId: detail?.binId ?? detail?.warehouseId ?? null,
-  });
+    // ✅ Cách A: update local
+    const skuKey = key(item.sku);
+    if (!scannedBySku.value[skuKey]) {
+      scannedBySku.value[skuKey] = { count: 0, details: [] };
+    }
+    scannedBySku.value[skuKey].count++;
+    scannedBySku.value[skuKey].details.push({
+      serialNumber: serial,
+      status: "SCANNED",
+      binId: null
+    });
 
-  toast('Đã quét ✓');
+    // ✅ Hoặc dùng Cách B: reload order
+    // const updated = await purchaseOrderService.getById(selectedOrder.value.id, { includeItems: true });
+    // selectedOrder.value = normalizeOrder(updated);
+
+  } catch (err) {
+    console.error("Scan error", err);
+
+    // ✅ xử lý lỗi chi tiết
+    const code = err.response?.data?.code;
+    const msg = err.response?.data?.message;
+
+    if (code === "SERIAL_ALREADY_SCANNED") {
+      toast("⚠️ Serial này đã được scan trước đó");
+    } else if (code === "SERIAL_NOT_FOUND") {
+      toast("❌ Serial không tồn tại trong hệ thống");
+    } else if (code === "SKU_MISMATCH") {
+      toast("⚠️ Serial không khớp với SKU trong phiếu");
+    } else {
+      toast(msg || "Có lỗi xảy ra khi quét");
+    }
+  } finally {
+    quickSerial.value = "";
+    quickInputRef.value?.focus();
+  }
 }
 
-/* ========== complete ========== */
-async function completeOrder(){
-  if(!selectedOrder.value) return;
-  try{
-    await purchaseOrderService.complete(selectedOrder.value.id, { confirmedAt:new Date().toISOString() });
-    selectedOrder.value.status='COMPLETED';
-    fire(EVENTS.DASHBOARD_SHOULD_REFRESH);
-    toast('Đã nhập hàng & xác nhận phiếu');
-  }catch{ toast('Nhập hàng thất bại'); }
+const canScan = computed(() => {
+  if (!selectedOrder.value) return false;
+
+  const status = (selectedOrder.value.status || '').toUpperCase();
+  
+  // Chỉ disable khi status là COMPLETED
+  return status !== 'COMPLETED';
+});
+
+
+
+async function completeOrder() {
+  if (!selectedOrder.value) {
+    toast("Chưa chọn phiếu");
+    return;
+  }
+  try {
+    await api.post(
+      `/api/purchase-orders/${selectedOrder.value.id}/complete`,
+      {},
+      { params: { userId: userId.value } }
+    );
+    toast("Nhập kho thành công!");
+
+    // reload danh sách để cập nhật trạng thái
+    orders.value = await purchaseOrderService.list();
+    selectedOrder.value = null;
+  } catch (err) {
+    console.error("Complete error", err);
+    toast(err.response?.data?.message || "Có lỗi khi nhập kho");
+  }
 }
 
-/* ========== modal & toast & mount ========== */
-function openSerialsModal(sku){ modalSku.value = key(sku); }
-function toast(msg=''){ toastMsg.value=msg; clearTimeout(toastTimer); toastTimer=setTimeout(()=>toastMsg.value='',1600); }
 
+
+
+/* ========== modal & toast ========== */
+async function openSerialsModal(sku, productId) {
+  if (!selectedOrder.value) return;
+
+  modalSku.value = sku;
+  modalSerials.value = []; // reset trước khi load
+
+  try {
+    // gọi API backend
+    const res = await api.get(`/api/purchase-orders/${selectedOrder.value.id}/serials`, {
+      params: { sku }
+    });
+
+    // trả về danh sách serial
+    modalSerials.value = Array.isArray(res.data.result) ? res.data.result : [];
+
+  } catch (err) {
+    console.error("Load serials error", err);
+    toast("Không tải được serials");
+  }
+}
+
+
+
+
+function toast(msg=''){ 
+  toastMsg.value = msg; 
+  clearTimeout(toastTimer); 
+  toastTimer = setTimeout(()=>toastMsg.value='',1600); 
+}
+
+/* ========== onMounted ========== */
 onMounted(async ()=>{
-  try{ orders.value = await purchaseOrderService.list(); }
+  // userId.value = toke
+  auth.loadToken();
+  userId.value = auth.userId;
+  try { orders.value = await purchaseOrderService.list(); }
   catch{ toast('Không tải được danh sách phiếu'); }
   finally{ loading.value=false; }
 });
