@@ -287,11 +287,15 @@ async function handleQuickScan() {
       return;
     }
 
-    await api.post(
-      `/api/purchase-orders-items/${item.id}/scan`,
-      {},
-      { params: { serial, userId: userId.value } }
-    );
+  await api.post(
+    "/api/product-details/confirm-scan",
+    {
+      serialNumber: serial,
+      warehouseId: selectedOrder.value?.warehouseId,   // hoặc lấy từ order hiện tại
+      scannedByUserId: userId.value
+    }
+);
+
 
     toast("Quét thành công!");
 
