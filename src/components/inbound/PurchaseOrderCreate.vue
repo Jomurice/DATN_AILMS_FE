@@ -40,6 +40,19 @@
             >userId: <span class="mono">{{ creatorName || "—" }}</span></small
           >
         </div>
+
+        <div class="col">
+                  <!-- ✅ chọn kho -->
+        <div class="col">
+          <label class="lbl">Kho nhập</label>
+          <select v-model="form.warehouseId" class="ipt">
+            <option disabled value="">-- Chọn kho --</option>
+            <option v-for="w in warehouses" :key="w.id" :value="w.id">
+              {{ w.name }}
+            </option>
+          </select>
+        </div>
+        </div>
       </div>
     </div>
 
@@ -79,6 +92,9 @@
             </option>
           </select>
         </div>
+
+        
+
 
         <div class="col">
           <label class="lbl">Số lượng</label>
@@ -158,7 +174,7 @@ import { ref, computed, onMounted } from "vue";
 import { useRouter, RouterLink } from "vue-router";
 import { purchaseOrderService } from "@/services/purchaseOrderService";
 import { tokenService } from "@/services/TokenService"; // đổi tên cho dễ hiểu
-
+import { warehouseService } from "@/services/WarehouseService";
 
 
 const router = useRouter();
@@ -173,6 +189,7 @@ const form = ref({
   supplier: "",
   status: "PENDING",
   createdAt: todayStr(),
+  warehouseId: "", // ✅ chọn kho
   items: [], // { productId, orderQuantity, sku, name, categoryName, brandName, color }
 });
 
@@ -183,6 +200,7 @@ const selectedProductId = ref(null);
 const qty = ref(1);
 const err = ref("");
 const submitting = ref(false);
+const warehouses = ref([]); // ✅ danh sách kho
 
 const auth = tokenService();
  // đảm bảo lấy lại token từ localStorage
@@ -351,6 +369,7 @@ async function submit() {
     status: "PENDING",
     createdAt: form.value.createdAt,
     createdBy: userId.value,
+    warehouseId: form.value.warehouseId, // ✅ gửi lên BE
     items: form.value.items.map((x) => ({
       productId: x.productId,
       orderQuantity: x.orderQuantity,
@@ -384,6 +403,15 @@ async function loadProducts() {
     filteredProducts.value = [];
   }
 }
+async function loadWarehouses() {
+  try {
+    const res = await warehouseService.getAllWarehouses("/api/warehouses");
+    warehouses.value = res;
+  } catch (e) {
+    console.error("loadWarehouses failed", e);
+    warehouses.value = [];
+  }
+}
 
 onMounted(() => {
     auth.loadToken();
@@ -392,6 +420,7 @@ onMounted(() => {
   creatorName.value = auth.userName;
   user.value?.name || user.value?.fullName || user.value?.email || "";
   loadProducts();
+  loadWarehouses();
 });
 </script>
 
