@@ -149,7 +149,7 @@ onMounted(() => {
 <template>
   <div class="d-flex vh-100">
     <!-- Sidebar -->
-    <div class="d-flex flex-column">
+    <!-- <div class="d-flex flex-column">
       <div class="bg-light border-end p-2 text-center">
         <button
           class="btn btn-sm btn-outline-secondary w-100"
@@ -195,7 +195,7 @@ onMounted(() => {
           </ul>
         </div>
       </transition>
-    </div>
+    </div> -->
 
     <!--  Table -->
     <div class="flex-grow-1 d-flex flex-column">

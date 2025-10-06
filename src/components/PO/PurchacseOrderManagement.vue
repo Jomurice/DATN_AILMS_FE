@@ -2,7 +2,7 @@
   <div class="container-fluid py-4 bg-light min-vh-100">
     <div class="row g-4">
 
-   
+      <!-- LEFT: Danh sách PO -->
       <div class="col-md-3">
         <div class="card shadow-sm border-0 h-100">
           <div class="card-header bg-white border-bottom">
@@ -37,12 +37,11 @@
         </div>
       </div>
 
-   
+      <!-- RIGHT: Chi tiết sản phẩm -->
       <div class="col-md-9">
         <div class="card shadow-sm border-0 h-100">
           <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
             <h5 class="mb-0">Chi tiết sản phẩm</h5>
-
 
             <div class="position-relative search-wrapper">
               <i class="bi bi-search search-icon"></i>
@@ -54,11 +53,14 @@
             </div>
           </div>
 
+          <!-- Thông tin PO -->
           <div class="card-body" v-if="selectedPo">
             <div class="mb-3 border-bottom pb-2">
               <h6 class="fw-bold mb-1">Mã PO: {{ selectedPo.code }}</h6>
               <div class="text-muted small">Nhà cung cấp: {{ selectedPo.supplier }}</div>
               <div class="text-muted small">Ngày tạo: {{ selectedPo.createdAt }}</div>
+              <div class="text-muted small">Người tạo: {{ creatorName }}</div>
+              <div class="text-muted small">Kho: {{ warehouseName }}</div>
               <div class="text-muted small">
                 Trạng thái:
                 <span
@@ -74,6 +76,7 @@
               </div>
             </div>
 
+            <!-- Table sản phẩm -->
             <div class="table-responsive rounded-3">
               <table class="table table-hover align-middle text-center">
                 <thead class="table-light">
@@ -97,19 +100,29 @@
                     <td>{{ item.product.storage }}</td>
                     <td>{{ item.orderQuantity }}</td>
                     <td>{{ item.scannedQuantity }}</td>
+
                     <td>
-                      <button 
-                        class="btn btn-sm btn-outline-danger"
-                        @click="askRemove(item.id)"
-                      >
-                        <i class="fa-solid fa-trash"></i>
-                      </button>
+                      <div class="btn-group">
+                        <button 
+                          class="btn btn-sm btn-outline-primary"
+                          @click="openProductDetail(item)"
+                        >
+                          <i class="fa-solid fa-list"></i>
+                        </button>
+                        <button 
+                          class="btn btn-sm btn-outline-danger"
+                          @click="askRemove(item.id)"
+                        >
+                          <i class="fa-solid fa-trash"></i>
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 </tbody>
               </table>
             </div>
 
+            <!-- Pagination -->
             <nav class="mt-3">
               <ul class="pagination justify-content-end mb-0">
                 <li class="page-item disabled"><a class="page-link" href="#"><</a></li>
@@ -121,6 +134,7 @@
             </nav>
           </div>
 
+          <!-- Khi chưa chọn PO -->
           <div class="card-body text-center text-muted py-5" v-else>
             <h6 class="mb-0">Chọn một PO từ danh sách bên trái </h6>
           </div>
@@ -128,7 +142,7 @@
       </div>
     </div>
 
- 
+    <!-- Modal xác nhận xóa -->
     <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
       <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content rounded-3 shadow">
@@ -146,20 +160,70 @@
         </div>
       </div>
     </div>
+
+    <!-- Modal chi tiết sản phẩm -->
+    <div class="modal fade" id="productDetailModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content rounded-3 shadow">
+          <div class="modal-header">
+            <h5 class="modal-title">Chi tiết sản phẩm</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+          </div>
+          <div class="modal-body">
+            <table class="table table-bordered text-center align-middle">
+              <thead class="table-light">
+                <tr>
+                  <th>#</th>
+                  <th>Serial Number</th>
+                  <th>Ngày tạo</th>
+                  <th>Ngày cập nhật</th> 
+                  <th>Người quét</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="(pd, i) in selectedItemDetails" :key="i">
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ pd.serialNumber }}</td>
+                  <td>{{ formatDateTime(pd.createdAt) }}</td>
+                  <td>{{ formatDateTime(pd.updatedAt) }}</td>
+                  <td>{{ scannedUserNames[pd.scannedByUserId] || "-" }}</td>
+                  <td>
+                    <span class="badge bg-success" v-if="pd.status === 'ACTIVE'">ACTIVE</span>
+                    <span class="badge bg-secondary" v-else>{{ pd.status || '-' }}</span>
+                  </td>
+                </tr>
+                <tr v-if="!selectedItemDetails?.length">
+                  <td colspan="6" class="text-muted py-3">Không có dữ liệu sản phẩm chi tiết</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import { purchaseOrderService } from "../../services/puchaseOrder/puschaseOrderService";
 import { purchaseOrderItemService } from "../../services/puchaseOrder/PuchaseOrderItem";
+import { userService } from "../../services/UserService";
+import { warehouseService } from "../../services/WarehouseService";
 
 const pos = ref([]);
 const selectedPo = ref(null);
-
-
+const creatorName = ref("");
+const warehouseName = ref("");
 const itemToDelete = ref(null);
+const selectedItemDetails = ref([]);
+const scannedUserNames = ref({});
 let modalInstance = null;
+let detailModal = null;
 
 async function getAllPO() {
   try {
@@ -170,7 +234,6 @@ async function getAllPO() {
   }
 }
 
-
 function askRemove(itemId) {
   itemToDelete.value = itemId;
   const modalEl = document.getElementById("confirmDeleteModal");
@@ -178,76 +241,69 @@ function askRemove(itemId) {
   modalInstance.show();
 }
 
-
 async function confirmRemove() {
   try {
     await purchaseOrderItemService.removeItem(itemToDelete.value);
-    getAllPO(); 
+    getAllPO();
     modalInstance.hide();
   } catch (error) {
     console.log("Error delete item", error);
   }
 }
 
+async function openProductDetail(item) {
+  selectedItemDetails.value = item.productDetails || [];
+
+  // Загружаем имена пользователей, которые сканировали
+  for (const pd of selectedItemDetails.value) {
+    if (pd.scannedByUserId && !scannedUserNames.value[pd.scannedByUserId]) {
+      try {
+        const res = await userService.getUserById(pd.scannedByUserId);
+        scannedUserNames.value[pd.scannedByUserId] = res.username || "-";
+      } catch {
+        scannedUserNames.value[pd.scannedByUserId] = "-";
+      }
+    }
+  }
+
+  const modalEl = document.getElementById("productDetailModal");
+  detailModal = new bootstrap.Modal(modalEl);
+  detailModal.show();
+}
+
+async function loadExtraInfo(po) {
+  try {
+    const userResponse = await userService.getUserById(po.createdBy);
+    creatorName.value = userResponse.username || "Không rõ người tạo";
+    const warehouseResponse = await warehouseService.getWarehouseById(po.warehouseId);
+    warehouseName.value = warehouseResponse?.name || "Không rõ kho";
+  } catch (error) {
+    console.error("Error Load info", error);
+  }
+}
+
+watch(selectedPo, async (newPo) => {
+  if (newPo) {
+    await loadExtraInfo(newPo);
+  } else {
+    creatorName.value = "";
+    warehouseName.value = "";
+  }
+});
+
+function formatDateTime(dateString) {
+  if (!dateString) return "-";
+  const date = new Date(dateString);
+  return date.toLocaleString("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 onMounted(() => {
   getAllPO();
 });
 </script>
-
-<style scoped>
-.container-fluid {
-  background: #f8f9fa;
-}
-
-.card {
-  transition: all 0.2s ease-in-out;
-  border-radius: 0.75rem;
-}
-
-.list-group-item.active {
-  background: #e9ecef !important;
-  color: #000 !important;
-  border: none !important;
-}
-
-.list-group-item:hover {
-  background: #f1f3f5;
-}
-
-.table th {
-  font-weight: 600;
-}
-
-.badge {
-  font-size: 0.75rem;
-  padding: 0.4em 0.6em;
-}
-
-
-.search-wrapper {
-  width: 280px;
-}
-
-.search-input {
-  padding-left: 2.2rem;
-  border-radius: 50px;
-  background-color: #fff;
-  border: 1px solid #ced4da;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  transition: all 0.2s ease-in-out;
-}
-
-.search-input:focus {
-  border-color: #0d6efd;
-  box-shadow: 0 0 6px rgba(13, 110, 253, 0.4);
-}
-
-.search-icon {
-  position: absolute;
-  top: 50%;
-  left: 14px;
-  transform: translateY(-50%);
-  font-size: 1rem;
-  color: #6c757d;
-}
-</style>
