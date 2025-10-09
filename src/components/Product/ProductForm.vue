@@ -12,9 +12,14 @@
           <div v-if="error" class="alert alert-danger">{{ error }}</div>
 
           <form @submit.prevent="submitForm" class="row g-3">
-            <div class="col-md-4">
+            <div class="col-md-6">
               <label class="form-label">Mã SKU <span class="text-danger">*</span></label>
               <input v-model.trim="form.sku" class="form-control" placeholder="Nhập mã SKU" required />
+            </div>
+
+             <div class="col-md-6">
+              <label class="form-label">Serial Prefix <span class="text-danger">*</span></label>
+              <input v-model.trim="form.serialPrefix" class="form-control" placeholder="Nhập serial prefix" required />
             </div>
 
             <div class="col-md-8">
@@ -118,7 +123,7 @@ const isModal = ref(false);
 const isLoading = ref(false);
 const categories = ref([]);
 const brands = ref([]);
-const form = ref({ sku: '', name: '', brandId: null, specifications: '', color: '', storage: '', categoryId: null })
+const form = ref({ sku: '', name: '', brandId: null, specifications: '', color: '', storage: '',serialPrefix: '', categoryId: null })
 const submitting = ref(false)
 const error = ref('')
 const touched = ref({ brand: false, name: false, brandId: false, color: false, categoryId: false })
