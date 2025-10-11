@@ -62,6 +62,7 @@
           <div v-if="loading" class="text-center py-3">
             <div class="spinner-border text-dark"></div>
           </div>
+          
         </div>
       </aside>
 
@@ -86,6 +87,14 @@
               </small>
             </div>
             <div class="d-flex gap-2">
+              <div class="text-center">
+                <button
+                  class="btn btn-outline-danger btn-sm"
+                  @click="contactModalVisible = true"
+                >
+                  <i class="fa-solid fa-envelope me-1"></i> Liên hệ Admin
+                </button>
+              </div>
               <RouterLink
                 class="btn btn-outline-primary btn-sm"
                 to="/inbound/new"
@@ -201,6 +210,65 @@
       </main>
     </div>
 
+   <!-- Modal: Liên hệ Admin -->
+<div
+  v-if="contactModalVisible"
+  class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50"
+>
+  <div class="card p-4 w-50 shadow">
+    <!-- Заголовок -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h5 class="mb-0">
+        <i class="fa-solid fa-envelope me-2 text-primary"></i>Liên hệ Admin
+      </h5>
+      <button
+        class="btn btn-sm btn-outline-secondary"
+        @click="contactModalVisible = false"
+      >
+        Đóng
+      </button>
+    </div>
+
+   
+    <div class="table-responsive mb-3">
+      <table class="table table-striped table-bordered table-hover align-middle text-center">
+        <thead class="table-primary">
+          <tr>
+            <th scope="col">SKU</th>
+            <th scope="col">Tên hàng hóa</th>
+            <th scope="col">Loại</th>
+            <th scope="col">Hãng</th>
+            <th scope="col">Màu</th>
+            <th scope="col">Số lượng</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="6" class="text-muted">Không có dữ liệu</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+   
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Tin nhắn</label>
+      <textarea
+        v-model.trim="contactMessage"
+        class="form-control"
+        placeholder="Nhập tin nhắn của bạn..."
+        rows="4"
+      ></textarea>
+    </div>
+
+   
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-primary px-4" @click="sendMessageToAdmin">
+        <i class="fa-solid fa-paper-plane me-2"></i>Gửi
+      </button>
+    </div>
+  </div>
+</div>
     <!-- Modal: Serial đã quét -->
     <!-- Modal: Serial đã quét -->
     <div
@@ -258,6 +326,7 @@ import { tokenService } from "@/services/TokenService";
 import { fire, EVENTS } from "@/services/eventBus";
 import api from "@/services/axios"; // ✅ import đúng axios instance
 
+const contactModalVisible = ref(false);
 const auth = tokenService();
 const userId = ref("");
 
@@ -367,7 +436,6 @@ const canComplete = computed(() => {
 //   }
 // }
 
-
 // ✅ Luôn reload lại dữ liệu đơn hàng từ backend để đảm bảo scannedQuantity mới nhất
 async function openOrder(o) {
   try {
@@ -405,7 +473,6 @@ async function openOrder(o) {
     toast.error("Không tải được chi tiết phiếu nhập.");
   }
 }
-
 
 /* ========== chuẩn hóa dữ liệu cha → con (giống getAllPO) ========== */
 function normalizeOrder(order) {
@@ -482,7 +549,10 @@ async function handleQuickScan() {
     // });
 
     // ✅ Cập nhật lại order sau khi scan, để số lượng hiển thị đúng từ backend
-    const updated = await purchaseOrderService.getPurchaseOrderById(selectedOrder.value.id, { includeItems: true });
+    const updated = await purchaseOrderService.getPurchaseOrderById(
+      selectedOrder.value.id,
+      { includeItems: true }
+    );
     selectedOrder.value = normalizeOrder(updated);
   } catch (err) {
     console.error("Scan error", err);
@@ -683,4 +753,5 @@ onMounted(async () => {
     position: static;
   }
 }
+
 </style>
