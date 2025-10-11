@@ -210,8 +210,8 @@
 
 <script setup>
 import { ref, onMounted, watch } from "vue";
-import { purchaseOrderService } from "../../services/puchaseOrder/puschaseOrderService";
-import { purchaseOrderItemService } from "../../services/puchaseOrder/PuchaseOrderItem";
+import { purchaseOrderService } from "@/services/purchaseOrder/purchaseOrderService";
+import { purchaseOrderItemService } from "@/services/purchaseOrder/purchaseOrderItem";
 import { userService } from "../../services/UserService";
 import { warehouseService } from "../../services/WarehouseService";
 
@@ -277,7 +277,7 @@ async function loadExtraInfo(po) {
     creatorName.value = userResponse.username || "Không rõ người tạo";
     const warehouseResponse = await warehouseService.getWarehouseById(po.warehouseId);
     warehouseName.value = warehouseResponse?.name || "Không rõ kho";
-  } catch (error) {
+  } catch (error) { 
     console.error("Error Load info", error);
   }
 }

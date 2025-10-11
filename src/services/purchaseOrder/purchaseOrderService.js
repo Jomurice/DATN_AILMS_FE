@@ -8,8 +8,8 @@ export const purchaseOrderService = {
     return response.data.result;
   },
 
-  async getPurchaseOrderById(orderId) {
-    const response = await api.get(`/api/purchase-orders/${orderId}`);
+  async getPurchaseOrderById(orderId, params = {}) {
+    const response = await api.get(`/api/purchase-orders/${orderId}`, { params });
     return response.data.result;
   },
 
