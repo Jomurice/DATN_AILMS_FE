@@ -43,12 +43,23 @@
                 Ngày tạo: {{ fmtDate(selectedOrder.createdAt) }} • Trạng thái: {{ toViStatus(selectedOrder.status) }}
               </small>
             </div>
+
             <div class="d-flex gap-2">
+                <div class="text-center">
+                <button
+                  class="btn btn-outline-danger btn-sm"
+                  @click="contactModalVisible = true"
+                >
+                  <i class="fa-solid fa-envelope me-1"></i> Liên hệ Admin
+                </button>
+              </div>
               <RouterLink class="btn btn-outline-primary btn-sm" to="/outbound/new">+ Tạo phiếu xuất</RouterLink>
               <button class="btn btn-outline-secondary btn-sm" @click="selectedOrder=null">← Quay lại</button>
             </div>
           </div>
+          
 
+          
           <!-- Toolbar -->
           <div class="px-3 pb-3 d-flex align-items-center flex-wrap gap-3">
             <div class="badge-card">
@@ -148,6 +159,66 @@
     <!-- Toast -->
     <div v-if="toastMsg" class="toast-box">{{ toastMsg }}</div>
   </div>
+
+    <!-- Modal: Liên hệ Admin -->
+<div
+  v-if="contactModalVisible"
+  class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50"
+>
+  <div class="card p-4 w-50 shadow">
+    <!-- Заголовок -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+      <h5 class="mb-0">
+        <i class="fa-solid fa-envelope me-2 text-primary"></i>Liên hệ Admin
+      </h5>
+      <button
+        class="btn btn-sm btn-outline-secondary"
+        @click="contactModalVisible = false"
+      >
+        Đóng
+      </button>
+    </div>
+
+   
+    <div class="table-responsive mb-3">
+      <table class="table table-striped table-bordered table-hover align-middle text-center">
+        <thead class="table-primary">
+          <tr>
+            <th scope="col">SKU</th>
+            <th scope="col">Tên hàng hóa</th>
+            <th scope="col">Loại</th>
+            <th scope="col">Hãng</th>
+            <th scope="col">Màu</th>
+            <th scope="col">Số lượng</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td colspan="6" class="text-muted">Không có dữ liệu</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+   
+    <div class="mb-3">
+      <label class="form-label fw-semibold">Tin nhắn</label>
+      <textarea
+        v-model.trim="contactMessage"
+        class="form-control"
+        placeholder="Nhập tin nhắn của bạn..."
+        rows="4"
+      ></textarea>
+    </div>
+
+   
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-primary px-4" @click="sendMessageToAdmin">
+        <i class="fa-solid fa-paper-plane me-2"></i>Gửi
+      </button>
+    </div>
+  </div>
+</div>
 </template>
 
 <script setup>
@@ -162,6 +233,7 @@ const norm = s => String(s||'').trim();
 const normKey = s => norm(s).toLowerCase();
 const skuFromSerial = s => String(s||'').split('-')[0]?.trim()?.toLowerCase()||'';
 const inflight = new Set();
+const contactModalVisible = ref(false);
 
 // state
 const orders=ref([]); const loading=ref(true); const status=ref('ALL'); const selectedOrder=ref(null);
