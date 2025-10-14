@@ -5,8 +5,10 @@ import api from "./axios";
  * Chuẩn hoá tham số timeframe để gửi BE.
  * Bạn có thể đổi sang startDate/endDate nếu backend yêu cầu.
  */
-function mapTimeframe(tf) {
-  return { timeframe: tf }; // -> /api/dashboard/series?timeframe=7D
+function mapTimeframe(tf, warehouseId) {
+  const params = { timeframe: tf }; // -> /api/dashboard/series?timeframe=7D
+  if(warehouseId) params.warehouseId = warehouseId;
+  return params;
 }
 
 /* ====== Fallback mock khi BE chưa sẵn sàng (giống style productDetailService) ====== */
@@ -30,8 +32,8 @@ function mockSeries(tf) {
 /* ===================== PUBLIC API ===================== */
 
 /** Lấy thống kê 3 ô đầu trang */
-export const getDashboardStats = async (timeframe) => {
-  const { data } = await api.get("/api/dashboard/stats", { params: mapTimeframe(timeframe) });
+export const getDashboardStats = async (timeframe, warehouseId) => {
+  const { data } = await api.get("/api/dashboard/stats", { params: mapTimeframe(timeframe,warehouseId) });
   const r = data?.result ?? data;
   return {
     inStock: Number(r?.inStock ?? 0),
@@ -41,9 +43,9 @@ export const getDashboardStats = async (timeframe) => {
 };
 
 /** Lấy series nhập/xuất cho biểu đồ */
-export const getInboundOutboundSeries = async (timeframe) => {
+export const getInboundOutboundSeries = async (timeframe,warehouseId) => {
   try {
-    const { data } = await api.get("/api/dashboard/series", { params: mapTimeframe(timeframe) });
+    const { data } = await api.get("/api/dashboard/series", { params: mapTimeframe(timeframe,warehouseId) });
     const r = data?.result ?? data;
     if (Array.isArray(r?.labels) && Array.isArray(r?.inbound) && Array.isArray(r?.outbound)) {
       return r;
