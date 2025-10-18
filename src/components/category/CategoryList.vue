@@ -18,17 +18,6 @@
 
     <div class="d-flex gap-4">
 
-      <aside class="card d-flex gap-3 border-0 p-2 shadow-sm rounded-3 side ">
-        <div class="asideChildren">
-          <label class="form-label fw-semibold text-dark">Sắp xếp</label>
-          <select v-model="filters.sort" class="form-select">
-            <option value="name_asc">Tên A → Z</option>
-            <option value="name_desc">Tên Z → A</option>
-          </select>
-        </div>
-
-      </aside>
-
       <!-- LIST -->
       <div class="card border-0 shadow-sm rounded-3 main">
 
@@ -51,7 +40,10 @@
           <table class="table table-hover mb-0">
             <thead class="bg-light">
               <tr class="text-uppercase table-primary small fw-bold">
-                <th>Tên loại</th>
+                <th @click="selectSort()" class="name">Tên loại
+                  <i v-if="isSort" class="fa-solid fa-arrow-up ms-2"></i>
+                  <i v-else class="fa-solid fa-arrow-down ms-2"></i>
+                </th>
                 <th>Mô tả</th>
                 <th class="text-center">Hành động</th>
               </tr>
@@ -119,7 +111,7 @@ import { categoryService } from '../../services/categoryService'
 const categories = ref([])
 const isLoading = ref(false)
 const error = ref('')
-
+const isSort = ref(true);
 const filters = ref({ keyword: '', sort: 'name_asc' })
 const applied = ref({ ...filters.value })
 const payload = ref({
@@ -132,6 +124,16 @@ const payload = ref({
 });
 const unaccent = (s = '') => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
 
+
+function selectSort() {
+  if (isSort.value) {
+    isSort.value = false;
+    payload.value.pageable.sort = 'name,desc';
+  } else {
+    isSort.value = true;
+    payload.value.pageable.sort = 'name,asc';
+  }
+}
 
 async function loadAll() {
   isLoading.value = true
@@ -161,17 +163,10 @@ onMounted(loadAll)
   padding-top: 0 !important;
 }
 
-.side {
-  flex: 0 0 18%;
-  height: calc(100vh - 200px);
-  overflow: auto;
-}
 
 .main {
   flex: 1 1 auto;
   min-width: 0;
-  height: calc(100vh - 200px);
-  overflow: auto;
 }
 
 .modal-overlay {
@@ -195,6 +190,10 @@ onMounted(loadAll)
   width: 100%;
   border: none;
   border-radius: 10px;
+}
+
+.name {
+  cursor: pointer;
 }
 
 .asideChildren {
