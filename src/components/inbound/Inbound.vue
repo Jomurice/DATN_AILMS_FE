@@ -154,7 +154,7 @@
                   <td class="nowrap" :title="it.name">
                     {{ cut(it.name, 28) }}
                   </td>
-                  <td class="nowrap">{{ cut(it.categoryName, 18) }}</td>
+                  <td class="nowrap">{{ it.categoryName}}</td>
                   <td class="nowrap">{{ cut(it.brandName, 18) }}</td>
                   <td class="nowrap">{{ cut(it.color || "—", 16) }}</td>
                   <td class="text-end nowrap mono">
@@ -216,7 +216,7 @@
   class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50"
 >
   <div class="card p-4 w-50 shadow">
-    <!-- Заголовок -->
+   
     <div class="d-flex align-items-center justify-content-between mb-3">
       <h5 class="mb-0">
         <i class="fa-solid fa-envelope me-2 text-primary"></i>Liên hệ Admin
@@ -270,7 +270,7 @@
   </div>
 </div>
     <!-- Modal: Serial đã quét -->
-    <!-- Modal: Serial đã quét -->
+    
     <div
       v-if="modalSku"
       class="modal-overlay d-flex align-items-center justify-content-center"
@@ -324,7 +324,7 @@ import { RouterLink } from "vue-router";
 import { purchaseOrderService } from "@/services/purchaseOrder/purchaseOrderService";
 import { tokenService } from "@/services/TokenService";
 import { fire, EVENTS } from "@/services/eventBus";
-import api from "@/services/axios"; // ✅ import đúng axios instance
+import api from "@/services/axios"; 
 
 const contactModalVisible = ref(false);
 const auth = tokenService();
@@ -401,7 +401,7 @@ const canComplete = computed(() => {
   return Object.keys(m).some((k) => (m[k]?.count || 0) > 0);
 });
 
-/* ========== open order ========== */
+
 /* ========== open order ========== */
 // async function openOrder(o) {
 //   try {

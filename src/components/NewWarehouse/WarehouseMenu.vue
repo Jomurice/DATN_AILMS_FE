@@ -227,7 +227,6 @@ onMounted(() => {
               <th>Kho cha</th>
               <th>Vị trí</th>
               <th>Ngày tạo</th>
-              <th>Số lượng SP</th>
               <th>Hành động</th>
             </tr>
           </thead>
@@ -239,7 +238,6 @@ onMounted(() => {
               <td>{{ w.parent || "-" }}</td>
               <td>{{ w.location }}</td>
               <td>{{ w.createdAt }}</td>
-              <td>{{ w.productCount }}</td>
               <td>
                 <button class="btn btn-outline-warning" @click="openEditModal(w)">
                   <i class="fa-solid fa-pen"></i>

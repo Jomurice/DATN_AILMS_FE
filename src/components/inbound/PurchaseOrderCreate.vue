@@ -12,11 +12,7 @@
       <div class="grid">
         <div class="col">
           <label class="lbl">Mã đơn</label>
-          <input
-            v-model.trim="form.code"
-            class="ipt"
-            placeholder=${}
-          />
+          <input v-model.trim="form.code" class="ipt" placeholder="${}" />
           <small class="muted"
             >Gợi ý: <span class="mono">{{ suggestCode }}</span></small
           >
@@ -42,16 +38,16 @@
         </div>
 
         <div class="col">
-                  <!-- ✅ chọn kho -->
-        <div class="col">
-          <label class="lbl">Kho nhập</label>
-          <select v-model="form.warehouseId" class="ipt">
-            <option disabled value="">-- Chọn kho --</option>
-            <option v-for="w in warehouses" :key="w.id" :value="w.id">
-              {{ w.name }}
-            </option>
-          </select>
-        </div>
+       
+          <div class="col">
+            <label class="lbl">Kho nhập</label>
+            <select v-model="form.warehouseId" class="ipt">
+              <option disabled value="">-- Chọn kho --</option>
+              <option v-for="w in warehouses" :key="w.id" :value="w.id">
+                {{ w.name }}
+              </option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -92,9 +88,6 @@
             </option>
           </select>
         </div>
-
-        
-
 
         <div class="col">
           <label class="lbl">Số lượng</label>
@@ -175,7 +168,7 @@ import { useRouter, RouterLink } from "vue-router";
 import { purchaseOrderService } from "@/services/purchaseOrderService";
 import { tokenService } from "@/services/TokenService"; // đổi tên cho dễ hiểu
 import { warehouseService } from "@/services/WarehouseService";
-
+import { productDetailsService } from "../../services/product/productDetailsService";
 
 const router = useRouter();
 
@@ -189,8 +182,8 @@ const form = ref({
   supplier: "",
   status: "PENDING",
   createdAt: todayStr(),
-  warehouseId: "", // ✅ chọn kho
-  items: [], // { productId, orderQuantity, sku, name, categoryName, brandName, color }
+  warehouseId: "", 
+  items: [], 
 });
 
 const products = ref([]);
@@ -200,10 +193,10 @@ const selectedProductId = ref(null);
 const qty = ref(1);
 const err = ref("");
 const submitting = ref(false);
-const warehouses = ref([]); // ✅ danh sách kho
+const warehouses = ref([]); 
 
 const auth = tokenService();
- // đảm bảo lấy lại token từ localStorage
+// đảm bảo lấy lại token từ localStorage
 
 /* utils */
 function todayStr() {
@@ -376,13 +369,25 @@ async function submit() {
     })),
   };
 
+  
+
   submitting.value = true;
   try {
+
     const res = await purchaseOrderService.create(payload);
-    const id = res?.id;
+    console.log("Load data",res)
+    const poId = res?.id;
+
+    const payloadSerial ={
+    purchaseOrderId: poId,
+    createdByUserId: userId.value
+    }
+    const resSerial = await productDetailsService.createSerialForPO(payloadSerial)
+    console.log("Serial PO",resSerial)
     alert("Tạo đơn thành công!");
-    if (id) router.push(`/inbound/${encodeURIComponent(id)}`);
-    else router.push("/inbound");
+    // if (id) router.push(`/inbound/${encodeURIComponent(id)}`);
+    // else 
+    router.push("/inbound");
   } catch (e) {
     console.error(e);
     alert("Lỗi khi tạo đơn.");
@@ -414,7 +419,7 @@ async function loadWarehouses() {
 }
 
 onMounted(() => {
-    auth.loadToken();
+  auth.loadToken();
   if (!form.value.code) genCode();
   userId.value = auth.userId;
   creatorName.value = auth.userName;
