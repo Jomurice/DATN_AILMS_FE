@@ -44,21 +44,6 @@
           <button @click="selectStatus(false)" :class="{ active: isStatus === false }">Khóa</button>
         </div>
 
-        <div class="asideChildren">
-          <h5>Sắp xếp</h5>
-
-          <select v-model="tableSort" class=" form-select form-select-sm w-100">
-            <optgroup label="Theo tên">
-              <option value="name_asc">Tên A → Z</option>
-              <option value="name_desc">Tên Z → A</option>
-            </optgroup>
-            <optgroup label="Theo loại">
-              <option value="cat_asc">Loại A → Z</option>
-              <option value="cat_desc">Loại Z → A</option>
-            </optgroup>
-          </select>
-
-        </div>
       </aside>
       <button v-if="!isAsideOpen" class="btn p-0 open-btn" @click="toggleAside">
         <i class="fas fa-angle-right"></i>

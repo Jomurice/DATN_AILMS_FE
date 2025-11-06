@@ -12,21 +12,21 @@
     </div>
 
     <!-- Thông tin đơn -->
-   <div class="card">
+    <div class="card">
       <div class="grid">
         <div class="col">
           <label class="lbl">Mã phiếu</label>
-          <input v-model.trim="order.code" class="ipt" disabled/>
+          <input v-model.trim="responseOrder.code" class="ipt" disabled />
         </div>
 
         <div class="col">
           <label class="lbl">Khách hàng</label>
-          <input v-model.trim="order.customer" class="ipt" placeholder="Tên khách hàng" />
+          <input v-model.trim="responseOrder.customer" class="ipt" placeholder="Tên khách hàng" />
         </div>
 
         <div class="col">
           <label class="lbl">Ngày tạo</label>
-          <input v-model="order.createdAt" type="date" class="ipt" disabled/>
+          <input v-model="responseOrder.createAt" type="date" class="ipt" disabled />
         </div>
 
         <div class="col">
@@ -61,8 +61,9 @@
               </div>
 
               <div class="col">
-                <label class="lbl">Số lượng</label>
-                <input v-model.number="form.orderQuantity" type="number" class="ipt" min="1" max="999" />
+                <label class="lbl">Số lượng</label> 
+                <input v-model.number="form.orderQuantity" type="number" class="ipt" min="1" :max="stock" />
+                <span>Còn: {{ stock }} sản phẩm</span>
                 <div v-if="err" class="err mt8">{{ err }}</div>
               </div>
 
@@ -74,7 +75,7 @@
               </div>
             </div>
             <div class="d-flex justify-content-end mt-2">
-              <button class="btn btn-success" @click="createOrderItem()">+ Thêm</button>
+              <button class="btn btn-success" @click="handleAddItem()">+ Thêm</button>
             </div>
 
 
@@ -112,16 +113,16 @@
                 </tr>
               </thead>
               <tbody>
-                <tr v-if="orderItems.length === 0">
+                <tr v-if="responseOrder.length === 0">
                   <td colspan="8" class="text-center">Chưa có sản phẩm nào trong đơn.</td>
                 </tr>
-                <tr v-for="(item, idx) in orderItems" :key="item.productId">
+                <tr v-for="(item, idx) in responseOrder.items" :key="item.productId">
                   <td class="center">{{ idx + 1 }}</td>
-                  <td>{{ item.name }}</td>
+                  <td>{{ item.product?.name }}</td>
                   <td class=" mono">{{ item.orderQuantity }}</td>
                   <td>{{ item.product?.note }}</td>
                   <td class="center">
-                    <button class="btn small btn-danger" @click="removeItem(item.productId)"><i
+                    <button class="btn small btn-danger" @click="removeItem(item.product?.id)"><i
                         class="fa fa-trash"></i></button>
                   </td>
                 </tr>
@@ -133,20 +134,24 @@
     </div>
 
     <div class="bar">
-      <button class="btn" :class="orderItems === 0 ? 'btn-secondary' : 'btn-primary'"
-        :disabled="submitting || orderService.length === 0" @click="createOrder()">
-        {{ submitting ? 'Đang đặt hàng...' : 'Đặt hàng' }}
+      <button class="btn" :class="responseOrder === 0 ? 'btn-secondary' : 'btn-primary'"
+        :disabled="submitting || responseOrder.length === 0" @click="createOrder()">
+        {{ submitting ? 'Đang đặt hàng...' : 'Tạo đơn hàng' }}
       </button>
     </div>
+    <div v-if="toastMsg" class="toast-box">{{ toastMsg }}</div>
+
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from "vue";
-import { orderService } from "../../services/order/Orders";
 import { productService } from "../../services/product/productService";
 import { tokenService } from "../../services/TokenService";
 import { storeToRefs } from "pinia";
+import { outboundOrderService } from "../../services/outbound/outboundOrderService";
+import { outboundItemService } from "../../services/outbound/OutboundOrderItemService";
+import { stockService } from "../../services/StockServcie";
 
 const auth = tokenService();
 auth.loadToken();
@@ -154,27 +159,23 @@ storeToRefs(auth);
 const username = auth.userName || "—";
 console.log("Auth user:", auth.userId);
 
-const order = ref({
+const orders = ref({
+  id: "",
   code: "",
   customer: "",
   createdBy: auth.userId || null,
-  createdAt: "",
-  items: [
-    { productId: "", orderQuantity: 1 },
-  ],
+  createAt: "",
+  items: [],
 });
 
 const products = ref([]);
-const orderItems = ref([]);
+const responseOrder = ref([]);
 const form = ref({ productId: "", name: "", orderQuantity: 1, note: "" });
 const err = ref("");
 const submitting = ref(false);
+const stock = ref(0); 
+const modalSku = ref(null); const toastMsg = ref(""); let toastTimer = null;
 
-/* -------- utils -------- */
-function todayStr() {
-  const d = new Date();
-  return d.toISOString().slice(0, 10);
-}
 function clip(s, n = 20) {
   if (!s) return "";
   return s.length > n ? s.slice(0, n) + "..." : s;
@@ -246,31 +247,32 @@ function splitCSVitem(item) { return item.split(",").map(x => x.replace(/^"|"$/g
 
 async function createOrder() {
 
-  if (!order.value.customer?.trim()) return alert("Chưa nhập thông tin khách hàng.");
-  if (orderItems.value.length === 0) return alert("Chưa có sản phẩm nào trong đơn.");
+  orders.value = responseOrder.value
+
+  if (!orders.value.customer?.trim()) return showToast("Chưa nhập thông tin khách hàng.");
+  if (responseOrder.value.length === 0) return showToast("Chưa có sản phẩm nào trong đơn.");
   submitting.value = true;
 
-  order.value.items = orderItems.value.map(item => ({
-    productId: item.productId,
-    orderQuantity: item.orderQuantity,
-  }));
+  orders.value.status = "CONFIRMED";
 
   try {
-    console.log("Order created:", order.value);
-    await orderService.create(order.value)
-    alert("Tạo đơn thành công!");
-    localStorage.removeItem("order");
-    load();
+    await outboundOrderService.updateStatus(responseOrder.value.id, orders.value)
+    localStorage.removeItem("currentOrder");
+    showToast('Tạo đơn hàng thành công');
+    resetForm();
+    responseOrder.value = [];
   } catch (error) {
     console.error("Error creating order:", error);
-  }finally {
+  } finally {
     submitting.value = false;
   }
 }
 
-function selectProduct(product) {
+async function selectProduct(product) {
   form.value.productId = product.id;
   form.value.name = product.name;
+  stock.value = await stockService.getStocks(product.id);
+  console.log("Selected product:", form.value, "Stock:", stock.value," Product:", product.id);
 }
 
 function validateAdd() {
@@ -279,51 +281,71 @@ function validateAdd() {
     err.value = "Chưa chọn sản phẩm.";
     return false;
   }
-  if (!form.value.orderQuantity || form.value.orderQuantity < 1 || form.value.orderQuantity > 9999) {
+  if (!form.value.orderQuantity || form.value.orderQuantity < 1 || form.value.orderQuantity > 999) {
     err.value = "Số lượng phải từ 1–999.";
+    return false;
+  }
+
+  if (form.value.orderQuantity > stock.value) {
+    showToast (`Số lượng vượt quá tồn kho (${stock.value}).`);
     return false;
   }
   return true;
 }
 
 
-
-async function createOrderItem() {
+async function handleAddItem() {
   if (!validateAdd()) return;
 
-  let cart = JSON.parse(localStorage.getItem("order")) || [];
-  const existingItem = cart.find(x => x.productId === form.value.productId);
+  const newItem = {
+    productId: form.value.productId,
+    orderQuantity: Number(form.value.orderQuantity),
+  };
 
-  if (existingItem) {
-    existingItem.orderQuantity += Number(form.value.orderQuantity);
-    localStorage.setItem("order", JSON.stringify(cart));
-    alert("Thêm sản phẩm thành công!");
+  // nếu chưa có đơn thì tạo mới
+  if (!responseOrder.value.id) {
+    orders.value.items.push(newItem);
+    responseOrder.value = await outboundOrderService.create(orders.value);
+    localStorage.setItem("currentOrder", JSON.stringify({
+      id: responseOrder.value.id,
+      code: responseOrder.value.code,
+    }));
+    await outboundItemService.addItem(orders.value, responseOrder.value.id);
+    showToast('Đã thêm sản phẩm vào đơn');
     load();
     return;
   }
 
-  const newItem = {
-    productId: form.value.productId,
-    name: form.value.name,
-    orderQuantity: Number(form.value.orderQuantity),
-    note: form.value.note || "",
+  // nếu đã có đơn
+  const existingItem = responseOrder.value.items.find(
+    x => x.product?.id === newItem.productId
+  );
 
-  };
+  if (existingItem) {
+    existingItem.orderQuantity += newItem.orderQuantity;
+  } else {
+    // chỉ thêm vào UI
+    responseOrder.value.items.push({
+      product: { id: newItem.productId },
+      orderQuantity: newItem.orderQuantity,
+    });
+  }
 
-  cart.push(newItem);
+  // map tất cả items sang format server
+  orders.value.items = responseOrder.value.items.map(item => ({
+    productId: item.product.id,
+    orderQuantity: item.orderQuantity,
+  }));
 
-  localStorage.setItem("order", JSON.stringify(cart));
-
-  alert("Thêm sản phẩm thành công!");
+  await outboundItemService.addItem(orders.value, responseOrder.value.id);
+  showToast('Đã thêm sản phẩm vào đơn');
   load();
 }
 
 
-async function removeItem(id) {
+async function removeItem(idProduct) {
   if (!confirm("Bạn có chắc muốn xóa sản phẩm khỏi đơn ?")) return;
-  let cart = JSON.parse(localStorage.getItem("order")) || [];
-  cart = cart.filter(x => x.productId !== id);
-  localStorage.setItem("order", JSON.stringify(cart));
+  await outboundItemService.deleteItem(responseOrder.value.id, idProduct);
   load();
 }
 
@@ -333,28 +355,28 @@ function resetForm() {
 }
 
 async function load() {
-
-  const suggestCode = computed(() => {
-    const d = new Date();
-    return `HD-${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}-${String(d.getHours()).padStart(2, "0")}${String(d.getMinutes()).padStart(2, "0")}${String(d.getSeconds()).padStart(2, "0")}`;
-  });
-  order.value.code = suggestCode.value;
-  order.value.createdAt = todayStr();
   try {
     products.value = await productService.getAll();
-    // const list = Array.isArray(products.value) ? data.result : data;
-    // order.value = await orderService.getById(getOrderId());
-    // console.log("Loaded order:", order.value);
-    orderItems.value = JSON.parse(localStorage.getItem("order")) || [];
-    console.log("Loaded order:", orderItems.value);
 
+    const savedOrder = localStorage.getItem("currentOrder")
+      ? JSON.parse(localStorage.getItem("currentOrder"))
+      : null;
+
+    if (savedOrder?.id) {
+      const fullOrder = await outboundOrderService.getByOutboundId(savedOrder.id);
+      responseOrder.value = fullOrder || [];
+      console.log("Loaded order items:", responseOrder.value);
+    }
   } catch (e) {
     console.warn("loadProduct failed", e);
     products.value = [];
-    filteredProducts.value = [];
+    // filteredProducts.value = [];
   }
   resetForm();
 }
+
+function showToast(msg = '') { toastMsg.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toastMsg.value = '', 1600); }
+
 
 onMounted(() => {
   load();
@@ -400,6 +422,18 @@ onMounted(() => {
   border: 1px solid blue;
 
 }
+
+.toast-box {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #111;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  z-index: 20000;
+}
+
 
 .table tbody {
   max-height: 300px;

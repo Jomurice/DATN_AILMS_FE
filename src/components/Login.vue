@@ -30,7 +30,7 @@
             <div class="invalid-feedback">{{ errors.password }}</div>
           </div>
 
-          <router-link to="/forgot-password" class="link">Quên mật khẩu ?</router-link>
+          <router-link to="/forgot-password" class="link" id="forgotPass">Quên mật khẩu ?</router-link>
 
           <div v-if="apiError" class="alert alert-danger py-2">{{ apiError }}</div>
 

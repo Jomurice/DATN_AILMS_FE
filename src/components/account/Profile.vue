@@ -8,7 +8,7 @@
 
           <p class="profile-info">
             <i class="fa-regular fa-user px-2"></i>
-            <span class="fw-bold">Username:</span> {{ user.username }}
+            <span class="fw-bold">Tên đăng nhập:</span> {{ user.username }}
           </p>
 
           <p class="profile-info">
@@ -19,7 +19,7 @@
           <p class="profile-info">
             <i class="fa-solid fa-key px-2"></i>
             <span class="fw-bold">Mật khẩu:</span>
-            <button @click="isChangePassword = true" class="btn btn-warning">Đổi mật khẩu</button>
+            <button @click="isChangePassword = true" class="btn btn-warning" id="changePass">Đổi mật khẩu</button>
           </p>
 
           <p class="profile-info">
@@ -65,7 +65,7 @@
           <div class="modal-row">
             <label class="modal-label">Mật khẩu cũ:</label>
             <div class="input-wrapper">
-              <input :type="showOldPassword ? 'text' : 'password'" v-model="changePasswordForm.oldPassword"
+              <input id="password" :type="showOldPassword ? 'text' : 'password'" v-model="changePasswordForm.oldPassword"
                 class="modal-input" required />
               <i @click="showOldPassword = !showOldPassword" :class="showOldPassword ? 'fa fa-eye-slash' : 'fa fa-eye'">
               </i>
@@ -75,7 +75,7 @@
           <div class="modal-row">
             <label class="modal-label">Mật khẩu mới:</label>
             <div class="input-wrapper">
-              <input :type="showNewPassword ? 'text' : 'password'" v-model="changePasswordForm.newPassword"
+              <input id="newPassword" :type="showNewPassword ? 'text' : 'password'" v-model="changePasswordForm.newPassword"
                 class="modal-input" maxlength="30" required />
               <i @click="showNewPassword = !showNewPassword" :class="showNewPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
             </div>
@@ -84,7 +84,7 @@
           <div class="modal-row">
             <label class="modal-label">Xác nhận mật khẩu:</label>
             <div class="input-wrapper">
-              <input :type="showConfirmPassword ? 'text' : 'password'" v-model="changePasswordForm.confirmPassword"
+              <input id="confirmPassword" :type="showConfirmPassword ? 'text' : 'password'" v-model="changePasswordForm.confirmPassword"
                 class="modal-input" required />
               <i @click="showConfirmPassword = !showConfirmPassword"
                 :class="showConfirmPassword ? 'fa fa-eye-slash' : 'fa fa-eye'">
@@ -176,10 +176,10 @@ async function submitChangePassword() {
   changePasswordError.value = "";
 
   if (changePasswordForm.value.newPassword.length < 6)
-    return; changePasswordError.value = "Mật khẩu mới phải từ 6 - 30 ký tự.";
+    return changePasswordError.value = "Mật khẩu mới phải từ 6 - 30 ký tự.";
 
   if (changePasswordForm.value.newPassword !== changePasswordForm.value.confirmPassword)
-    return; changePasswordError.value = "Mật khẩu xác nhận không khớp !";
+    return changePasswordError.value = "Mật khẩu xác nhận không khớp !";
 
   try {
     console.log(changePasswordForm.value)
@@ -189,12 +189,13 @@ async function submitChangePassword() {
     localStorage.removeItem("accessToken");
     router.push('/');
     resetForm();
+   isChangePassword.value = false;
+
   } catch (error) {
     changePasswordError.value = "Đổi mật khẩu thất bại.";
     console.error("Error changing password:", error);
   }
 
-  isChangePassword.value = false;
 }
 
 function resetForm() {
