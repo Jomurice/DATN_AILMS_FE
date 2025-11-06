@@ -7,39 +7,25 @@ const form = ref({
   name: "",
   code: "",
   type: "",
-  currentQuantity: 0,
-  capacity: 0,
   parentId: null,
-  locationId: null,
+  location: "", // 👈 обычная строка
 });
 
 const warehouses = ref([]);
-const locations = ref([]);
 const loading = ref(false);
 const successMessage = ref("");
 const errorMessage = ref("");
 
-
+// 📦 Загрузка всех складов (если нужно выбрать родителя)
 async function loadOptions() {
   try {
     warehouses.value = await warehouseService.getAllWarehouses();
-
-    const all = await locationService.getAllLocation();
-    
-    locations.value = all.flatMap(city => {
-      return city.children?.length
-        ? city.children.map(ward => ({
-            id: ward.id,
-            name: `${city.name} - ${ward.name}`,
-          }))
-        : [];
-    });
   } catch (e) {
     console.error("Lỗi khi tải dữ liệu:", e);
   }
 }
 
-
+// 🧾 Создание склада
 async function createWarehouse() {
   loading.value = true;
   successMessage.value = "";
@@ -49,17 +35,15 @@ async function createWarehouse() {
     await warehouseService.createWarehouse(form.value);
     successMessage.value = "Tạo kho hàng thành công!";
 
+    // сбрасываем форму
     form.value = {
       name: "",
       code: "",
       type: "",
-      currentQuantity: 0,
-      capacity: 0,
       parentId: null,
-      locationId: null,
+      location: "",
     };
 
-  
     await loadOptions();
   } catch (err) {
     console.error("Error create:", err);
@@ -69,14 +53,14 @@ async function createWarehouse() {
   }
 }
 
-
+// 🔁 Если выбран родительский склад — копируем его location (строкой)
 watch(
   () => form.value.parentId,
   (newParentId) => {
     if (newParentId) {
-      const parent = warehouses.value.find(w => w.id === newParentId);
-      if (parent?.location?.id) {
-        form.value.locationId = parent.location.id;
+      const parent = warehouses.value.find((w) => w.id === newParentId);
+      if (parent?.location) {
+        form.value.location = parent.location; // 👈 строка
       }
     }
   }
@@ -106,7 +90,7 @@ onMounted(() => {
       </div>
 
       <div class="col-md-6">
-        <label class="form-label">Loại kho</label>
+        <label class="form-label">Loại</label>
         <select v-model="form.type" class="form-select" required>
           <option disabled value="">-- Chọn loại kho --</option>
           <option value="WAREHOUSE">WAREHOUSE</option>
@@ -117,34 +101,26 @@ onMounted(() => {
         </select>
       </div>
 
-      <div class="col-md-3">
-        <label class="form-label">Số lượng hiện tại</label>
-        <input v-model.number="form.currentQuantity" type="number" min="0" class="form-control" />
-      </div>
-
-      <div class="col-md-3">
-        <label class="form-label">Sức chứa</label>
-        <input v-model.number="form.capacity" type="number" min="0" class="form-control" />
-      </div>
-
       <div class="col-md-6">
         <label class="form-label">Kho cha</label>
         <select v-model="form.parentId" class="form-select">
-          <option :value="null"> -- Không có  -- </option>
+          <option :value="null">-- Không có --</option>
           <option v-for="w in warehouses" :key="w.id" :value="w.id">
             {{ w.name }} ({{ w.code }})
           </option>
         </select>
       </div>
 
+      <!-- 🗺 location как строка -->
       <div class="col-md-6">
-        <label class="form-label">Vị trí (Ward)</label>
-        <select v-model="form.locationId" class="form-select" required>
-          <option disabled value="">-- Chọn vị trí (ward) --</option>
-          <option v-for="l in locations" :key="l.id" :value="l.id">
-            {{ l.name }}
-          </option>
-        </select>
+        <label class="form-label">Vị trí (Location)</label>
+        <input
+          v-model="form.location"
+          type="text"
+          class="form-control"
+          placeholder="Nhập vị trí (ví dụ: Hanoi - Ward 5)"
+          required
+        />
       </div>
 
       <div class="col-12 text-end">
