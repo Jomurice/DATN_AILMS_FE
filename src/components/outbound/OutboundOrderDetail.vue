@@ -68,7 +68,7 @@
 <script setup>
 import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter, RouterLink } from "vue-router";
-import { outboundOrderService } from "@/services/outboundOrderService";
+import { outboundOrderService } from "@/services/outbound/outboundOrderService";
 
 const route = useRoute(); const router = useRouter();
 const order = ref(null);

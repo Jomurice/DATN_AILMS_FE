@@ -182,8 +182,9 @@ const form = ref({
   supplier: "",
   status: "PENDING",
   createdAt: todayStr(),
-  warehouseId: "", 
-  items: [], 
+  warehouseId: "", // chọn kho
+  items: [], // { productId, orderQuantity, sku, name, categoryName, brandName, color }
+
 });
 
 const products = ref([]);

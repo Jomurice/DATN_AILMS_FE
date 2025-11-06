@@ -25,7 +25,7 @@
               <div class="fw-semibold">{{ clip(o.customer, 20) }}</div>
               <div class="badge bg-light text-dark mt-1">{{ toViStatus(o.status) }}</div>
             </div>
-            <small class="text-muted">{{ fmtDate(o.createdAt) }}</small>
+            <small class="text-muted">{{ fmtDate(o.createAt) }}</small>
           </button>
 
           <div v-if="!loading && !filteredOrders.length" class="text-muted p-3">Không có phiếu phù hợp</div>
@@ -40,7 +40,7 @@
             <div class="fw-bold">
               <div>{{ selectedOrder.code }} — <span class="text-muted">{{ clip(selectedOrder.customer, 28) }}</span></div>
               <small class="text-muted">
-                Ngày tạo: {{ fmtDate(selectedOrder.createdAt) }} • Trạng thái: {{ toViStatus(selectedOrder.status) }}
+                Ngày tạo: {{ fmtDate(selectedOrder.createAt) }} — Trạng thái: {{ toViStatus(selectedOrder.status) }}
               </small>
             </div>
 
@@ -142,12 +142,12 @@
               <tr><th class="notranslate">Serial</th><th>Trạng thái</th><th>Vị trí</th></tr>
             </thead>
             <tbody>
-              <tr v-for="s in scannedBySku[modalSku]?.details || []" :key="s.serialNumber">
+              <tr v-for="s in scannedBySku[modalSku]?.productDetails || []" :key="s.serialNumber">
                 <td class="mono nowrap notranslate">{{ s.serialNumber }}</td>
                 <td class="nowrap">{{ s.status }}</td>
                 <td class="nowrap notranslate">{{ s.warehouseId || s.binId || '—' }}</td>
               </tr>
-              <tr v-if="!scannedBySku[modalSku]?.details?.length">
+              <tr v-if="!scannedBySku[modalSku]?.productDetails?.length">
                 <td colspan="3" class="text-center text-muted">Chưa có serial</td>
               </tr>
             </tbody>
@@ -224,7 +224,7 @@
 <script setup>
 import { ref, computed, onMounted } from "vue";
 import { RouterLink } from "vue-router";
-import { outboundOrderService } from "@/services/outboundOrderService";
+import { outboundOrderService } from "@/services/outbound/outboundOrderService";
 import { fire, EVENTS } from "@/services/eventBus";
 
 const clip = (s,n=20)=> s && s.length>n ? (s.slice(0,n)+'...') : (s||'');
@@ -241,7 +241,8 @@ const quickSerial=ref(''); const quickInputRef=ref(null);
 const userId = ref("");
 
 const scannedBySku=ref({}); // { [skuLower]: { count, serials:[lowerSerial], details:[...] } }
-const modalSku=ref(null); const toastMsg=ref(""); let toastTimer=null;
+const modalSku=ref(null); 
+const toastMsg=ref(""); let toastTimer=null;
 
 // filters
 const chipCls=s=>({ 'btn-outline-secondary': status.value!==s, 'btn-primary text-white': status.value===s });
@@ -268,7 +269,7 @@ const canComplete = computed(()=>{
   return !!selectedOrder.value && Object.keys(m).some(k => (m[k]?.count || 0) > 0);
 });
 
-function openSerialsModal(sku) { modalSku.value = String(sku||'').toLowerCase(); }
+function openSerialsModal(sku) { modalSku.value = String(sku||'').toLowerCase(); console.log("Opening serials modal for SKU:", modalSku.value, scannedBySku.value[modalSku.value]); }
 
 async function openOrder(o){
   try{
@@ -374,7 +375,7 @@ function showToast(msg=''){ toastMsg.value=msg; clearTimeout(toastTimer); toastT
 
 onMounted(async ()=>{
   try{
-    orders.value = await outboundOrderService.list();
+    orders.value = await outboundOrderService.getAll();
     // lấy userId để pass khi scan (nếu BE cần)
     try{ const u = JSON.parse(localStorage.getItem("auth_user") || "null"); userId.value = u?.id || u?.userId || u?.uid || u?.sub || ""; }catch{}
   }catch{ showToast('Không tải được danh sách phiếu'); }
