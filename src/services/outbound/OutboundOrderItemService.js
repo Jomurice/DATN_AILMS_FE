@@ -10,7 +10,8 @@ export const outboundItemService = {
     async deleteItem(orderId, productId){
         const response = await api.delete(`/api/outbound/${orderId}/item/${productId}`);
         return response.data?.result;
-    }
+    },
+
 
 
 }
