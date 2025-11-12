@@ -8,44 +8,24 @@
         </div>
 
         <div class="mb-2 d-flex gap-2 flex-wrap">
-          <button
-            class="btn btn-sm"
-            :class="chip('ALL')"
-            @click="status = 'ALL'"
-          >
+          <button class="btn btn-sm" :class="chip('ALL')" @click="status = 'ALL'">
             Tất cả
           </button>
-          <button
-            class="btn btn-sm"
-            :class="chip('PENDING')"
-            @click="status = 'PENDING'"
-          >
+          <button class="btn btn-sm" :class="chip('PENDING')" @click="status = 'PENDING'">
             Chờ xử lý
           </button>
-          <button
-            class="btn btn-sm"
-            :class="chip('IN_PROGRESS')"
-            @click="status = 'IN_PROGRESS'"
-          >
+          <button class="btn btn-sm" :class="chip('IN_PROGRESS')" @click="status = 'IN_PROGRESS'">
             Đang thực hiện
           </button>
-          <button
-            class="btn btn-sm"
-            :class="chip('COMPLETED')"
-            @click="status = 'COMPLETED'"
-          >
+          <button class="btn btn-sm" :class="chip('COMPLETED')" @click="status = 'COMPLETED'">
             Hoàn tất
           </button>
         </div>
 
         <div class="list-group small">
-          <button
-            v-for="o in filteredOrders"
-            :key="o.id"
+          <button v-for="o in filteredOrders" :key="o.id"
             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-            :class="{ active: selectedOrder?.id === o.id }"
-            @click="openOrder(o)"
-          >
+            :class="{ active: selectedOrder?.id === o.id }" @click="openOrder(o)">
             <div>
               <div class="fw-bold">{{ cut(o.code, 20) }}</div>
               <div class="fw-semibold">{{ cut(o.supplier, 20) }}</div>
@@ -62,16 +42,14 @@
           <div v-if="loading" class="text-center py-3">
             <div class="spinner-border text-dark"></div>
           </div>
-          
+
         </div>
       </aside>
 
       <!-- Main -->
       <main class="main">
         <div class="section-card" v-if="selectedOrder">
-          <div
-            class="d-flex align-items-center justify-content-between px-3 pt-3 pb-2"
-          >
+          <div class="d-flex align-items-center justify-content-between px-3 pt-3 pb-2">
             <div class="fw-bold">
               <div>
                 {{ selectedOrder.code }} —
@@ -88,22 +66,12 @@
             </div>
             <div class="d-flex gap-2">
               <div class="text-center">
-                <button
-                  class="btn btn-outline-danger btn-sm"
-                  @click="contactModalVisible = true"
-                >
+                <button class="btn btn-outline-danger btn-sm" @click="contactModalVisible = true">
                   <i class="fa-solid fa-envelope me-1"></i> Liên hệ Admin
                 </button>
               </div>
-              <RouterLink
-                class="btn btn-outline-primary btn-sm"
-                to="/inbound/new"
-                >+ Tạo đơn mua</RouterLink
-              >
-              <button
-                class="btn btn-outline-secondary btn-sm"
-                @click="selectedOrder = null"
-              >
+              <RouterLink class="btn btn-outline-primary btn-sm" to="/inbound/new">+ Tạo đơn mua</RouterLink>
+              <button class="btn btn-outline-secondary btn-sm" @click="selectedOrder = null">
                 ← Quay lại
               </button>
             </div>
@@ -118,14 +86,9 @@
 
             <!-- QUÉT NHANH -->
             <div class="flex-grow-1 d-flex align-items-center gap-2">
-              <input
-                ref="quickInputRef"
-                v-model.trim="quickSerial"
-                @keyup.enter="handleQuickScan"
-                class="form-control mono"
-                placeholder="Quét nhanh serial… (vd: iphone15prm-0001)"
-                :disabled="!canScan"
-              />
+              <input ref="quickInputRef" v-model.trim="quickSerial" @keyup.enter="handleQuickScan"
+                class="form-control mono" placeholder="Quét nhanh serial… (vd: iphone15prm-0001)"
+                :disabled="!canScan" />
               <button class="btn btn-primary" @click="handleQuickScan">
                 Quét
               </button>
@@ -146,30 +109,22 @@
                 </tr>
               </thead>
               <tbody>
-                <tr
-                  v-for="it in selectedOrder.items || []"
-                  :key="it.id || it.sku"
-                >
+                <tr v-for="it in selectedOrder.items || []" :key="it.id || it.sku">
                   <td class="mono nowrap">{{ it.sku }}</td>
                   <td class="nowrap" :title="it.name">
                     {{ cut(it.name, 28) }}
                   </td>
-                  <td class="nowrap">{{ it.categoryName}}</td>
+                  <td class="nowrap">{{ it.categoryName }}</td>
                   <td class="nowrap">{{ cut(it.brandName, 18) }}</td>
                   <td class="nowrap">{{ cut(it.color || "—", 16) }}</td>
                   <td class="text-end nowrap mono">
-                    <span
-                      >{{
-                        it.scannedQuantity != null
-                          ? it.scannedQuantity
-                          : scannedCount(it.sku)
-                      }}/{{ it.orderQuantity }}</span
-                    >
-                    <button
-                      class="btn btn-link btn-sm ms-1"
-                      title="Xem serial đã quét"
-                      @click="openSerialsModal(it.sku, it.productId)"
-                    >
+                    <span>{{
+                      it.scannedQuantity != null
+                        ? it.scannedQuantity
+                        : scannedCount(it.sku)
+                    }}/{{ it.orderQuantity }}</span>
+                    <button class="btn btn-link btn-sm ms-1" title="Xem serial đã quét"
+                      @click="openSerialsModal(it.sku, it.productId)">
                       <i class="fa-solid fa-eye"></i>
                     </button>
                   </td>
@@ -184,24 +139,16 @@
           </div>
 
           <div class="px-3 py-3 d-flex justify-content-end">
-            <button
-              class="btn btn-success"
-              :disabled="!canComplete"
-              @click="completeOrder"
-            >
+            <button class="btn btn-success" :disabled="!canComplete" @click="completeOrder">
               Nhập hàng
             </button>
           </div>
         </div>
 
         <div v-else class="section-card">
-          <div
-            class="px-3 pt-3 pb-2 d-flex align-items-center justify-content-between"
-          >
+          <div class="px-3 pt-3 pb-2 d-flex align-items-center justify-content-between">
             <h5 class="fw-bold mb-0">Chọn 1 phiếu mua (đơn hàng) để nhập</h5>
-            <RouterLink class="btn btn-outline-primary btn-sm" to="/inbound/new"
-              >+ Tạo đơn mua</RouterLink
-            >
+            <RouterLink class="btn btn-outline-primary btn-sm" to="/inbound/new">+ Tạo đơn mua</RouterLink>
           </div>
           <div class="p-3 text-muted">
             Hãy chọn phiếu từ danh sách bên trái.
@@ -210,78 +157,63 @@
       </main>
     </div>
 
-   <!-- Modal: Liên hệ Admin -->
-<div
-  v-if="contactModalVisible"
-  class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50"
->
-  <div class="card p-4 w-50 shadow">
-   
-    <div class="d-flex align-items-center justify-content-between mb-3">
-      <h5 class="mb-0">
-        <i class="fa-solid fa-envelope me-2 text-primary"></i>Liên hệ Admin
-      </h5>
-      <button
-        class="btn btn-sm btn-outline-secondary"
-        @click="contactModalVisible = false"
-      >
-        Đóng
-      </button>
-    </div>
+    <!-- Modal: Liên hệ Admin -->
+    <div v-if="contactModalVisible"
+      class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50">
+      <div class="card p-4 w-50 shadow">
 
-   
-    <div class="table-responsive mb-3">
-      <table class="table table-striped table-bordered table-hover align-middle text-center">
-        <thead class="table-primary">
-          <tr>
-            <th scope="col">SKU</th>
-            <th scope="col">Tên hàng hóa</th>
-            <th scope="col">Loại</th>
-            <th scope="col">Hãng</th>
-            <th scope="col">Màu</th>
-            <th scope="col">Số lượng</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td colspan="6" class="text-muted">Không có dữ liệu</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <h5 class="mb-0">
+            <i class="fa-solid fa-envelope me-2 text-primary"></i>Liên hệ Admin
+          </h5>
+          <button class="btn btn-sm btn-outline-secondary" @click="contactModalVisible = false">
+            Đóng
+          </button>
+        </div>
 
-   
-    <div class="mb-3">
-      <label class="form-label fw-semibold">Tin nhắn</label>
-      <textarea
-        v-model.trim="contactMessage"
-        class="form-control"
-        placeholder="Nhập tin nhắn của bạn..."
-        rows="4"
-      ></textarea>
-    </div>
 
-   
-    <div class="d-flex justify-content-end">
-      <button class="btn btn-primary px-4" @click="sendMessageToAdmin">
-        <i class="fa-solid fa-paper-plane me-2"></i>Gửi
-      </button>
+        <div class="table-responsive mb-3">
+          <table class="table table-striped table-bordered table-hover align-middle text-center">
+            <thead class="table-primary">
+              <tr>
+                <th scope="col">SKU</th>
+                <th scope="col">Tên hàng hóa</th>
+                <th scope="col">Loại</th>
+                <th scope="col">Hãng</th>
+                <th scope="col">Màu</th>
+                <th scope="col">Số lượng</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="6" class="text-muted">Không có dữ liệu</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+
+        <div class="mb-3">
+          <label class="form-label fw-semibold">Tin nhắn</label>
+          <textarea v-model.trim="contactMessage" class="form-control" placeholder="Nhập tin nhắn của bạn..."
+            rows="4"></textarea>
+        </div>
+
+
+        <div class="d-flex justify-content-end">
+          <button class="btn btn-primary px-4" @click="sendMessageToAdmin">
+            <i class="fa-solid fa-paper-plane me-2"></i>Gửi
+          </button>
+        </div>
+      </div>
     </div>
-  </div>
-</div>
     <!-- Modal: Serial đã quét -->
-    
-    <div
-      v-if="modalSku"
-      class="modal-overlay d-flex align-items-center justify-content-center"
-    >
+
+    <div v-if="modalSku" class="modal-overlay d-flex align-items-center justify-content-center">
       <div class="card w-50 p-2 notranslate" translate="no">
         <div class="d-flex align-items-center justify-content-between">
           <h5 class="mb-0">Đã quét Serial — SKU: {{ modalSku }}</h5>
-          <button
-            class="btn btn-sm btn-outline-secondary"
-            @click="modalSku = null"
-          >
+          <button class="btn btn-sm btn-outline-secondary" @click="modalSku = null">
             Đóng
           </button>
         </div>
@@ -324,7 +256,7 @@ import { RouterLink } from "vue-router";
 import { purchaseOrderService } from "@/services/purchaseOrder/purchaseOrderService";
 import { tokenService } from "@/services/TokenService";
 import { fire, EVENTS } from "@/services/eventBus";
-import api from "@/services/axios"; 
+import api from "@/services/axios";
 
 const contactModalVisible = ref(false);
 const auth = tokenService();
@@ -511,6 +443,7 @@ async function handleQuickScan() {
   const serial = String(quickSerial.value || "").trim();
   if (!serial) return;
 
+  console.log('Auth userId:', userId.value);
   if (!selectedOrder.value?.items?.length) {
     toast("Chưa chọn phiếu");
     return;
@@ -560,6 +493,7 @@ async function handleQuickScan() {
     // ✅ xử lý lỗi chi tiết
     const code = err.response?.data?.code;
     const msg = err.response?.data?.message;
+    console.log('Scan error code:', code);
 
     if (code === "SERIAL_ALREADY_SCANNED") {
       toast("⚠️ Serial này đã được scan trước đó");
@@ -658,6 +592,7 @@ onMounted(async () => {
   gap: 16px;
   width: 100%;
 }
+
 .side {
   width: 320px;
   background: #fff;
@@ -668,6 +603,7 @@ onMounted(async () => {
   height: calc(100vh - 110px);
   overflow: auto;
 }
+
 .brand {
   font-weight: 700;
   font-size: 18px;
@@ -675,12 +611,14 @@ onMounted(async () => {
   align-items: center;
   margin-bottom: 10px;
 }
+
 .main {
   flex: 1;
   display: flex;
   flex-direction: column;
   gap: 16px;
 }
+
 .section-card {
   background: #fff;
   border: 1px solid #eef2f7;
@@ -698,6 +636,7 @@ onMounted(async () => {
   flex-direction: column;
   min-width: 140px;
 }
+
 .badge-card .num {
   font-weight: 700;
   color: #1f2937;
@@ -710,9 +649,11 @@ onMounted(async () => {
   white-space: nowrap;
   height: 56px;
 }
+
 .nowrap {
   white-space: nowrap;
 }
+
 .thead-soft th {
   background: #cfe3ff;
   color: #0b1324;
@@ -721,6 +662,7 @@ onMounted(async () => {
   border-top: 1px solid #9ec5fe;
   border-bottom: 1px solid #9ec5fe;
 }
+
 .mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
@@ -732,6 +674,7 @@ onMounted(async () => {
   background: rgba(0, 0, 0, 0.6);
   z-index: 10000;
 }
+
 .toast-box {
   position: fixed;
   bottom: 20px;
@@ -747,11 +690,11 @@ onMounted(async () => {
   .pbox {
     flex-direction: column;
   }
+
   .side {
     width: 100%;
     height: auto;
     position: static;
   }
 }
-
 </style>
