@@ -18,6 +18,9 @@
           <RouterLink class="tab" to="/purchaseorder">PO</RouterLink>
           <!-- <RouterLink class="tab" to="/report" exact-active-class="active">Tổng quát</RouterLink>
           <RouterLink class="tab" to="/report" exact-active-class="active">Khác</RouterLink> -->
+          <RouterLink class="tab" to="/inventory-check/new" exact-active-class="active">Tạo Phiếu Kiểm Kê</RouterLink>
+          <RouterLink class="tab" to="/inventory-check-perform" exact-active-class="active">Phiếu Kiểm Kê</RouterLink>
+        
         </div>
       </div>
     </nav>

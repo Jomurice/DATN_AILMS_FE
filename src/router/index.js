@@ -32,6 +32,8 @@ import OutboundOrderDetail from "../components/outbound/OutboundOrderDetail.vue"
 import WarehouseCreateForm from "../components/NewWarehouse/WarehouseCreateForm.vue";
 import PurchacseOrderManagement from "../components/PO/PurchacseOrderManagement.vue";
 
+import CreateInventory from "../components/CheckInventory/CreateInventory.vue";
+import ChecInventory from "../components/CheckInventory/ChecInventory.vue";
 const routes = [
   { path: "/", redirect: "/login" },
   { path: "/login", name: "login", component: Login },
@@ -172,9 +174,30 @@ const routes = [
         component: OutboundOrderDetail,
         props: true,
       },
-      { path: ":pathMatch(.*)*", redirect: "/product" },
 
-    
+      // Phieu kiem kê
+
+      {
+          path: "inventory-check", // URL: /inventory-check
+          name: "inventory-check-list",
+          meta: { title: "Danh sách Phiếu Kiểm Kê" },
+          component: ChecInventory,
+      },
+      {
+          path: "inventory-check/new", // URL: /inventory-check/new
+          name: "inventory-check-create",
+          meta: { title: "Tạo phiếu kiểm kê" },
+          component: CreateInventory,
+      },
+      {
+          // URL: /inventory-check/ABC-123/perform
+          path: "inventory-check/:id/perform", 
+          name: "inventory-check-perform",
+          meta: { title: "Thực hiện Kiểm Kê" },
+          component: ChecInventory, // Sử dụng lại component Master-Detail
+          props: true,
+      },
+      { path: ":pathMatch(.*)*", redirect: "/product" },
     
     ],
   },
@@ -203,6 +226,10 @@ const routes = [
         meta: { title: "Sửa" },
         component: AccountForm,
         props: true,
+      },
+  
+      {
+        path: ":pathMatch(.*)*", redirect: "/product"
       },
     ],
   },
