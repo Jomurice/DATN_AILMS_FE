@@ -8,6 +8,7 @@
           placeholder="Nhập tên nhân viên cần tìm" />
       </div>
 
+
       <h2>Nhân sự</h2>
 
 
@@ -131,7 +132,9 @@
                       </button>
                       <button class="btn btn-outline-warning" title="Sửa thông tin"
                         @click="$router.push(`/admin/account/${u.id}/edit`)">
-                        <i class="fa-solid fa-user-pen"></i>
+                        
+
+
                       </button>
                       <button class="btn" :class="u.status ? 'btn-outline-danger' : 'btn-outline-success'"
                         :title="u.status ? 'Khóa tài khoản' : 'Mở khóa tài khoản'" @click="changeStatus(u)" @load="">
