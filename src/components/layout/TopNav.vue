@@ -18,6 +18,9 @@
           <RouterLink class="tab" to="/purchaseorder">PO</RouterLink>
 
           <RouterLink class="tab" to="/suppliers">Nhà phân phối</RouterLink>
+
+          <RouterLink class="tab" to="/createinventorycheck">Tạo phiếu kiểm kê</RouterLink>
+          <RouterLink class="tab" to="/inventorycheckDetail">Kiểm kê kho</RouterLink>
           
 
         </div>

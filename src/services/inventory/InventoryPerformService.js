@@ -1,101 +1,51 @@
 // src/services/inventory/InventoryPerformService.js
-import axios from 'axios';
-
-const API_BASE_URL = '/api/inventories'; 
+import api from '../axios';
 
 export const inventoryPerformService = {
 
-    // 1. GET: Lấy danh sách tất cả phiếu kiểm kê (cho sidebar)
-    // GET /api/inventories
-    async getAllChecks() {
-        try {
-            const response = await axios.get(API_BASE_URL);
-            return response.data.result || response.data;
-        } catch (error) {
-            console.error("Lỗi khi tải danh sách phiếu kiểm kê:", error);
-            throw error;
-        }
-    },
+  // Lấy phiếu kiểm kê theo ID
+  async getCheckById(checkId) {
+    const response = await api.get(`/api/inventories/${checkId}`);
+    return response.data.result;
+  },
 
-    // 2. GET: Lấy chi tiết header phiếu kiểm kê
-    // GET /api/inventories/{id}
-    async getCheckById(checkId) {
-        try {
-            const response = await axios.get(`${API_BASE_URL}/${checkId}`);
-            return response.data.result;
-        } catch (error) {
-            console.error(`Lỗi khi tải phiếu ${checkId}:`, error);
-            throw error;
-        }
-    },
+  // Lấy danh sách items theo phiếu ID
+  async getItemsByCheckId(checkId) {
+    const response = await api.get(`/api/inventories/${checkId}/items`);
+    return response.data.result || [];
+  },
 
-    // 3. GET: Lấy danh sách items chi tiết trong phiếu (Item list)
-    // GET /api/inventories/{id}/items
-    async getItemsByCheckId(checkId) {
-        try {
-            const response = await axios.get(`${API_BASE_URL}/${checkId}/items`);
-            return response.data.result || response.data;
-        } catch (error) {
-            console.error(`Lỗi khi tải items của phiếu ${checkId}:`, error);
-            throw error;
-        }
-    },
+  // Quét serial
+  async scanSerial(checkId, serialNumber, scannedByUserId) {
+    const params = { serialNumber };
+    if (scannedByUserId) params.scannedByUserId = scannedByUserId;
+    const response = await api.post(`/api/inventories/${checkId}/scan`, null, { params });
+    return response.data.result;
+  },
 
-    // 4. POST: Bắt đầu kiểm kê (Chuyển trạng thái DRAFT -> IN_PROGRESS)
-    // POST /api/inventories/{id}/start?checkedByUserId={userId}
-    async startCheck(checkId, checkedByUserId) {
-        try {
-            const response = await axios.post(`${API_BASE_URL}/${checkId}/start`, null, {
-                params: {
-                    checkedByUserId: checkedByUserId
-                }
-            });
-            return response.data.result;
-        } catch (error) {
-            console.error("Lỗi khi bắt đầu kiểm kê:", error);
-            throw error;
-        }
-    },
+  // Cập nhật item (countedQuantity, note, status)
+  async updateItem(itemId, payload) {
+    const response = await api.put(`/api/inventories/items/${itemId}`, payload);
+    return response.data.result;
+  },
 
-    // 5. PUT: Cập nhật thủ công SL đếm thực tế (Lưu tạm thời)
-    // PUT /api/inventories/{checkId}/items/{itemId}
-    async updateItemManual(checkId, itemId, payload) {
-        // payload = { countedQuantity, note, ... }
-        try {
-            const response = await axios.put(`${API_BASE_URL}/${checkId}/items/${itemId}`, payload);
-            return response.data.result;
-        } catch (error) {
-            console.error(`Lỗi khi cập nhật Item ${itemId}:`, error);
-            throw error;
-        }
-    },
+  // Hoàn thành kiểm kê (tính status MATCHED/SHORTAGE/OVERAGE)
+  async completeCheck(checkId) {
+    const response = await api.post(`/api/inventories/${checkId}/complete`);
+    return response.data.result;
+  },
 
-    // 6. POST: Hoàn tất kiểm kê
-    // POST /api/inventories/{id}/complete
-    async completeCheck(checkId) {
-        try {
-            const response = await axios.post(`${API_BASE_URL}/${checkId}/complete`);
-            return response.data.result;
-        } catch (error) {
-            console.error("Lỗi khi hoàn tất kiểm kê:", error);
-            throw error;
-        }
-    },
-    
-    // 7. POST: Quét Serial (Quick Scan)
-    // POST /api/inventories/{id}/scan?serialNumber={serial}&scannedByUserId={userId}
-    async scanSerial(checkId, serialNumber, scannedByUserId) {
-        try {
-            const response = await axios.post(`${API_BASE_URL}/${checkId}/scan`, null, {
-                params: {
-                    serialNumber: serialNumber,
-                    scannedByUserId: scannedByUserId
-                }
-            });
-            return response.data.result;
-        } catch (error) {
-            console.error("Lỗi khi quét Serial:", error);
-            throw error;
-        }
-    }
+  // Lưu tạm (update all items)
+  async saveTemporary(checkId, items) {
+    // Giả sử batch update, hoặc loop call updateItem
+    const promises = items.map(item => updateItem(item.id, { countedQuantity: item.countedQuantity, note: item.note }));
+    await Promise.all(promises);
+    return { message: 'Lưu tạm thành công' };
+  },
+
+  // Gợi ý serial (search)
+  async suggestSerials(checkId, query) {
+    const response = await api.get(`/api/inventories/${checkId}/serials/suggest`, { params: { q: query } });
+    return response.data.result || [];
+  },
 };

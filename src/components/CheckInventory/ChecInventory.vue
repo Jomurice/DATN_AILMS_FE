@@ -1,24 +1,17 @@
 <template>
   <div class="container-fluid px-3 py-4">
     <div class="pbox">
+      <!-- Aside -->
       <aside class="side">
         <div class="brand">
-          <i class="fa-solid fa-clipboard-check me-2"></i>Phiếu Kiểm Kê
+          <i class="fa-solid fa-clipboard-check me-2"></i>Phiếu kiểm kê kho
         </div>
 
         <div class="mb-2 d-flex gap-2 flex-wrap">
-          <button class="btn btn-sm" :class="chip('ALL')" @click="status = 'ALL'">
-            Tất cả
-          </button>
-          <button class="btn btn-sm" :class="chip('DRAFT')" @click="status = 'DRAFT'">
-            Chờ xử lý
-          </button>
-          <button class="btn btn-sm" :class="chip('IN_PROGRESS')" @click="status = 'IN_PROGRESS'">
-            Đang thực hiện
-          </button>
-          <button class="btn btn-sm" :class="chip('COMPLETED')" @click="status = 'COMPLETED'">
-            Hoàn tất
-          </button>
+          <button class="btn btn-sm" :class="chip('ALL')" @click="setStatus('ALL')">Tất cả</button>
+          <button class="btn btn-sm" :class="chip('PENDING')" @click="setStatus('PENDING')">Chờ xử lý</button>
+          <button class="btn btn-sm" :class="chip('IN_PROGRESS')" @click="setStatus('IN_PROGRESS')">Đang xử lý</button>
+          <button class="btn btn-sm" :class="chip('COMPLETED')" @click="setStatus('COMPLETED')">Hoàn tất</button>
         </div>
 
         <div class="list-group small">
@@ -28,537 +21,406 @@
             <div>
               <div class="fw-bold">{{ cut(o.code, 20) }}</div>
               <div class="fw-semibold">{{ cut(o.warehouseName, 20) }}</div>
-              <div class="badge bg-light mt-1" :class="statusBg(o.status)">
-                {{ viStatus(o.status) }}
-              </div>
+              <div class="badge bg-light text-dark mt-1">{{ viStatus(o.status) }}</div>
             </div>
-            <small class="text-muted">{{ d(o.createdAt) }}</small>
+            <small class="text-muted">{{ formatDate(o.createdAt) }}</small>
           </button>
 
           <div v-if="!loading && !filteredChecks.length" class="text-muted p-3">
             Không có phiếu phù hợp
           </div>
           <div v-if="loading" class="text-center py-3">
-            <div class="spinner-border text-primary"></div>
+            <div class="spinner-border text-dark"></div>
           </div>
         </div>
       </aside>
 
+      <!-- Main -->
       <main class="main">
         <div class="section-card" v-if="selectedCheck">
-          <div class="px-3 pt-3 pb-2 mb-3 border-bottom">
-            <div class="d-flex align-items-center justify-content-between">
-              <h5 class="fw-bold mb-0 text-primary">
-                {{ selectedCheck.code }}
-              </h5>
-              <button class="btn btn-outline-secondary btn-sm" @click="selectedCheck = null">
-                ← Quay lại
-              </button>
+          <div class="d-flex align-items-center justify-content-between px-3 pt-3 pb-2">
+            <div class="fw-bold">
+              <div>{{ selectedCheck.code }} — <span class="text-muted">{{ cut(selectedCheck.warehouseName, 28) }}</span></div>
+              <small class="text-muted">
+                Người tạo: {{ selectedCheck.createdByName }} • Ngày tạo: {{ formatDate(selectedCheck.createdAt) }} • Hạn kiểm kê: {{ formatDate(selectedCheck.deadline) }} • Trạng thái: {{ viStatus(selectedCheck.status) }}
+              </small>
             </div>
-
-            <div class="grid-check-info small mt-2">
-              <div><span class="text-muted">Kho:</span> <span class="fw-semibold">{{ selectedCheck.warehouseName }}</span></div>
-              <div><span class="text-muted">Người tạo:</span> <span>{{ selectedCheck.createdByName }}</span></div>
-              <div><span class="text-muted">Người kiểm kê:</span> <span class="fw-bold text-success">{{ checkUser.name }}</span></div>
-              <div><span class="text-muted">Ngày tạo:</span> <span>{{ d(selectedCheck.createdAt) }}</span></div>
-              <div><span class="text-muted">Hạn kiểm kê:</span> <span class="fw-bold text-danger">{{ d(selectedCheck.deadline) }}</span></div>
-              <div><span class="text-muted">Ghi chú:</span> <span>{{ cut(selectedCheck.note, 30) || '—' }}</span></div>
-              <div><span class="text-muted">Trạng thái:</span> <span :class="statusText(selectedCheck.status)">{{ viStatus(selectedCheck.status) }}</span></div>
-            </div>
-          </div>
-
-          <div class="px-3 pb-3 d-flex align-items-center flex-wrap gap-3">
-            <div class="flex-grow-1 d-flex align-items-center gap-2">
-              <input ref="quickInputRef" v-model.trim="quickSerial" @keyup.enter="handleQuickScan"
-                class="form-control mono" placeholder="Quét nhanh serial..."
-                :disabled="!canScan" />
-              <button class="btn btn-primary" @click="handleQuickScan" :disabled="!canScan || isScanning">
-                <span v-if="isScanning" class="spinner-border spinner-border-sm me-2"></span>
-                Quét
-              </button>
+            <div class="d-flex gap-2">
+              <input
+                v-model.trim="scanSerial"
+                @keyup.enter="handleScanSerial"
+                class="form-control mono"
+                placeholder="Quét serial..."
+                style="width: 250px;"
+              />
+              <button class="btn btn-primary btn-sm" @click="handleScanSerial">Quét</button>
+              <button class="btn btn-outline-secondary btn-sm" @click="selectedCheck = null">← Quay lại</button>
             </div>
           </div>
 
-          <ul class="nav nav-tabs px-3" role="tablist">
-            <li class="nav-item" v-for="tab in tabs" :key="tab.status">
-              <button class="nav-link" :class="{ active: currentTab === tab.status }" @click="currentTab = tab.status">
-                {{ tab.name }} ({{ tab.count }})
-              </button>
-            </li>
-          </ul>
+          <!-- Chi tiết phiếu -->
+          <div class="px-3 pb-3">
+            <div class="row">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Người kiểm kê</label>
+                <input v-model="checkerName" class="form-control" disabled />
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">Ghi chú</label>
+                <input v-model="selectedCheck.note" class="form-control" disabled />
+              </div>
+            </div>
+          </div>
 
-          <div class="table-responsive p-3">
-            <table class="table table-hover mb-0 table-sm align-middle">
+          <!-- Tabs cho table -->
+          <div class="px-3 pb-3">
+            <ul class="nav nav-tabs">
+              <li class="nav-item" v-for="tab in tabs" :key="tab.key">
+                <button class="nav-link" :class="{ active: activeTab === tab.key }" @click="activeTab = tab.key">
+                  {{ tab.label }} ({{ tab.count }})
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Table -->
+          <div class="table-responsive">
+            <table class="table table-hover mb-0">
               <thead class="thead-soft">
                 <tr class="text-uppercase fw-semibold">
-                  <th style="width: 50px;">#</th>
                   <th>Hãng</th>
                   <th>Loại</th>
                   <th>Tên sản phẩm</th>
                   <th>Số serial</th>
-                  <th class="text-center">SL Hệ thống</th>
-                  <th class="text-center">SL Thực tế (*)</th>
-                  <th class="text-center">Chênh lệch</th>
-                  <th style="width: 150px;">Trạng thái</th>
+                  <th>Số lượng hệ thống</th>
+                  <th v-if="activeTab === 'ALL' || activeTab === 'CHECKED' || activeTab === 'UNCHECKED'">Trạng thái</th>
+                  <th v-if="activeTab === 'DIFFERENCE'">Số lượng chênh lệch</th>
                 </tr>
               </thead>
               <tbody>
-                <tr v-for="(item, idx) in filteredCheckItems" :key="item.id">
-                  <td class="center">{{ idx + 1 }}</td>
-                  <td>{{ item.brandName || '—' }}</td>
-                  <td>{{ item.categoryName || '—' }}</td>
-                  <td>{{ item.productName || item.productSku }}</td>
-                  <td class="mono fw-semibold">{{ item.serialNumber }}</td>
-                  
-                  <td class="text-center text-primary fw-bold">{{ item.systemQuantity }}</td>
-
-                  <td>
-                    <input type="number" 
-                           v-model.number="item.countedQuantity" 
-                           class="form-control form-control-sm text-end" 
-                           min="0" 
-                           :disabled="!canEditCount"
-                           @change="updateDifference(item)"
-                    />
+                <tr v-for="(item, idx) in filteredItems" :key="item.id">
+                  <td>{{ item.brand || 'N/A' }}</td>
+                  <td>{{ item.category || 'N/A' }}</td>
+                  <td>{{ item.productName || 'N/A' }}</td>
+                  <td>{{ item.serialNumber }}</td>
+                  <td class="text-center">{{ item.systemQuantity }}</td>
+                  <td v-if="activeTab === 'ALL' || activeTab === 'CHECKED' || activeTab === 'UNCHECKED'" class="text-center">
+                    <span :class="getStatusClass(item.status)">{{ item.status || 'UNKNOWN' }}</span>
                   </td>
-
-                  <td class="text-center fw-bold" :class="getDifferenceClass(item)">
-                      {{ item.difference || 0 }}
-                  </td>
-                  
-                  <td>
-                    <span class="badge" :class="statusBg(item.status)">
-                        {{ viStatus(item.status) }}
-                    </span>
+                  <td v-if="activeTab === 'DIFFERENCE'" class="text-center">
+                    <span :class="getDifferenceClass(item.difference)">{{ item.difference }}</span>
                   </td>
                 </tr>
-                <tr v-if="!filteredCheckItems.length">
-                  <td colspan="9" class="text-center text-muted py-3">
-                    Không có hàng hóa nào thuộc danh mục: {{ tabs.find(t => t.status === currentTab)?.name }}
-                  </td>
+                <tr v-if="!filteredItems.length">
+                  <td colspan="6" class="text-center text-muted py-3">Không có dữ liệu</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <div class="px-3 py-3 d-flex justify-content-end gap-2 border-top">
-            <button class="btn btn-outline-success" 
-                    :disabled="!canSaveTemp" 
-                    @click="showSaveModal = true">
+          <div class="px-3 py-3 d-flex justify-content-end gap-2">
+            <button class="btn btn-primary" @click="handleSaveTemporary" :disabled="submitting">
               Lưu tạm
             </button>
-
-            <button class="btn btn-primary" :disabled="!canCompleteFinal" @click="completeCheck">
+            <button class="btn btn-success" @click="handleCompleteCheck" :disabled="submitting || !canComplete">
               Hoàn tất
             </button>
           </div>
         </div>
 
         <div v-else class="section-card">
-          <div class="p-4 text-center">
-            <h5 class="fw-bold mb-0">Chọn 1 Phiếu Kiểm Kê để bắt đầu đếm</h5>
-            <div class="text-muted mt-2">
-              Sử dụng danh sách bên trái để chọn phiếu.
-            </div>
+          <div class="px-3 pt-3 pb-2 d-flex align-items-center justify-content-between">
+            <h5 class="fw-bold mb-0">Chọn 1 phiếu kiểm kê để xử lý</h5>
           </div>
+          <div class="p-3 text-muted">Hãy chọn phiếu từ danh sách bên trái.</div>
         </div>
       </main>
     </div>
 
-    <div v-if="showSaveModal" class="custom-modal-backdrop">
-      <div class="custom-modal-dialog">
-        <div class="custom-modal-content">
-          <div class="custom-modal-header">
-            <h5 class="custom-modal-title">Xác nhận Lưu Tạm</h5>
-          </div>
-          <div class="custom-modal-body text-center">
-            <p class="h5">Bạn có chắc chắn muốn lưu tạm kết quả kiểm kê hiện tại?</p>
-            <small class="text-muted">Các thay đổi sẽ được lưu nhưng phiếu chưa được hoàn tất.</small>
-          </div>
-          <div class="custom-modal-footer">
-            <button type="button" class="btn btn-primary" @click="showSaveModal = false">
-              Huỷ
-            </button>
-            <button type="button" class="btn btn-secondary" @click="saveCountedItems">
-              Xác nhận
-            </button>
-          </div>
+    <!-- Serial Scan Modal (nếu cần mở rộng) -->
+    <div v-if="serialModalVisible" class="modal-overlay d-flex align-items-center justify-content-center">
+      <div class="card w-50 p-2">
+        <div class="d-flex align-items-center justify-content-between">
+          <h5 class="mb-0">Quét serial cho {{ selectedItem?.serialNumber }}</h5>
+          <button class="btn btn-sm btn-outline-secondary" @click="serialModalVisible = false">Đóng</button>
         </div>
+        <input v-model="scanSerial" @keyup.enter="handleScanSerial" class="form-control" placeholder="Nhập serial..." />
+        <button class="btn btn-primary mt-2" @click="handleScanSerial">Xác nhận</button>
       </div>
     </div>
-    
+
+    <!-- Toast -->
     <div v-if="toastMsg" class="toast-box">{{ toastMsg }}</div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
-import { useRoute } from "vue-router";
-// Giả định API Service
-import { inventoryPerformService } from "@/services/inventory/InventoryPerformService"; 
-import { tokenService } from "@/services/TokenService"; 
-import api from "@/services/axios"; // Giả định axios đã được cấu hình
+import { ref, computed, onMounted, watch } from "vue";
+import { RouterLink } from "vue-router";
+import { inventoryCheckService } from "@/services/inventory/CreateInventoryService.js"; 
+import { tokenService } from "@/services/TokenService.js"; 
 
-const route = useRoute();
+// ===== Refs =====
 const auth = tokenService();
 const userId = ref("");
+const checks = ref([]); // List phiếu kiểm kê
+const loading = ref(true);
+const status = ref("ALL");
+const selectedCheck = ref(null);
+const scanSerial = ref(""); // Thanh quét serial luôn hiển thị
+const activeTab = ref("ALL");
+const serialModalVisible = ref(false);
+const selectedItem = ref(null);
+const toastMsg = ref("");
+let toastTimer = null;
 
-/* ========== helpers ========== */
+// Checker name (từ user hiện tại)
+const checkerName = computed(() => auth.userName || "—");
+
+// ======== Helpers ========
 const cut = (s, n = 20) => s && s.length > n ? s.slice(0, n) + "..." : s || "";
-const d = (x) => {
+const formatDate = (x) => {
   if (!x) return "—";
   try {
     const t = new Date(x);
     return isNaN(+t) ? x : t.toISOString().slice(0, 10);
-  } catch { return x; }
+  } catch {
+    return x;
+  }
 };
 const key = (s) => String(s || "").trim().toLowerCase();
-let toastTimer = null;
 
-/* ========== state ========== */
-const checks = ref([]); // Danh sách phiếu kiểm kê
-const loading = ref(true);
-const status = ref("ALL"); // Trạng thái lọc danh sách
-const selectedCheck = ref(null); // Phiếu đang được chọn
-const checkItems = ref([]); // Chi tiết items của phiếu đang chọn
-const quickSerial = ref("");
-const quickInputRef = ref(null);
-const isScanning = ref(false);
-
-const currentTab = ref("ALL"); // Tab hiện tại trong bảng chi tiết
-const showSaveModal = ref(false); // Điều khiển modal lưu tạm
-const toastMsg = ref("");
-
-// Dữ liệu người kiểm kê (Giả định lấy từ Auth user)
-const checkUser = computed(() => ({
-    id: auth.userId,
-    name: auth.userName || 'Tài khoản hiện tại'
-}));
-
-/* ========== filters / computed ========== */
-
-// Lọc trạng thái danh sách phiếu
+// ======== Filters ========
+const chip = (s) => ({ "btn-outline-secondary": status.value !== s, "btn-primary text-white": status.value === s });
+const viStatus = (s) => {
+  const k = String(s || "").toUpperCase();
+  if (k === "PENDING") return "Chờ xử lý";
+  if (k === "IN_PROGRESS") return "Đang xử lý";
+  if (k === "COMPLETED") return "Hoàn tất";
+  return s || "—";
+};
 const filteredChecks = computed(() => {
   if (status.value === "ALL") return checks.value;
-  return checks.value.filter((o) => {
-    const k = String(o.status || "").toUpperCase();
-    return k === status.value;
-  });
+  return checks.value.filter(o => String(o.status || "").toUpperCase() === status.value);
 });
 
-// Logic phân loại và đếm số lượng cho từng tab
-const tabs = computed(() => {
-    const items = checkItems.value;
-    const all = items.length;
-    const checked = items.filter(i => i.status === 'MATCHED' || i.status === 'OVERAGE' || i.status === 'SHORTAGE').length;
-    const unchecked = items.filter(i => i.status === 'DRAFT' || i.status === 'UNKNOWN').length;
-    const variance = items.filter(i => i.difference !== 0).length;
+// ======== Tabs & Filtered Items ========
+const tabs = [
+  { key: 'ALL', label: 'Tất cả' },
+  { key: 'CHECKED', label: 'Đã kiểm' },
+  { key: 'UNCHECKED', label: 'Chưa kiểm' },
+  { key: 'DIFFERENCE', label: 'Chênh lệch' }
+];
 
-    return [
-        { name: "Tất cả", status: "ALL", count: all },
-        { name: "Đã kiểm", status: "CHECKED", count: checked },
-        { name: "Chưa kiểm", status: "UNCHECKED", count: unchecked },
-        { name: "Chênh lệch", status: "VARIANCE", count: variance },
-    ];
+const filteredItems = computed(() => {
+  if (!selectedCheck.value || !selectedCheck.value.items) return [];
+  let items = [...selectedCheck.value.items];
+
+  // Lọc theo tab
+  if (activeTab.value === 'CHECKED') {
+    items = items.filter(i => (i.countedQuantity || 0) > 0);
+  } else if (activeTab.value === 'UNCHECKED') {
+    items = items.filter(i => (i.countedQuantity || 0) === 0);
+  } else if (activeTab.value === 'DIFFERENCE') {
+    items = items.filter(i => (i.systemQuantity || 0) !== (i.countedQuantity || 0));
+    items.forEach(i => i.difference = (i.systemQuantity || 0) - (i.countedQuantity || 0));
+  }
+
+  // Update count for tabs
+  tabs[0].count = selectedCheck.value.items.length;
+  tabs[1].count = items.filter(i => (i.countedQuantity || 0) > 0).length;
+  tabs[2].count = items.filter(i => (i.countedQuantity || 0) === 0).length;
+  tabs[3].count = items.filter(i => (i.systemQuantity || 0) !== (i.countedQuantity || 0)).length;
+
+  return items;
 });
 
-// Lọc Item theo Tab
-const filteredCheckItems = computed(() => {
-    const items = checkItems.value;
-    const tab = currentTab.value;
-    if (tab === 'ALL') return items;
-    
-    if (tab === 'CHECKED') {
-        return items.filter(i => i.status === 'MATCHED' || i.status === 'OVERAGE' || i.status === 'SHORTAGE');
-    }
-    if (tab === 'UNCHECKED') {
-        return items.filter(i => i.status === 'DRAFT' || i.status === 'UNKNOWN');
-    }
-    if (tab === 'VARIANCE') {
-        return items.filter(i => i.difference !== 0);
-    }
-    return items;
+// ======== Computed ========
+const canComplete = computed(() => {
+  if (!selectedCheck.value) return false;
+  const s = String(selectedCheck.value.status || "").toUpperCase();
+  if (s === "COMPLETED") return false;
+  return selectedCheck.value.items.every(i => (i.countedQuantity || 0) > 0); // Ví dụ: Tất cả checked
 });
 
+// ======== Methods ========
+const setStatus = (s) => status.value = s;
 
-const canEditCount = computed(() => {
-    const status = (selectedCheck.value?.status || "").toUpperCase();
-    return status === "IN_PROGRESS" || status === "DRAFT";
-});
-
-const canScan = computed(() => {
-    const status = (selectedCheck.value?.status || "").toUpperCase();
-    return status === "IN_PROGRESS" || status === "DRAFT";
-});
-
-const canSaveTemp = computed(() => {
-    const status = (selectedCheck.value?.status || "").toUpperCase();
-    // Chỉ cho phép lưu tạm khi đang thực hiện
-    return status === "IN_PROGRESS"; 
-});
-
-const canCompleteFinal = computed(() => {
-    if (!selectedCheck.value) return false;
-    // Yêu cầu: tất cả sản phẩm phải được kiểm (đã có trạng thái khác UNKNOWN/DRAFT)
-    const status = (selectedCheck.value?.status || "").toUpperCase();
-    if (status !== "IN_PROGRESS") return false;
-
-    // Kiểm tra tất cả đã được đánh dấu kiểm chưa
-    const unchecked = checkItems.value.some(i => i.status === 'DRAFT' || i.status === 'UNKNOWN');
-    return !unchecked;
-});
-
-// Helpers
-const chip = (s) => ({
-    "btn-outline-secondary": status.value !== s,
-    "btn-primary text-white": status.value === s,
-});
-const viStatus = (s) => {
-    const k = String(s || "").toUpperCase();
-    if (k === "DRAFT" || k === "PENDING" || k === "UPCOMING") return "Chờ xử lý";
-    if (k === "IN_PROGRESS") return "Đang thực hiện";
-    if (k === "COMPLETED" || k === "DONE") return "Hoàn tất";
-    if (k === "MATCHED") return "Khớp";
-    if (k === "SHORTAGE") return "Thiếu";
-    if (k === "OVERAGE") return "Thừa";
-    if (k === "UNKNOWN") return "Chưa kiểm";
-    return s || "—";
-};
-const statusBg = (s) => {
-    const k = String(s || "").toUpperCase();
-    if (k === "DRAFT" || k === "UNKNOWN") return "bg-secondary text-white";
-    if (k === "IN_PROGRESS") return "bg-info text-dark";
-    if (k === "COMPLETED") return "bg-success text-white";
-    if (k === "SHORTAGE") return "bg-danger text-white";
-    if (k === "OVERAGE") return "bg-warning text-dark";
-    if (k === "MATCHED") return "bg-success text-white";
-    return "bg-light text-dark";
-};
-const statusText = (s) => {
-    const k = String(s || "").toUpperCase();
-    if (k === "IN_PROGRESS") return "text-info fw-bold";
-    if (k === "COMPLETED") return "text-success fw-bold";
-    return "text-muted";
-};
-
-
-/* ========== methods ========== */
-
-// Cập nhật chênh lệch khi input thay đổi
-const updateDifference = (item) => {
-    item.difference = (item.countedQuantity || 0) - (item.systemQuantity || 0);
-
-    // Cập nhật trạng thái item tạm thời (dựa trên FE)
-    if (item.difference === 0) item.status = 'MATCHED';
-    else if (item.difference < 0) item.status = 'SHORTAGE';
-    else if (item.difference > 0) item.status = 'OVERAGE';
-    else item.status = 'UNKNOWN'; 
-};
-
-const getDifferenceClass = (item) => {
-    if (item.difference < 0) return 'text-danger';
-    if (item.difference > 0) return 'text-warning';
-    if (item.difference === 0) return 'text-success';
-    return '';
-};
-
-
-// Mở phiếu kiểm kê (Load header + items)
-async function openCheck(o) {
+async function initChecks() {
+  loading.value = true;
   try {
-    loading.value = true;
-    
-    // 1. GỌI API: Lấy chi tiết header phiếu
-    const fullCheck = await inventoryPerformService.getCheckById(o.id);
-
-    // 2. GỌI API: Lấy danh sách items chi tiết
-    const items = await inventoryPerformService.getItemsByCheckId(o.id);
-    
-    // 3. Chuẩn hóa và tính toán difference/status ban đầu
-    checkItems.value = items.map(item => ({
-        ...item,
-        difference: (item.countedQuantity || 0) - (item.systemQuantity || 0),
-        // Giả định backend đã trả về status đúng (MATCHED, UNKNOWN...)
-    }));
-
-    selectedCheck.value = fullCheck;
-    
-    // 4. Nếu phiếu là DRAFT, chuyển sang IN_PROGRESS (Dựa vào API startCheck)
-    if (fullCheck.status === 'DRAFT') {
-        const startedCheck = await inventoryPerformService.startCheck(o.id, checkUser.value.id);
-        selectedCheck.value = startedCheck;
-    }
-
-    toast("Đã tải chi tiết phiếu thành công!");
-  } catch (err) {
-    console.error("openCheck error", err);
-    toast("Không tải được chi tiết phiếu kiểm kê.");
+    auth.loadToken();
+    userId.value = auth.userId;
+    const response = await inventoryCheckService.getAll(); // Giả sử service có getAll()
+    checks.value = response;
+  } catch (error) {
+    console.error("Lỗi load danh sách phiếu:", error);
+    showToast("Không tải được danh sách phiếu kiểm kê.");
   } finally {
     loading.value = false;
   }
 }
 
-// Lưu tạm thời kết quả đếm (Gửi PUT cho tất cả Items đã chỉnh sửa)
-async function saveCountedItems() {
-    isSaving.value = true;
-    showSaveModal.value = false; // Đóng modal
-    try {
-        const itemsToUpdate = checkItems.value.filter(i => 
-            // Lọc ra các item đã thay đổi CountedQuantity hoặc Note (hoặc tất cả)
-            i.status !== 'UNKNOWN' && i.status !== 'DRAFT' 
-        );
-
-        // Gửi từng PUT request cho mỗi item (dựa trên Controller: PUT /{id}/items/{itemId})
-        for (const item of checkItems.value) {
-            const itemPayload = {
-                countedQuantity: item.countedQuantity,
-                note: item.note,
-                // Không gửi productDetailId khi UPDATE Item
-            };
-            
-            await inventoryPerformService.updateItemManual(item.id, itemPayload);
-        }
-        
-        toast('✅ Đã lưu kết quả đếm tạm thời.');
-
-    } catch (error) {
-        console.error("Lỗi khi lưu tạm:", error);
-        toast('❌ Lỗi: Không thể lưu tạm kết quả kiểm kê.');
-    } finally {
-        isSaving.value = false;
-    }
+async function openCheck(o) {
+  try {
+    const full = await inventoryCheckService.getCheckById(o.id); // Giả sử service có getById()
+    selectedCheck.value = full;
+    console.log('Chi tiết phiếu:', full);
+    showToast("Đã tải chi tiết phiếu thành công!");
+  } catch (err) {
+    console.error("Lỗi open check:", err);
+    showToast("Không tải được chi tiết phiếu kiểm kê.");
+  }
 }
 
-// Hoàn tất Kiểm kê
-async function completeCheck() {
-    if (!confirm("Xác nhận hoàn tất kiểm kê? Bạn sẽ không thể chỉnh sửa sau khi hoàn tất.")) return;
+async function handleScanSerial() {
+  const serial = scanSerial.value.trim();
+  if (!serial) return showToast("Chưa nhập serial");
+  if (!selectedCheck.value) return showToast("Chưa chọn phiếu");
+
+  try {
+    const response = await inventoryCheckService.scanSerial(selectedCheck.value.id, serial, userId.value);
+    console.log('Scan response:', response);
     
-    isSaving.value = true;
-    try {
-        // 1. Đảm bảo tất cả các thay đổi cuối cùng đã được lưu (Gọi saveCountedItems)
-        await saveCountedItems(); 
-
-        // 2. GỌI API: Hoàn tất phiếu (POST /api/inventories/{id}/complete)
-        await inventoryPerformService.completeCheck(selectedCheck.value.id);
-        
-        toast('✅ Hoàn tất kiểm kê thành công!');
-        
-        // Cập nhật lại danh sách phiếu và reset view
-        await loadChecks();
-        selectedCheck.value = null;
-
-    } catch (err) {
-        console.error("Complete error", err);
-        toast(err.response?.data?.message || "Có lỗi khi hoàn tất kiểm kê");
-    } finally {
-        isSaving.value = false;
+    // Update local item (tăng countedQuantity)
+    const existingItem = selectedCheck.value.items.find(item => item.serialNumber === serial);
+    if (existingItem) {
+      existingItem.countedQuantity += 1;
+      updateItemStatus(existingItem);
+      await updateItem(existingItem);
+    } else {
+      // Add new overage item (nếu API return new item)
+      selectedCheck.value.items.push({
+        id: response.id,
+        productDetailId: response.productDetailId,
+        productName: response.productName || 'Unknown',
+        serialNumber: serial,
+        brand: 'N/A',
+        category: 'N/A',
+        systemQuantity: 0,
+        countedQuantity: 1,
+        status: 'OVERAGE',
+        note: '',
+      });
     }
+    scanSerial.value = '';
+    showToast(`✅ Quét serial ${serial} thành công.`);
+  } catch (error) {
+    console.error('Lỗi scan:', error);
+    showToast(`❌ Lỗi quét serial: ${error.response?.data?.message || error.message}`);
+  }
 }
 
-// Xử lý Quét Serial (Tương tác với API Scan)
-async function handleQuickScan() {
-    const serial = String(quickSerial.value || "").trim();
-    if (!serial || !selectedCheck.value) return;
+function updateItemStatus(item) {
+  const sys = item.systemQuantity || 0;
+  const cnt = item.countedQuantity || 0;
+  if (sys === cnt) item.status = 'MATCHED';
+  else if (sys > cnt) item.status = 'SHORTAGE';
+  else item.status = 'OVERAGE';
+}
 
-    isScanning.value = true;
-    try {
-        // 1. GỌI API: Scan Serial (POST /api/inventories/{id}/scan)
-        const updatedItem = await inventoryPerformService.scanSerial(
-            selectedCheck.value.id, 
-            serial, 
-            checkUser.value.id
-        );
+async function updateItem(item) {
+  try {
+    const payload = {
+      countedQuantity: item.countedQuantity,
+      note: item.note,
+    };
+    await inventoryCheckService.updateItem(item.id, payload); // Giả sử service có updateItem
+    showToast('Cập nhật item thành công.');
+  } catch (error) {
+    console.error('Lỗi update item:', error);
+    showToast('Lỗi cập nhật item.');
+  }
+}
 
-        // 2. Cập nhật giao diện cục bộ (Tìm và cập nhật item trong checkItems)
-        const itemIndex = checkItems.value.findIndex(item => item.id === updatedItem.id);
-        if (itemIndex !== -1) {
-            // Cập nhật thông tin từ API response (CountedQuantity, Status)
-            checkItems.value[itemIndex].countedQuantity = updatedItem.countedQuantity;
-            checkItems.value[itemIndex].status = updatedItem.status;
-            updateDifference(checkItems.value[itemIndex]); // Tính lại chênh lệch
-        } else {
-            // Trường hợp Serial này là Overage (thừa), BE tạo Item mới và trả về
-            // Trong FE cần xử lý để thêm item này vào danh sách checkItems (cần reload items hoặc xử lý logic thêm item mới)
-            // Tạm thời: Gây ra reload toàn bộ items để đơn giản hóa
-            await openCheck(selectedCheck.value); 
-        }
-
-        toast(`✅ Serial ${serial} đã được quét.`);
-
-    } catch (err) {
-        console.error("Scan error", err);
-        const msg = err.response?.data?.message;
-        toast(msg || "Có lỗi xảy ra khi quét Serial");
-    } finally {
-        quickSerial.value = "";
-        isScanning.value = false;
-        quickInputRef.value?.focus();
+async function handleSaveTemporary() {
+  submitting.value = true;
+  try {
+    for (const item of selectedCheck.value.items) {
+      if (item.countedQuantity !== item.systemQuantity || item.note) {
+        await updateItem(item);
+      }
     }
+    showToast('Lưu tạm thành công.');
+  } catch (error) {
+    console.error('Lỗi save temporary:', error);
+    showToast('Lỗi lưu tạm.');
+  } finally {
+    submitting.value = false;
+  }
 }
 
-// Load danh sách phiếu kiểm kê
-async function loadChecks() {
-    try {
-        loading.value = true;
-        checks.value = await inventoryPerformService.getAllChecks();
-    } catch {
-        toast("Không tải được danh sách phiếu kiểm kê");
-    } finally {
-        loading.value = false;
-    }
+async function handleCompleteCheck() {
+  if (!canComplete.value) return showToast("Vui lòng kiểm kê đầy đủ.");
+  try {
+    submitting.value = true;
+    const response = await inventoryCheckService.completeCheck(selectedCheck.value.id); // Giả sử service có completeCheck
+    console.log('Complete response:', response);
+    showToast(`✅ Hoàn tất phiếu ${selectedCheck.value.code} thành công!`);
+    await initChecks(); // Reload list
+    selectedCheck.value = null;
+  } catch (error) {
+    console.error('Lỗi complete:', error);
+    showToast(`❌ Lỗi hoàn tất: ${error.response?.data?.message || error.message}`);
+  } finally {
+    submitting.value = false;
+  }
 }
 
-function toast(msg = "") {
-    toastMsg.value = msg;
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => (toastMsg.value = ""), 1600);
+function getStatusClass(status) {
+  switch (status) {
+    case 'MATCHED': return 'text-success';
+    case 'SHORTAGE': return 'text-danger';
+    case 'OVERAGE': return 'text-warning';
+    default: return 'text-muted';
+  }
 }
 
-/* ========== onMounted ========== */
+function getDifferenceClass(diff) {
+  if (diff === 0) return 'text-success';
+  if (diff > 0) return 'text-danger'; // Thiếu
+  return 'text-warning'; // Thừa
+}
+
+function showToast(msg = '') { 
+  toastMsg.value = msg; 
+  clearTimeout(toastTimer); 
+  toastTimer = setTimeout(() => toastMsg.value = '', 3000); 
+}
+
 onMounted(async () => {
-    auth.loadToken();
-    userId.value = auth.userId;
-    await loadChecks();
-    
-    // Nếu có ID trong URL, tự động mở phiếu đó
-    if (route.params.id) {
-        // Tìm phiếu trong danh sách hoặc tạo đối tượng giả để mở
-        const checkToOpen = checks.value.find(c => c.id === route.params.id) || { id: route.params.id };
-        if (checkToOpen.id) {
-            await openCheck(checkToOpen);
-        }
-    }
+  await initChecks();
 });
 </script>
 
 <style scoped>
-/* Thêm CSS cho Modal */
-.custom-modal-backdrop {
-    position: fixed; inset: 0; background-color: rgba(0, 0, 0, 0.5); 
-    display: flex; justify-content: center; align-items: center; z-index: 1050;
+/* Copy style từ template bạn gửi – giống inbound form */
+.pbox { display: flex; gap: 16px; width: 100%; }
+.side {
+  width: 320px; background: #fff; border-radius: 14px; padding: 14px;
+  position: sticky; top: 96px; height: calc(100vh - 110px); overflow: auto;
 }
-.custom-modal-dialog {
-    background: white; border-radius: 10px; box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3); width: 90%; max-width: 450px; 
-}
-.custom-modal-content { display: flex; flex-direction: column; }
-.custom-modal-header, .custom-modal-footer { padding: 15px; border-top: 1px solid #eee; }
-.custom-modal-body { padding: 20px; }
-.custom-modal-footer { justify-content: flex-end; gap: 10px; }
+.brand { font-weight: 700; font-size: 18px; display: flex; align-items: center; margin-bottom: 10px; }
+.main { flex: 1; display: flex; flex-direction: column; gap: 16px; }
+.section-card { background: #fff; border: 1px solid #eef2f7; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
 
-/* Grid cho thông tin Header */
-.grid-check-info {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 8px 15px;
-    padding-bottom: 10px;
+.badge-card { background: #fff; border: 1px solid #eef2f7; border-radius: 10px; padding: 8px 14px; text-align: center; display: inline-flex; flex-direction: column; min-width: 140px; }
+.badge-card .num { font-weight: 700; color: #1f2937; font-size: 18px; }
+
+.table-responsive { overflow-x: auto; }
+.table-hover th, .table-hover td { vertical-align: middle; white-space: nowrap; height: 56px; }
+.nowrap { white-space: nowrap; }
+.thead-soft th { background: #cfe3ff; color: #0b1324; font-weight: 600; letter-spacing: 0.2px; border-top: 1px solid #9ec5fe; border-bottom: 1px solid #9ec5fe; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000; }
+.toast-box { position: fixed; bottom: 20px; right: 20px; background: #111; color: #fff; padding: 10px 14px; border-radius: 8px; z-index: 20000; }
+
+.nav-tabs .nav-link { border: 1px solid #dee2e6; border-top-left-radius: 0.375rem; border-top-right-radius: 0.375rem; }
+.nav-tabs .nav-link.active { border-bottom-color: #fff; background: #fff; }
+
+@media (max-width: 992px) {
+  .pbox { flex-direction: column; }
+  .side { width: 100%; height: auto; position: static; }
 }
-.grid-check-info .lbl {
-    font-weight: 500;
-    color: #4b5563;
-}
-.thead-soft th {
-    background: #e9ecef !important;
-    color: #495057 !important;
-}
-/* Các style khác (pbox, side, main, toast-box) giữ nguyên như code gốc của bạn */
 </style>

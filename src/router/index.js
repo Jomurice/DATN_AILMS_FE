@@ -190,20 +190,20 @@ const routes = [
       // Phieu kiem kê
 
       {
-          path: "inventory-check", // URL: /inventory-check
+          path: "listinventorycheck", // URL: /inventory-check
           name: "inventory-check-list",
           meta: { title: "Danh sách Phiếu Kiểm Kê" },
           component: ChecInventory,
       },
       {
-          path: "inventory-check/new", // URL: /inventory-check/new
+          path: "createinventorycheck", // URL: /inventory-check/new
           name: "inventory-check-create",
           meta: { title: "Tạo phiếu kiểm kê" },
           component: CreateInventory,
       },
       {
           // URL: /inventory-check/ABC-123/perform
-          path: "inventory-check/:id/perform", 
+          path: "inventorycheckDetail", 
           name: "inventory-check-perform",
           meta: { title: "Thực hiện Kiểm Kê" },
           component: ChecInventory, // Sử dụng lại component Master-Detail

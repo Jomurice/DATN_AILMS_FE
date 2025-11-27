@@ -65,19 +65,17 @@
                 </tr>
                 <tr v-for="(item, idx) in localItems" :key="item.productDetailId">
                     <td class="center">{{ idx + 1 }}</td>
-                    <td>{{ item.brand }}</td>
-                    <td>{{ item.category }}</td>
-                    <td>{{ item.productName }}</td>
-                    
-                    <td>{{ item.serialNumber }}</td>
-                    
+                    <td>{{ item.brand || 'N/A' }}</td>
+                    <td>{{ item.category || 'N/A' }}</td>
+                    <td>{{ item.productName || 'N/A' }}</td>
+                    <td>{{ item.serialNumber || 'N/A' }}</td>
                     <td class="text-center fw-bold text-primary">
-                        <span>{{ item.systemQuantity }}</span>
+                        <span>{{ item.systemQuantity || 1 }}</span>
                     </td>
                 </tr>
             </tbody>
         </table>
-    </div>
+      </div>
     </div>
 
     <div class="bar mt-4">
@@ -148,47 +146,48 @@ const inventoryForm = ref({
 
 const localItems = ref([]);
 
-
 // --- WATCHER: Tự động tải sản phẩm khi Kho thay đổi ---
 watch(() => inventoryForm.value.warehouseId, async (newWarehouseId) => {
+    console.log('=== WATCHER TRIGGERED ===');
+    console.log('New warehouseId:', newWarehouseId);
     localItems.value = []; 
     if (newWarehouseId) {
         try {
-            // GỌI API THỰC TẾ: Lấy danh sách sản phẩm/serial từ tồn kho
+            console.log('Đang gọi API với warehouseId:', newWarehouseId);
             const products = await inventoryCheckService.getProductsByWarehouse(newWarehouseId);
+            console.log('Products từ API:', products); // Raw data từ BE
             
-            localItems.value = products.map((p) => ({
-                productDetailId: p.productDetailId,
-                productName: p.productName,
-                
-                // *** LOGIC MAPPING SERIAL CHÍNH XÁC ***
-                // Sử dụng 'p.serialNumber' hoặc 'p.productSerialNumber' tùy theo tên trường BE
-                serialNumber: p.serialNumber || p.productSerialNumber || p.serialCode, 
-                // **********************************
-
-                brand: p.brand,
-                category: p.category,
-                systemQuantity: p.systemQuantity, 
-                // Gán countedQuantity = systemQuantity (SL Sổ sách) để gửi lên BE
-                countedQuantity: p.systemQuantity, 
-                note: p.note,
-            }));
+            localItems.value = products.map((p, idx) => {
+                console.log(`Mapping item ${idx}:`, p);
+                return {
+                    productDetailId: p.productDetailId,
+                    productName: p.productName || 'N/A',
+                    serialNumber: p.serialNumber || p.productSerialNumber || p.serialCode || 'N/A', // Fallback serial
+                    brand: p.brand || 'N/A', // Hãng
+                    category: p.category || 'N/A', // Loại
+                    systemQuantity: p.systemQuantity || 1, // SL hệ thống (1 per serial)
+                    countedQuantity: p.systemQuantity || 1, // Ban đầu = system
+                    note: p.note || '',
+                };
+            });
+            console.log('LocalItems sau map:', localItems.value);
             showToast(`Đã tải ${localItems.value.length} sản phẩm cần kiểm kê.`);
 
         } catch (error) {
             console.error("Lỗi tải sản phẩm theo kho:", error);
+            console.error('Error response:', error.response?.data || error.message);
             showToast("❌ Lỗi: Không thể tải danh sách sản phẩm tồn kho.");
         }
+    } else {
+        console.log('No warehouse selected');
     }
+    console.log('=== END WATCHER ===');
 });
 
-
-// --- LOGIC GỬI FORM VÀ XỬ LÝ API ---
-
+// --- LOGIC VALIDATION & FORM ---
 const isValidForm = computed(() => {
     if (!inventoryForm.value.deadline || !inventoryForm.value.warehouseId) return false;
     if (localItems.value.length === 0) return false;
-
     return true;
 });
 
@@ -215,6 +214,7 @@ function confirmCancel() {
     showToast("Phiếu kiểm kê đã được huỷ.");
 }
 
+// --- HÀM TẠO PHIẾU - LƯU VÀO DB TỰ ĐỘNG ---
 async function handleCreateCheck() {
   if (!isValidForm.value) {
     showToast("Vui lòng nhập đầy đủ thông tin bắt buộc và chọn kho.");
@@ -232,11 +232,14 @@ async function handleCreateCheck() {
   };
 
   try {
+    console.log('=== TẠO PHIẾU: Bắt đầu ===');
+    console.log('Header payload:', headerPayload);
     const newCheckResponse = await inventoryCheckService.createCheck(headerPayload);
+    console.log('BE response create header:', newCheckResponse);
     const newCheckId = newCheckResponse.id;
     inventoryForm.value.code = newCheckResponse.code; 
 
-    // GỬI DATA: countedQuantity là số lượng sổ sách
+    console.log('=== TẠO ITEMS: Loop ' + localItems.value.length + ' items ===');
     for (const item of localItems.value) {
       const itemPayload = {
         serialNumber: item.serialNumber,
@@ -244,15 +247,18 @@ async function handleCreateCheck() {
         note: item.note,
         productDetailId: item.productDetailId, 
       };
-      
-      await inventoryCheckService.addItemManual(newCheckId, itemPayload);
+      console.log('Item payload:', itemPayload);
+      const itemResponse = await inventoryCheckService.addItemManual(newCheckId, itemPayload);
+      console.log('BE response add item:', itemResponse);
     }
     
+    console.log('=== TẠO PHIẾU: Thành công - Lưu vào DB ===');
     showToast(`✅ Tạo phiếu kiểm kê ${inventoryForm.value.code} thành công!`);
     resetForm(); 
 
   } catch (error) {
     console.error("Lỗi tạo phiếu:", error);
+    console.error('Full error:', error.response || error);
     const errorMessage = error.response?.data?.message || error.message || 'Lỗi không xác định.';
     showToast(`❌ Lỗi tạo phiếu: ${errorMessage}`);
   } finally {
@@ -269,7 +275,7 @@ function showToast(msg = '') {
 async function loadInitialData() {
   try {
     warehouses.value = await warehouseService.getAllWarehouses();
-    console.log(warehouses.value);
+    console.log('Warehouses loaded:', warehouses.value);
   } catch (e) {
     console.error("Không thể load danh sách kho:", e);
   }

@@ -21,7 +21,13 @@ export const productDetailsService = {
     return response.data.result;
   },
 
- 
+ async getByWarehouse(warehouseId) {
+    if (!warehouseId) return [];
+    const response = await api.get(`/api/inventories/products/by-warehouse/${
+      warehouseId}/instock`);
+    return response.data.result || []; 
+  },
+
   async createSerial(payload) {
     const response = await api.post('/api/product-details/create-serial', payload);
     return response.data.result;
