@@ -12,10 +12,9 @@
         
         <div class="col">
           <label class="lbl">Mã đơn</label>
-          <input v-model.trim="form.code" class="ipt" placeholder="${}" />
-          <small class="muted"
-            >Gợi ý: <span class="mono">{{ suggestCode }}</span></small
-          >
+
+          <input v-model.trim="form.code" class="ipt" placeholder="Nhập mã..." />
+          <small class="muted">Gợi ý: <span class="mono">{{ suggestCode }}</span></small>
         </div>
 
         <!-- autocomplete -->
@@ -149,6 +148,7 @@ import { useRouter, RouterLink } from "vue-router";
 import { purchaseOrderService } from "@/services/purchaseOrderService";
 import { tokenService } from "@/services/TokenService";
 import { warehouseService } from "@/services/WarehouseService";
+
 import { productDetailsService } from "@/services/product/productDetailsService";
 import { supplierService } from "@/services/purchaseOrder/supplierService.js";
 
@@ -179,8 +179,6 @@ const qty = ref(1);
 const err = ref("");
 const submitting = ref(false);
 
-const auth = tokenService();
-// đảm bảo lấy lại token từ localStorage
 
 const creatorName = ref("");
 const userId = ref("");
@@ -326,7 +324,6 @@ async function submit() {
   try {
 
     const res = await purchaseOrderService.create(payload);
-    console.log("Load data",res)
     await productDetailsService.createSerialForPO({
       purchaseOrderId: res.id,
       createdByUserId: userId.value,

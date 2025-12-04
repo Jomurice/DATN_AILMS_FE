@@ -32,8 +32,7 @@
           <div v-if="loading" class="text-center py-3">
             <div class="spinner-border text-dark"></div>
           </div>
-
-        </div>
+</div>
       </aside>
 
       <!-- Main -->
@@ -54,6 +53,7 @@
               </div>
               <RouterLink class="btn btn-outline-primary btn-sm" to="/inbound/new">+ Tạo đơn mua</RouterLink>
               <button class="btn btn-outline-secondary btn-sm" @click="selectedOrder = null">← Quay lại</button>
+
             </div>
           </div>
 
@@ -65,13 +65,16 @@
             </div>
 
             <div class="flex-grow-1 d-flex align-items-center gap-2">
-
-              <input ref="quickInputRef" v-model.trim="quickSerial" @keyup.enter="handleQuickScan"
-                class="form-control mono" placeholder="Quét nhanh serial… (vd: iphone15prm-0001)"
-                :disabled="!canScan" />
-              <button class="btn btn-primary" @click="handleQuickScan">
-                Quét
-              </button>
+              <input
+                ref="quickInputRef"
+                v-model.trim="quickSerial"
+                @keyup.enter="handleQuickScan"
+                class="form-control mono"
+                placeholder="Quét nhanh serial… (vd: iphone15prm-0001)"
+                :disabled="!canScan"
+              />
+              <button class="btn btn-primary" @click="handleQuickScan">Quét</button>
+              <button class="btn btn-success" @click="startQrScanner">Quét QR</button>
             </div>
           </div>
 
@@ -97,13 +100,14 @@
               <tbody>
                 <tr v-for="it in selectedOrder.items || []" :key="it.id || it.sku">
                   <td class="mono nowrap">{{ it.sku }}</td>
-                  <td class="nowrap" :title="it.name">
-                    {{ cut(it.name, 28) }}
-                  </td>
-                  <td class="nowrap">{{ it.categoryName }}</td>
+
+                  <td class="nowrap" :title="it.name">{{ cut(it.name, 28) }}</td>
+                  <td class="nowrap">{{ cut(it.categoryName, 18) }}</td>
+
                   <td class="nowrap">{{ cut(it.brandName, 18) }}</td>
                   <td class="nowrap">{{ cut(it.color || '—', 16) }}</td>
                   <td class="text-end nowrap mono">
+
                     <span>{{ it.scannedQuantity != null ? it.scannedQuantity : scannedCount(it.sku) }}/{{ it.orderQuantity }}</span>
                     <button class="btn btn-link btn-sm ms-1" title="Xem serial đã quét" @click="openSerialsModal(it.sku, it.productId)">
                       <i class="fa-solid fa-eye"></i>
@@ -118,9 +122,8 @@
           </div>
 
           <div class="px-3 py-3 d-flex justify-content-end">
-            <button class="btn btn-success" :disabled="!canComplete" @click="completeOrder">
-              Nhập hàng
-            </button>
+
+            <button class="btn btn-success" :disabled="!canComplete" @click="completeOrder">Nhập hàng</button>
           </div>
         </div>
 
@@ -129,13 +132,11 @@
             <h5 class="fw-bold mb-0">Chọn 1 phiếu mua (đơn hàng) để nhập</h5>
             <RouterLink class="btn btn-outline-primary btn-sm" to="/inbound/new">+ Tạo đơn mua</RouterLink>
           </div>
-          <div class="p-3 text-muted">
-            Hãy chọn phiếu từ danh sách bên trái.
-          </div>
           <div class="p-3 text-muted">Hãy chọn phiếu từ danh sách bên trái.</div>
         </div>
       </main>
     </div>
+
     <!-- Contact Admin Modal -->
     <div v-if="contactModalVisible" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50">
       <div class="card p-4 w-50 shadow">
@@ -182,7 +183,9 @@
       <div class="card w-50 p-2 notranslate" translate="no">
         <div class="d-flex align-items-center justify-content-between">
           <h5 class="mb-0">Đã quét Serial — SKU: {{ modalSku }}</h5>
+
           <button class="btn btn-sm btn-outline-secondary" @click="modalSku = null">Đóng</button>
+
         </div>
         <div class="table-responsive mt-2">
           <table class="table table-sm" translate="no">
@@ -218,8 +221,10 @@ import { ref, computed, onMounted } from "vue";
 import { RouterLink } from "vue-router";
 import { purchaseOrderService } from "@/services/purchaseOrder/purchaseOrderService";
 import { tokenService } from "@/services/TokenService";
+
 import api from "@/services/axios";
-// import { Html5Qrcode } from "html5-qrcode";
+import { Html5Qrcode } from "html5-qrcode";
+
 
 // ===== Refs =====
 const contactModalVisible = ref(false);
@@ -288,8 +293,10 @@ const canScan = computed(() => {
   return String(selectedOrder.value.status || "").toUpperCase() !== "COMPLETED";
 });
 
+
 // ======== Methods ========
 const setStatus = (s) => status.value = s;
+
 
 async function initOrders() {
   loading.value = true;
@@ -474,10 +481,13 @@ onMounted(async () => {
 .section-card { background: #fff; border: 1px solid #eef2f7; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
 
 .badge-card {
+
   background: #fff; border: 1px solid #eef2f7; border-radius: 10px;
   padding: 8px 14px; text-align: center; display: inline-flex; flex-direction: column; min-width: 140px;
+
 }
 .badge-card .num { font-weight: 700; color: #1f2937; font-size: 18px; }
+
 
 .table-balanced th, .table-balanced td { vertical-align: middle; white-space: nowrap; height: 56px; }
 .nowrap { white-space: nowrap; }
