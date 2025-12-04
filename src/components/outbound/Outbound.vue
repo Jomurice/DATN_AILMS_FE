@@ -7,8 +7,11 @@
 
         <div class="mb-2 d-flex gap-2 flex-wrap">
           <button class="btn btn-sm" :class="chipCls('ALL')" @click="status = 'ALL'">Tất cả</button>
-          <button class="btn btn-sm" :class="chipCls('PENDING')" @click="status = 'CONFIRMED'">Chờ xử lý</button>
-          <button class="btn btn-sm" :class="chipCls('COMPLETED')" @click="status = 'EXPORT'">Hoàn tất</button>
+          <button class="btn btn-sm" :class="chipCls('CONFIRMED')" @click="status = 'CONFIRMED'">Chờ xử lý</button>
+          <button class="btn btn-sm" :class="chipCls('EXPORT')" @click="status = 'EXPORT'">Hoàn tất</button>
+          <button class="btn btn-sm" :class="chipCls('PENDING_CANCEL')" @click="status = 'PENDING_CANCEL'">Chờ
+            hủy</button>
+          <button class="btn btn-sm" :class="chipCls('CANCELLED')" @click="status = 'CANCELLED'">Hủy</button>
         </div>
 
         <div class="list-group small">
@@ -35,7 +38,8 @@
         <div class="section-card" v-if="selectedOrder">
           <div class="d-flex align-items-center justify-content-between px-3 pt-3 pb-2">
             <div class="fw-bold">
-              <div>{{ selectedOrder.code }} — <span class="text-muted">{{ clip(selectedOrder.customer, 28) }}</span>
+              <div>{{ selectedOrder.code }} — <span class="text-muted">KH: {{ clip(customer.lastName + " " +
+                customer.firstName, 28) }}</span>
               </div>
               <small class="text-muted">
                 Ngày tạo: {{ fmtDate(selectedOrder.createAt) }} — Trạng thái: {{ toViStatus(selectedOrder.status) }}
@@ -66,7 +70,7 @@
             <div class="flex-grow-1 d-flex align-items-center gap-2">
               <input ref="quickInputRef" v-model.trim="quickSerial" @keyup.enter="handleQuickScan"
                 class="form-control mono" placeholder="Quét nhanh serial… (vd: iphone15prm-0001)" />
-              <button class="btn btn-primary" @click="handleQuickScan">Quét</button>
+              <button class="btn btn-primary" :disabled="!isCancel" @click="handleQuickScan">Quét</button>
             </div>
           </div>
 
@@ -106,7 +110,15 @@
           </div>
 
           <div class="px-3 py-3 d-flex justify-content-end">
-            <button class="btn btn-success" :disabled="!isAllScanned" @click="confirmExport()">Xuất hàng</button>
+            <button v-if="isConfirmCancel" class="btn btn-waning mx-2"  @click="rejectCancel()">Không hủy</button>
+            <button v-if="isConfirmCancel" class="btn btn-danger mx-2"  @click="confirmCancel()">Xác nhận
+              hủy</button>
+            <button class="btn btn-success" :disabled="!isAllScanned || submitting" @click="confirmExport()">
+              {{ submitting ? 'Đang xuất hàng...' : 'Xuất hàng' }}
+            </button>
+            <div v-if="toastMsg" class="toast-box">{{ toastMsg }}</div>
+            <button class="btn btn-danger ms-2" :disabled="!isCancel" @click="cancelModalVisible = true">Hủy
+              đơn</button>
           </div>
         </div>
 
@@ -121,7 +133,7 @@
     </div>
 
     <!-- Modal: Serial đã quét -->
-    <div v-if="modalSku" class="modal-overlay d-flex align-items-center justify-content-center">
+    <div v-if="modalSku" class="modal-overlay">
       <div class="card w-50 p-2 notranslate" translate="no">
         <div class="d-flex align-items-center justify-content-between">
           <h5 class="mb-0">Đã quét Serial — SKU: {{ modalSku }}</h5>
@@ -142,7 +154,7 @@
                 <td class="nowrap">{{ s.status }}</td>
                 <td class="nowrap notranslate">{{ s.warehouseId || s.binId || '—' }}</td>
               </tr>
-              <tr v-if="!modalSerials[modalSku]?.productDetails?.length">
+              <tr v-if="!modalSerials?.length">
                 <td colspan="3" class="text-center text-muted">Chưa có serial</td>
               </tr>
             </tbody>
@@ -153,6 +165,33 @@
 
     <!-- Toast -->
     <div v-if="toastMsg" class="toast-box">{{ toastMsg }}</div>
+  </div>
+
+  <!-- modal cancel outbound -->
+  <div v-if="cancelModalVisible" class="modal-overlay">
+    <div class="card p-4 w-50 shadow">
+      <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="mb-0">
+          <i class="fa-solid fa-truck-ramp-box me-2 text-primary"></i>Hủy đơn xuất
+        </h5>
+        <button class="btn btn-sm btn-outline-secondary" @click="cancelModalVisible = false">
+          Đóng
+        </button>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold">Lý do hủy đơn</label>
+        <textarea v-model.trim="note" class="form-control" placeholder="Nhập lý do hủy đơn..." rows="4"></textarea>
+      </div>
+
+      <div class="d-flex justify-content-end">
+        <button class="btn btn-danger px-4" @click="cancelOutbound(selectedOrder.id)">
+          <i class="fa-solid fa-trash-can me-2"></i>
+          {{ canceling ? 'Đang hủy...' : 'Hủy đơn' }}
+        </button>
+        <div v-if="toastMsg" class="toast-box">{{ toastMsg }}</div>
+      </div>
+    </div>
   </div>
 
   <!-- Modal: Liên hệ Admin -->
@@ -213,6 +252,7 @@ import { RouterLink } from "vue-router";
 import { tokenService } from "@/services/TokenService";
 import { outboundOrderService } from "@/services/outbound/outboundOrderService";
 import { fire, EVENTS } from "@/services/eventBus";
+import { customerService } from "../../services/outbound/CustomerService";
 
 const auth = tokenService();
 const userId = ref("");
@@ -224,12 +264,16 @@ const normKey = s => norm(s).toLowerCase();
 const skuFromSerial = s => String(s || '').split('-')[0]?.trim()?.toLowerCase() || '';
 const inflight = new Set();
 const contactModalVisible = ref(false);
+const cancelModalVisible = ref(false);
+const note = ref('');
+const submitting = ref(false);
+const canceling = ref(false);
 
 // state
 const orders = ref([]); const loading = ref(true); const status = ref('ALL'); const selectedOrder = ref(null);
 const quickSerial = ref(''); const quickInputRef = ref(null);
-
-const modalSerials = ref({}); // { [skuLower]: { count, serials:[lowerSerial], details:[...] } }
+const customer = ref([]);
+const modalSerials = ref({});
 const modalSku = ref(null);
 const toastMsg = ref(""); let toastTimer = null;
 
@@ -240,17 +284,31 @@ const toViStatus = s => {
   if (k === 'CONFIRMED' || k === 'UPCOMING') return 'Chờ xử lý';
   if (k === '') return 'Đang thực hiện';
   if (k === 'EXPORT' || k === 'DONE') return 'Hoàn tất';
+  if (k === 'PENDING_CANCEL') return 'Chờ hủy';
+  if (k === 'CANCELLED') return 'Đã hủy';
   return s || '—';
 };
 
 const isAllScanned = computed(() => {
-    const statusUp = String(selectedOrder.value.status || "").toUpperCase();
-  if (statusUp === "EXPORT" || statusUp === "DONE") return false;
+  const statusUp = String(selectedOrder.value.status || "").toUpperCase();
+  if (statusUp === "EXPORT" || statusUp === "PENDING_CANCEL") return false;
 
   if (!selectedOrder.value?.items?.length) return false;
   return selectedOrder.value.items.every(it => Number(it.scannedQuantity || 0) >= Number(it.orderQuantity || 0));
 });
 
+
+const isCancel = computed(() => {
+  const statusUp = String(selectedOrder.value.status || "").toUpperCase();
+  if (statusUp === "EXPORT" || statusUp === "PENDING_CANCEL" || statusUp === "CANCELLED") return false;
+  return true;
+})
+
+const isConfirmCancel = computed(() => {
+  const statusUp = String(selectedOrder.value.status || "").toUpperCase();
+  if (statusUp === "PENDING_CANCEL") return true;
+  return false;
+})
 
 const filteredOrders = computed(() => {
   if (status.value === 'ALL') return orders.value;
@@ -262,26 +320,14 @@ const filteredOrders = computed(() => {
   });
 });
 
-// const scannedCount = sku => modalSerials.value[String(sku || '').toLowerCase()]?.count || 0;
-// const canComplete = computed(() => {
-//   const m = modalSerials.value;
-//   return !!selectedOrder.value && Object.keys(m).some(k => (m[k]?.count || 0) > 0);
-// });
-
 async function openSerialsModal(sku) {
   modalSku.value = String(sku || '').toLowerCase();
   modalSerials.value = [];
-
-  console.log('Fetching serials for', selectedOrder.value.id, sku);
   try {
     modalSerials.value = await outboundOrderService.getSerials(selectedOrder.value.id, sku);
-    console.log('Fetched serials:', modalSerials.value);
-  } catch (error) {
-    console.log('Error fetching serials:', error.response?.data?.code);
+  } catch {
     showToast('Không tải được serial đã quét');
   }
-
-
 }
 
 async function openOrder(o) {
@@ -290,10 +336,61 @@ async function openOrder(o) {
     if (!Array.isArray(o.items) || !o.items.length) {
       full = await outboundOrderService.getById(o.id, { includeItems: true });
     }
+    customer.value = await customerService.getById(full.customerId);
     selectedOrder.value = normalizeOrder(full);
     modalSerials.value = {};
   } catch { showToast('Không tải được chi tiết phiếu'); }
 }
+
+async function cancelOutbound() {
+  if (!selectedOrder.value) return;
+  if (!note.value) {
+    showToast('Vui lòng nhập lý do hủy đơn');
+    return;
+  }
+  const req = {
+    note: note.value,
+    canceledBy: userId.value,
+  };
+
+  canceling.value = true;
+  try {
+    await outboundOrderService.cancelOrder(selectedOrder.value.id, req);
+    showToast('Đã gửi yêu cầu hủy đơn');
+    orders.value = await outboundOrderService.getAll();
+    cancelModalVisible.value = false;
+    note.value = '';
+  } catch (error) {
+    console.log('Cancel outbound error:', error);
+    showToast('Gửi yêu cầu hủy đơn thất bại');
+  } finally {
+    canceling.value = false;
+  }
+}
+
+async function confirmCancel() {
+  try {
+    await outboundOrderService.confirmCancel(selectedOrder.value.id);
+    showToast('Hủy đơn thành công');
+    orders.value = await outboundOrderService.getAll();
+  } catch (error) {
+    console.log('Confirm cancel error:', error);
+    showToast('Hủy đơn thất bại');
+  }
+}
+
+async function rejectCancel() {
+  try {
+    await outboundOrderService.rejectCancel(selectedOrder.value.id);
+    showToast('Đã từ chối hủy đơn');
+    orders.value = await outboundOrderService.getAll();
+  } catch (error) {
+    console.log('Reject cancel error:', error);
+    showToast('Từ chối hủy đơn thất bại');
+  }
+}
+
+
 function normalizeOrder(order) {
   const items = (order.items || []).map(x => ({
     id: x.id ?? x.outboundOrderItemId ?? null,
@@ -329,18 +426,18 @@ async function handleQuickScan() {
     const updatedOrder = await outboundOrderService.getById(selectedOrder.value.id, { includeItems: true });
     selectedOrder.value = normalizeOrder(updatedOrder);
   } catch (error) {
-    const msg =  error.response?.data?.message;
+    const msg = error.response?.data?.message;
     console.log('Quick scan error:', msg);
-    if(msg == 'Serial had been scanned') {
+    if (msg == 'Serial had been scanned') {
       showToast('Serial này đã được quét trước đó');
-    } else if(msg == 'Serial not found' ) {
+    } else if (msg == 'Serial not found') {
       showToast('Không tìm thấy serial này trong kho');
-    } else if(msg == 'Serial not in order') {
+    } else if (msg == 'Serial not in order') {
       showToast('Serial không thuộc sản phẩm trong phiếu');
     } else {
       showToast('Quét thất bại');
     }
-  }finally {
+  } finally {
     quickSerial.value = '';
     quickInputRef.value?.focus();
   }
@@ -349,58 +446,6 @@ async function handleQuickScan() {
   // quickSerial.value=''; quickInputRef.value?.focus();
 }
 
-// async function scanSerialForItem(serial, item) {
-//   const input = norm(serial); if (!input) return;
-//   const reqKey = normKey(input); if (inflight.has(reqKey)) return; inflight.add(reqKey);
-
-//   let detail = null;
-//   try {
-//     if (item?.id) {
-//       detail = await outboundOrderService.scanItem(item.id, input, userId.value);
-//     } else {
-//       detail = { serialNumber: input, status: 'OUTBOUND', productId: item.productId ?? null };
-//     }
-//   } catch (e) {
-//     inflight.delete(reqKey); showToast('Quét thất bại'); return;
-//   }
-//   inflight.delete(reqKey);
-
-//   const detailSN = norm(detail?.serialNumber ?? input);
-//   const snKey = normKey(detailSN);
-//   const skuKey = String(item.sku || '').toLowerCase();
-//   const prefixMatches = skuFromSerial(detailSN) === skuKey;
-
-//   if (item.productId && detail?.productId
-//     && String(detail.productId) !== String(item.productId)
-//     && !prefixMatches) {
-//     showToast('Serial thuộc sản phẩm khác dòng này'); return;
-//   }
-
-//   const store = modalSerials.value[skuKey] || { count: 0, serials: [], details: [] };
-//   if (store.serials.includes(snKey)) { showToast('Serial này đã quét trong phiếu'); return; }
-
-//   const cur = store.count, max = Number(item.orderQuantity || 0);
-//   if (cur >= max) { showToast('Dòng này đã đủ số lượng'); return; }
-
-//   store.serials.push(snKey);
-//   store.details.unshift({
-//     serialNumber: detailSN,
-//     status: detail?.status || 'OUTBOUND',
-//     warehouseId: detail?.warehouseId ?? null,
-//     binId: detail?.binId ?? null,
-//     productId: detail?.productId ?? item.productId ?? null,
-//     outboundOrderItemId: detail?.outboundOrderItemId ?? item.id ?? null,
-//     scannedBy: detail?.scannedBy ?? null,
-//   });
-//   store.count = store.serials.length;
-//   modalSerials.value = { ...modalSerials.value, [skuKey]: store };
-
-//   if (String(selectedOrder.value?.status || '').toUpperCase() === 'PENDING')
-//     selectedOrder.value.status = 'IN_PROGRESS';
-
-//   fire(EVENTS.DASHBOARD_SHOULD_REFRESH);
-//   showToast('Đã quét ✓');
-// }
 
 async function confirmExport() {
   if (!selectedOrder.value) return;
@@ -414,7 +459,8 @@ async function confirmExport() {
     selectedOrder.value = normalizeOrder(updatedOrder);
   } catch (error) {
     console.log('Confirm export error:', error);
-     showToast('Xuất hàng thất bại'); }
+    showToast('Xuất hàng thất bại');
+  }
 }
 
 function showToast(msg = '') { toastMsg.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toastMsg.value = '', 1600); }
@@ -517,9 +563,15 @@ onMounted(async () => {
 
 .modal-overlay {
   position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, .6);
-  z-index: 10000;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
 }
 
 .toast-box {
