@@ -50,7 +50,7 @@ let sampleOrders = [
 
 export const purchaseOrderService = {
   /** List purchase orders */
-  async list(params = {}) {
+  async list(params = {}) { //async getAll(params = {}) {
     try {
       const { data } = await api.get("/api/purchase-orders", { params });
       const out = Array.isArray(data?.result) ? data.result : data;
