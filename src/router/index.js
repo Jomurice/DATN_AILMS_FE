@@ -27,8 +27,10 @@ import PurchaseOrderDetail from "../components/inbound/PurchaseOrderDetail.vue";
 import Outbound from "../components/outbound/Outbound.vue";
 import OutboundOrderCreate from "../components/outbound/OutboundOrderCreate.vue";
 import OutboundOrderDetail from "../components/outbound/OutboundOrderDetail.vue";
-
-
+import InventoryCheckList from "../components/inventory_check/InventoryCheckList.vue";
+import InventoryCheckCreate from "../components/inventory_check/InventoryCheckCreate.vue";
+import InventoryCheckDetail from "../components/inventory_check/InventoryCheckDetail.vue";
+import InventoryReport from "../components/report/Report.vue";
 import WarehouseCreateForm from "../components/NewWarehouse/WarehouseCreateForm.vue";
 import PurchacseOrderManagement from "../components/PO/PurchacseOrderManagement.vue";
 
@@ -46,6 +48,31 @@ const routes = [
     path: "/",
     component: HomeView,
     children: [
+      {
+        path: "inventory-check",
+        name: "inventory-check-list",
+        meta: { title: "Kiểm kê kho" },
+        component: InventoryCheckList,
+      },
+      {
+        path: "inventory-check/new",
+        name: "inventory-check-create",
+        meta: { title: "Tạo phiếu kiểm kê" },
+        component: InventoryCheckCreate,
+      },
+      {
+        path: "inventory-check/:id",
+        name: "inventory-check-detail",
+        meta: { title: "Thực hiện kiểm kê" },
+        component: InventoryCheckDetail,
+        props: true,
+      },
+      {
+          path: "inventory-report",
+          name: "inventory-report",
+          meta: { title: "Báo cáo kiểm kê" },
+          component: InventoryReport,
+      },
       { path: "", redirect: "product" },
 
       {
