@@ -18,8 +18,13 @@
           <RouterLink class="tab" to="/admin/account" exact-active-class="active">Nhân sự</RouterLink>
           <RouterLink class="tab" to="/warehousesmenu">Kho</RouterLink>
           <RouterLink class="tab" to="/purchaseorder">PO</RouterLink>
-          <!-- <RouterLink class="tab" to="/report" exact-active-class="active">Tổng quát</RouterLink>
-          <RouterLink class="tab" to="/report" exact-active-class="active">Khác</RouterLink> -->
+
+          <RouterLink class="tab" to="/suppliers">Nhà phân phối</RouterLink>
+
+          <RouterLink class="tab" to="/createinventorycheck">Tạo phiếu kiểm kê</RouterLink>
+          <RouterLink class="tab" to="/inventorycheckDetail">Kiểm kê kho</RouterLink>
+          
+
         </div>
       </div>
     </nav>
