@@ -8,12 +8,10 @@
         </div>
 
         <div class="mb-2 d-flex gap-2 flex-wrap">
-
           <button class="btn btn-sm" :class="chip('ALL')" @click="setStatus('ALL')">Tất cả</button>
           <button class="btn btn-sm" :class="chip('PENDING')" @click="setStatus('PENDING')">Chờ xử lý</button>
           <button class="btn btn-sm" :class="chip('IN_PROGRESS')" @click="setStatus('IN_PROGRESS')">Đang thực hiện</button>
           <button class="btn btn-sm" :class="chip('COMPLETED')" @click="setStatus('COMPLETED')">Hoàn tất</button>
-
         </div>
 
         <div class="list-group small">
@@ -34,7 +32,6 @@
           <div v-if="loading" class="text-center py-3">
             <div class="spinner-border text-dark"></div>
           </div>
-      
 </div>
       </aside>
 
@@ -55,7 +52,6 @@
                 </button>
               </div>
               <RouterLink class="btn btn-outline-primary btn-sm" to="/inbound/new">+ Tạo đơn mua</RouterLink>
-
               <button class="btn btn-outline-secondary btn-sm" @click="selectedOrder = null">← Quay lại</button>
 
             </div>
@@ -69,7 +65,6 @@
             </div>
 
             <div class="flex-grow-1 d-flex align-items-center gap-2">
-
               <input
                 ref="quickInputRef"
                 v-model.trim="quickSerial"
@@ -80,7 +75,6 @@
               />
               <button class="btn btn-primary" @click="handleQuickScan">Quét</button>
               <button class="btn btn-success" @click="startQrScanner">Quét QR</button>
-
             </div>
           </div>
 
@@ -116,7 +110,6 @@
 
                     <span>{{ it.scannedQuantity != null ? it.scannedQuantity : scannedCount(it.sku) }}/{{ it.orderQuantity }}</span>
                     <button class="btn btn-link btn-sm ms-1" title="Xem serial đã quét" @click="openSerialsModal(it.sku, it.productId)">
-
                       <i class="fa-solid fa-eye"></i>
                     </button>
                   </td>
@@ -131,7 +124,6 @@
           <div class="px-3 py-3 d-flex justify-content-end">
 
             <button class="btn btn-success" :disabled="!canComplete" @click="completeOrder">Nhập hàng</button>
-
           </div>
         </div>
 
@@ -144,7 +136,6 @@
         </div>
       </main>
     </div>
-
 
     <!-- Contact Admin Modal -->
     <div v-if="contactModalVisible" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50">
@@ -188,7 +179,6 @@
     </div>
 
     <!-- Serial Modal -->
-
     <div v-if="modalSku" class="modal-overlay d-flex align-items-center justify-content-center">
       <div class="card w-50 p-2 notranslate" translate="no">
         <div class="d-flex align-items-center justify-content-between">
@@ -231,7 +221,6 @@ import { ref, computed, onMounted } from "vue";
 import { RouterLink } from "vue-router";
 import { purchaseOrderService } from "@/services/purchaseOrder/purchaseOrderService";
 import { tokenService } from "@/services/TokenService";
-
 import api from "@/services/axios";
 import { Html5Qrcode } from "html5-qrcode";
 
@@ -344,7 +333,6 @@ function normalizeOrder(order) {
   return { ...order, items };
 }
 
-
 async function openOrder(o) {
   try {
     const full = await purchaseOrderService.getPurchaseOrderById(o.id, { includeItems: true });
@@ -366,7 +354,6 @@ async function openOrder(o) {
   } catch (err) {
     console.error("openOrder error", err);
     showToast("Không tải được chi tiết phiếu nhập.");
-
   }
 }
 
@@ -393,12 +380,10 @@ async function handleQuickScan(serialInput) {
   } catch (err) {
     const code = err.response?.data?.code;
     const msg = err.response?.data?.message;
-
     if (code === "SERIAL_ALREADY_SCANNED") showToast("⚠️ Serial này đã được scan trước đó");
     else if (code === "SERIAL_NOT_FOUND") showToast("❌ Serial không tồn tại trong hệ thống");
     else if (code === "SKU_MISMATCH") showToast("⚠️ Serial không khớp với SKU trong phiếu");
     else showToast(msg || "Có lỗi xảy ra khi quét");
-
   } finally {
     quickSerial.value = "";
     quickInputRef.value?.focus();
@@ -485,12 +470,10 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-
 .pbox { display: flex; gap: 16px; width: 100%; }
 .side {
   width: 320px; background: #fff; border-radius: 14px; padding: 14px;
   position: sticky; top: 96px; height: calc(100vh - 110px); overflow: auto;
-
 }
 .brand { font-weight: 700; font-size: 18px; display: flex; align-items: center; margin-bottom: 10px; }
 .main { flex: 1; display: flex; flex-direction: column; gap: 16px; }
@@ -516,6 +499,5 @@ onMounted(async () => {
 @media (max-width: 992px) {
   .pbox { flex-direction: column; }
   .side { width: 100%; height: auto; position: static; }
-
 }
 </style>

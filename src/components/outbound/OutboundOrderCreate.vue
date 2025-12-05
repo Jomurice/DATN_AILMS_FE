@@ -4,6 +4,11 @@
       <h2>Tạo đơn mua</h2>
       <div class="d-flex gap-2">
 
+        <div>
+          <button class="btn btn-outitem-primary btn-primary" title="Thêm khách hàng mới"
+            @click="showCustomerForm = true">+ Thêm mới</button>
+        </div>
+
         <div class="btn border-primary btn-outitem-primary btn-sm">
           <label for="file" class="m-0"><i class="fas fa-file-import"></i> Excel/CSV</label>
           <input id="file" type="file" accept=".xlsx,.xls,.csv" @change="onImport" hidden />
@@ -19,10 +24,26 @@
           <input v-model.trim="responseOrder.code" class="ipt" disabled />
         </div>
 
-        <div class="col">
+        <div class="col search-customer-wrapper">
           <label class="lbl">Khách hàng</label>
-          <input v-model.trim="responseOrder.customer" class="ipt" placeholder="Tên khách hàng" />
+
+          <input type="text" v-model="searchCustomer" class="ipt" placeholder="Nhập tên hoặc số điện thoại khách hàng"
+            @input="searchCustomers" @focus="loadCustomer" />
+
+          <!-- Dropdown list -->
+          <div v-if="showDropdown" class="dropdown-list">
+            <div v-if="isLoading" class="dropdown-item loading">Đang tìm...</div>
+
+            <div v-else-if="customers.length === 0" class="dropdown-item no-result">
+              Không tìm thấy khách hàng
+            </div>
+
+            <div v-else class="dropdown-item" v-for="cust in customers" :key="cust.id" @click="selectCustomer(cust)">
+              <div class="name">{{ cust.lastName }} {{ cust.firstName }}</div>
+            </div>
+          </div>
         </div>
+
 
         <div class="col">
           <label class="lbl">Ngày tạo</label>
@@ -61,7 +82,7 @@
               </div>
 
               <div class="col">
-                <label class="lbl">Số lượng</label> 
+                <label class="lbl">Số lượng</label>
                 <input v-model.number="form.orderQuantity" type="number" class="ipt" min="1" :max="stock" />
                 <span>Còn: {{ stock }} sản phẩm</span>
                 <div v-if="err" class="err mt8">{{ err }}</div>
@@ -141,6 +162,14 @@
     </div>
     <div v-if="toastMsg" class="toast-box">{{ toastMsg }}</div>
 
+    <!-- Modal thêm khách hàng -->
+    <div v-if="showCustomerForm" class="modal-overlay">
+      <CustomerForm @save="handleCustomerSave" @cancel="showCustomerForm = false" />
+    </div>
+    <div v-if="isLoading" class="modal-overlay-loading text-center py-5">
+      <div class="spinner-border text-info" role="status"></div>
+      <div class="small mx-2 fs-5 text-info mt-2">Đang tải...</div>
+    </div>
   </div>
 </template>
 
@@ -148,21 +177,20 @@
 import { ref, computed, onMounted } from "vue";
 import { productService } from "../../services/product/productService";
 import { tokenService } from "../../services/TokenService";
-import { storeToRefs } from "pinia";
 import { outboundOrderService } from "../../services/outbound/outboundOrderService";
 import { outboundItemService } from "../../services/outbound/OutboundOrderItemService";
-import { stockService } from "../../services/StockServcie";
+import { stockService } from "../../services/StockService";
+import { customerService } from "../../services/outbound/CustomerService";
+import CustomerForm from "./CustomerForm.vue";
 
 const auth = tokenService();
 auth.loadToken();
-storeToRefs(auth);
 const username = auth.userName || "—";
-console.log("Auth user:", auth.userId);
 
 const orders = ref({
   id: "",
   code: "",
-  customer: "",
+  customerId: "",
   createdBy: auth.userId || null,
   createAt: "",
   items: [],
@@ -173,16 +201,21 @@ const responseOrder = ref([]);
 const form = ref({ productId: "", name: "", orderQuantity: 1, note: "" });
 const err = ref("");
 const submitting = ref(false);
-const stock = ref(0); 
-const modalSku = ref(null); const toastMsg = ref(""); let toastTimer = null;
+const stock = ref(0);
+const searchCustomer = ref("");
+const customers = ref([]);
+const showDropdown = ref(false);
+const isLoading = ref(false);
+const selectedCustomer = ref(null);
+const toastMsg = ref("");
+let toastTimer = null;
+const showCustomerForm = ref(false);
+
 
 function clip(s, n = 20) {
   if (!s) return "";
   return s.length > n ? s.slice(0, n) + "..." : s;
 }
-
-
-
 
 
 /* -------- import excel/csv -------- */
@@ -248,12 +281,13 @@ function splitCSVitem(item) { return item.split(",").map(x => x.replace(/^"|"$/g
 async function createOrder() {
 
   orders.value = responseOrder.value
-
-  if (!orders.value.customer?.trim()) return showToast("Chưa nhập thông tin khách hàng.");
+  orders.value.customerId = selectedCustomer.value ? selectedCustomer.value.id : null;
+  if (!orders.value.customerId?.trim()) return showToast("Chưa nhập thông tin khách hàng.");
   if (responseOrder.value.length === 0) return showToast("Chưa có sản phẩm nào trong đơn.");
   submitting.value = true;
 
   orders.value.status = "CONFIRMED";
+  console.log("Creating order:", orders.value);
 
   try {
     await outboundOrderService.updateStatus(responseOrder.value.id, orders.value)
@@ -272,7 +306,7 @@ async function selectProduct(product) {
   form.value.productId = product.id;
   form.value.name = product.name;
   stock.value = await stockService.getStocks(product.id);
-  console.log("Selected product:", form.value, "Stock:", stock.value," Product:", product.id);
+  console.log("Selected product:", form.value, "Stock:", stock.value, " Product:", product.id);
 }
 
 function validateAdd() {
@@ -287,7 +321,7 @@ function validateAdd() {
   }
 
   if (form.value.orderQuantity > stock.value) {
-    showToast (`Số lượng vượt quá tồn kho (${stock.value}).`);
+    showToast(`Số lượng vượt quá tồn kho (${stock.value}).`);
     return false;
   }
   return true;
@@ -297,50 +331,72 @@ function validateAdd() {
 async function handleAddItem() {
   if (!validateAdd()) return;
 
+  isLoading.value = true;
+
   const newItem = {
     productId: form.value.productId,
     orderQuantity: Number(form.value.orderQuantity),
   };
 
-  // nếu chưa có đơn thì tạo mới
-  if (!responseOrder.value.id) {
-    orders.value.items.push(newItem);
-    responseOrder.value = await outboundOrderService.create(orders.value);
-    localStorage.setItem("currentOrder", JSON.stringify({
-      id: responseOrder.value.id,
-      code: responseOrder.value.code,
+  try {
+    // Chưa có order thì tạo mới
+    if (!responseOrder.value.id) {
+      // add item vào giỏ tạm
+      orders.value.items.push(newItem);
+
+      // tạo order
+      responseOrder.value = await outboundOrderService.create(orders.value);
+
+      // lưu localStorage
+      localStorage.setItem(
+        "currentOrder",
+        JSON.stringify({
+          id: responseOrder.value.id,
+          code: responseOrder.value.code,
+        })
+      );
+
+      // add item lên server
+      await outboundItemService.addItem(orders.value, responseOrder.value.id);
+
+      showToast("Đã thêm sản phẩm vào đơn");
+      load();
+      return;
+    }
+
+    //Đã có order rồi thì thêm item
+    let existingItem = responseOrder.value.items.find(
+      (x) => x.product?.id === newItem.productId
+    );
+
+    if (existingItem) {
+      // tăng số lượng
+      existingItem.orderQuantity += newItem.orderQuantity;
+    } else {
+      // thêm mới vào UI
+      responseOrder.value.items.push({
+        product: { id: newItem.productId },
+        orderQuantity: newItem.orderQuantity,
+      });
+    }
+
+    // chuẩn hóa format gửi server
+    orders.value.items = responseOrder.value.items.map((item) => ({
+      productId: item.product.id,
+      orderQuantity: item.orderQuantity,
     }));
+
     await outboundItemService.addItem(orders.value, responseOrder.value.id);
-    showToast('Đã thêm sản phẩm vào đơn');
+
+    showToast("Đã thêm sản phẩm vào đơn");
     load();
-    return;
+  } catch (error) {
+    console.error("Error:", error);
+  } finally {
+    isLoading.value = false;
   }
-
-  // nếu đã có đơn
-  const existingItem = responseOrder.value.items.find(
-    x => x.product?.id === newItem.productId
-  );
-
-  if (existingItem) {
-    existingItem.orderQuantity += newItem.orderQuantity;
-  } else {
-    // chỉ thêm vào UI
-    responseOrder.value.items.push({
-      product: { id: newItem.productId },
-      orderQuantity: newItem.orderQuantity,
-    });
-  }
-
-  // map tất cả items sang format server
-  orders.value.items = responseOrder.value.items.map(item => ({
-    productId: item.product.id,
-    orderQuantity: item.orderQuantity,
-  }));
-
-  await outboundItemService.addItem(orders.value, responseOrder.value.id);
-  showToast('Đã thêm sản phẩm vào đơn');
-  load();
 }
+
 
 
 async function removeItem(idProduct) {
@@ -352,9 +408,81 @@ async function removeItem(idProduct) {
 function resetForm() {
   form.value = { productId: "", name: "", orderQuantity: 1, note: "" };
   err.value = "";
+  searchCustomer.value = "";
 }
 
+let debounceTimeout = null;
+
+async function searchCustomers() {
+  clearTimeout(debounceTimeout);
+  showDropdown.value = true;
+
+  debounceTimeout = setTimeout(async () => {
+    if (!searchCustomer.value.trim()) {
+      const res = await customerService.getAll({
+        page: 0,
+        size: 10,
+        search: searchCustomer.value.trim(),
+        status: true
+      });
+      customers.value = res?.content || res || [];
+      return;
+    }
+
+    isLoading.value = true;
+    try {
+      console.log("Search:", searchCustomer.value.trim());
+      const res = await customerService.getAll({
+        page: 0,
+        size: 10,
+        search: searchCustomer.value.trim(),
+        status: true
+      });
+      customers.value = res?.content || res || [];
+    } catch {
+      customers.value = [];
+    } finally {
+      isLoading.value = false;
+    }
+  }, 350);
+}
+
+async function loadCustomer() {
+  showDropdown.value = true;
+  if (!searchCustomer.value.trim()) {
+    try {
+      const res = await customerService.getAll({
+        page: 0,
+        size: 10,
+        search: searchCustomer.value.trim(),
+        status: true
+      });
+      customers.value = res?.content || res || [];
+      console.log("Loaded customers:", customers.value);
+    } catch (error) {
+      console.error("Error loading customers:", error);
+      customers.value = [];
+    }
+  }
+}
+
+
+function selectCustomer(customer) {
+  selectedCustomer.value = customer;
+  searchCustomer.value = `${customer.lastName} ${customer.firstName}`;
+  customers.value = [];
+  showDropdown.value = false;
+}
+
+// document.addEventListener("click", (e) => {
+//   const wrapper = document.querySelector('.search-customer-wrapper');
+//   if (wrapper && !wrapper.contains(e.target)) {
+//     showDropdown.value = false;
+//   }
+// });
+
 async function load() {
+  isLoading.value = true;
   try {
     products.value = await productService.getAll();
 
@@ -363,14 +491,17 @@ async function load() {
       : null;
 
     if (savedOrder?.id) {
-      const fullOrder = await outboundOrderService.getByOutboundId(savedOrder.id);
+      const fullOrder = await outboundOrderService.getById(savedOrder.id);
       responseOrder.value = fullOrder || [];
       console.log("Loaded order items:", responseOrder.value);
     }
   } catch (e) {
-    console.warn("loadProduct failed", e);
+    console.error("loadProduct failed", e);
     products.value = [];
     // filteredProducts.value = [];
+  }
+  finally {
+    isLoading.value = false;
   }
   resetForm();
 }
@@ -556,7 +687,71 @@ onMounted(() => {
   font-size: 15px;
 }
 
+.search-customer-wrapper {
+  position: relative;
+}
 
+.dropdown-list {
+  position: absolute;
+  width: 100%;
+  top: 100%;
+  left: 0;
+  background: #fff;
+  border: 1px solid #ddd;
+  max-height: 250px;
+  overflow-y: auto;
+  border-radius: 6px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  z-index: 200;
+}
+
+.dropdown-item {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background: #f4f8ff;
+}
+
+.loading {
+  color: #888;
+}
+
+.no-result {
+  color: red;
+}
+
+.dropdown-item .phone {
+  font-size: 12px;
+  color: #666;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-overlay-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  background: rgba(0, 0, 0, 0.147);
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
 
 .btn.small {
   padding: 6px 10px;

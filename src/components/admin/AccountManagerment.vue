@@ -113,7 +113,7 @@
                   <td class="ps-4" :data-label="'STT'">{{ payload.pageable.page * payload.pageable.size + index + 1 }}
                   </td>
                   <td :data-label="'Tên đăng nhập'">{{ u.username }}</td>
-                  <td :data-label="'Họ và tên'">{{ u.name }}</td>
+                  <td :data-label="'Họ và tên'" :title="u.name">{{ u.name }}</td>
                   <td :data-label="'Email'" :title="u.email">{{ u.email }}</td>
                   <td :data-label="'Giới tính'">{{ u.gender ? 'Nam' : 'Nữ' }}</td>
                   <td :data-label="'Chức vụ'">

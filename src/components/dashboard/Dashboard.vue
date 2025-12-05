@@ -6,11 +6,7 @@
 
         <!-- STAT CARDS -->
         <div class="stats">
-          <div
-            v-for="s in statCards"
-            :key="s.title"
-            class="card border-0 shadow-sm rounded-4 stat-card"
-          >
+          <div v-for="s in statCards" :key="s.title" class="card border-0 shadow-sm rounded-4 stat-card">
             <div class="card-body d-flex align-items-center gap-3">
               <div class="stat-icon" :class="s.iconClass">
                 <i :class="s.icon"></i>
@@ -32,17 +28,10 @@
               <div class="d-flex align-items-center gap-2 flex-wrap">
                 <h6 class="m-0 chart-title">Nhập / Xuất theo thời gian</h6>
                 <div class="btn-group btn-group-sm ms-1">
-                  <button
-                    v-for="op in seriesOptions"
-                    :key="op.value"
-                    class="btn btn-sm"
-                    :class="
-                      series === op.value
-                        ? 'btn-primary'
-                        : 'btn-outline-secondary'
-                    "
-                    @click="series = op.value"
-                  >
+                  <button v-for="op in seriesOptions" :key="op.value" class="btn btn-sm" :class="series === op.value
+                    ? 'btn-primary'
+                    : 'btn-outline-secondary'
+                    " @click="series = op.value">
                     {{ op.label }}
                   </button>
                 </div>
@@ -50,11 +39,7 @@
 
               <!-- Phải: DROPDOWN KHO (nhỏ) đặt NGAY BÊN TRÁI cụm thời gian + cụm thời gian (GIỮ NGUYÊN VỊ TRÍ) -->
               <div class="d-flex align-items-center gap-2 flex-wrap">
-                <select
-                  v-model="warehouseId"
-                  class="form-select form-select-sm"
-                  style="width: 160px"
-                >
+                <select v-model="warehouseId" class="form-select form-select-sm" style="width: 160px">
                   <option :value="''">Tất cả kho</option>
                   <option v-for="w in warehouses" :key="w.id" :value="w.id">
                     {{ w.name }}
@@ -63,24 +48,23 @@
 
                 <span class="small text-muted me-1">Thời gian</span>
                 <div class="btn-group btn-group-sm">
-                  <button
-                    v-for="tf in timeframes"
-                    :key="tf"
-                    class="btn btn-sm"
-                    :class="
-                      timeframe === tf ? 'btn-primary' : 'btn-outline-primary'
-                    "
-                    @click="timeframe = tf"
-                  >
+                  <button v-for="tf in timeframes" :key="tf" class="btn btn-sm" :class="timeframe === tf ? 'btn-primary' : 'btn-outline-primary'
+                    " @click="timeframe = tf">
                     {{ tf }}
                   </button>
                 </div>
               </div>
             </div>
 
-            <div class="chart-wrap">
+            <div v-if="loading" class="chart-wrap text-center d-flex flex-column justify-content-center align-items-center">
+              <div class="spinner-border text-primary" role="status"> </div>
+              <div class="small mx-2 fs-5 text-primary mt-2">Đang tải...</div>
+            </div>
+
+            <div v-else class="chart-wrap">
               <canvas ref="chartRef"></canvas>
             </div>
+
 
             <div class="chart-foot">
               <div class="small text-muted">X: thời gian • Y: số lượng</div>
@@ -101,6 +85,8 @@ import {
 } from "@/services/dashboardService";
 import { warehouseService } from "@/services/WarehouseService";
 
+
+const loading = ref(false);
 /* ===== UI state ===== */
 const timeframes = ["24H", "7D", "1M", "1Y", "All"]; // giữ như cũ
 const seriesOptions = [
@@ -194,7 +180,7 @@ async function drawChart() {
       plugins: {
         legend: {
           position: "top",
-          onClick: () => {},
+          onClick: () => { },
           labels: { color: "#6b7280", font: { weight: 500 } },
         },
         tooltip: { mode: "index", intersect: false },
@@ -235,14 +221,22 @@ async function drawChart() {
 }
 
 async function loadStats() {
-  const s = await getDashboardStats(timeframe.value, warehouseId.value);
-  stats.value = s;
+  loading.value = true;
+  try {
+    const s = await getDashboardStats(timeframe.value, warehouseId.value);
+    stats.value = s;
+  } catch (error) {
+    console.error("Lỗi khi tải thống kê bảng điều khiển:", error);
+  } finally {
+    loading.value = false;
+  }
+
 }
 
 onMounted(async () => {
   try {
     warehouses.value = (await warehouseService.getAllWarehouses()) || [];
-  } catch {}
+  } catch { }
   await loadStats();
   await drawChart();
 });
@@ -251,13 +245,14 @@ watch(timeframe, async () => {
   await loadStats();
   await drawChart();
 });
-watch(warehouseId, async()=>{
+watch(warehouseId, async () => {
   await loadStats();
   await drawChart();
 })
 watch(series, async () => {
   await drawChart();
 });
+
 // Khi BE hỗ trợ lọc theo kho, có thể thêm watch(warehouseId, ...) để gọi API filter theo kho
 </script>
 
@@ -267,6 +262,7 @@ watch(series, async () => {
   gap: 20px;
   --top-offset: 96px;
 }
+
 .main {
   flex: 1 1 auto;
   width: 100%;
@@ -286,9 +282,11 @@ watch(series, async () => {
   gap: 16px;
   margin-bottom: 16px;
 }
+
 .stat-card {
   min-height: 140px;
 }
+
 .stat-icon {
   width: 56px;
   height: 56px;
@@ -298,6 +296,7 @@ watch(series, async () => {
   justify-content: center;
   font-size: 24px;
 }
+
 .stat-value {
   font-size: 2.2rem;
   font-weight: 600;
@@ -312,6 +311,7 @@ watch(series, async () => {
   gap: 12px;
   margin-bottom: 8px;
 }
+
 .chart-title {
   font-weight: 600;
   color: #111827;
@@ -320,6 +320,7 @@ watch(series, async () => {
 .chart-wrap {
   height: 360px;
 }
+
 .chart-wrap canvas {
   width: 100%;
   height: 100%;
@@ -337,20 +338,24 @@ watch(series, async () => {
     grid-template-columns: repeat(2, minmax(260px, 1fr));
   }
 }
+
 @media (max-width: 992px) {
   .dbox {
     flex-direction: column;
   }
 }
+
 @media (max-width: 576px) {
   .stats {
     grid-template-columns: 1fr;
   }
+
   .chart-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
   }
+
   .chart-foot {
     flex-direction: column;
     align-items: flex-start;

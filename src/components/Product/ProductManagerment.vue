@@ -103,6 +103,12 @@
                   </button>
                 </td>
               </tr>
+              <tr v-if="isLoading" class="text-center py-3">
+                <td colspan="6">
+                  <div class="spinner-border text-primary" role="status"></div>
+                  <div class="small mx-2 fs-5 text-primary mt-2">Đang tải...</div>
+                </td>
+              </tr>
               <tr v-if="!isLoading && products.length === 0">
                 <td colspan="6" class="text-center text-muted py-4">Không có dữ liệu</td>
               </tr>
@@ -139,13 +145,13 @@
 
 
       <div v-if="isDetailProduct" class="d-flex align-items-center justify-content-center modal-overlay">
-        <product-detail :node="product"  @close="isDetailProduct = false"/>
+        <product-detail :node="product" @close="isDetailProduct = false" />
       </div>
 
-      <div v-if="isLoading" class="modal-overlay text-center py-5">
+      <!-- <div v-if="isLoading" class="modal-overlay text-center py-5">
         <div class="spinner-border text-info" role="status"></div>
         <div class="small mx-2 fs-5 text-info mt-2">Đang tải...</div>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>
@@ -251,9 +257,9 @@ async function loadAll() {
 async function getByProductId(id) {
   try {
     product.value = await productService.getById(id);
-    console.log( 'dsad',product.value);
+    console.log('dsad', product.value);
     const p = await productDetailService.getByProductId(product.value.id);
-    if(p) product.value = { ...product.value, ...p };
+    if (p) product.value = { ...product.value, ...p };
     console.log(product.value);
   } catch (error) {
     console.log("error", error);
@@ -448,6 +454,7 @@ onMounted(() => {
 .table {
   table-layout: fixed;
 }
+
 .name {
   cursor: pointer;
 }

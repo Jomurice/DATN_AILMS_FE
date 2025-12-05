@@ -15,7 +15,6 @@
 
           <input v-model.trim="form.code" class="ipt" placeholder="Nhập mã..." />
           <small class="muted">Gợi ý: <span class="mono">{{ suggestCode }}</span></small>
-
         </div>
 
         <!-- autocomplete -->
@@ -53,14 +52,12 @@
         </div>
 
         <div class="col">
-
           <label class="lbl">Kho</label>
           <select v-model="form.warehouseId" class="ipt">
             <option disabled value="">-- Chọn kho --</option>
             <option v-for="w in warehouses" :key="w.id" :value="w.id">{{ w.name }}</option>
           </select>
         </div>
-
 
       </div>
     </section>
@@ -155,7 +152,6 @@ import { warehouseService } from "@/services/WarehouseService";
 import { productDetailsService } from "@/services/product/productDetailsService";
 import { supplierService } from "@/services/purchaseOrder/supplierService.js";
 
-
 const router = useRouter();
 
 
@@ -164,10 +160,8 @@ const form = ref({
   supplierId: "",
   status: "PENDING",
   createdAt: todayStr(),
-
   warehouseId: "",
   items: [],
-
 });
 
 const products = ref([]);
@@ -188,8 +182,6 @@ const submitting = ref(false);
 
 const creatorName = ref("");
 const userId = ref("");
-
-
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
@@ -322,25 +314,21 @@ function buildPayload() {
   };
 }
 
-
 async function submit() {
   const error = validateForm();
   if (error) return alert(error);
 
   const payload = buildPayload();
-
   submitting.value = true;
 
   try {
 
     const res = await purchaseOrderService.create(payload);
-
     await productDetailsService.createSerialForPO({
       purchaseOrderId: res.id,
       createdByUserId: userId.value,
     });
     alert("Tạo đơn thành công!");
-
     router.push("/inbound");
   } catch (e) {
     console.error(e);
@@ -355,7 +343,6 @@ async function submit() {
 async function initAuth() {
   const auth = tokenService();
   auth.loadToken();
-
   userId.value = auth.userId;
   creatorName.value = auth.userName;
 }

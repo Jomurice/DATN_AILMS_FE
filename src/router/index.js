@@ -27,10 +27,14 @@ import PurchaseOrderDetail from "../components/inbound/PurchaseOrderDetail.vue";
 import Outbound from "../components/outbound/Outbound.vue";
 import OutboundOrderCreate from "../components/outbound/OutboundOrderCreate.vue";
 import OutboundOrderDetail from "../components/outbound/OutboundOrderDetail.vue";
+import CustomerList from "../components/outbound/CustomerList.vue";
+import SuppliersFrom from "../components/inbound/SuppliersForm.vue";
+
 import InventoryCheckList from "../components/inventory_check/InventoryCheckList.vue";
 import InventoryCheckCreate from "../components/inventory_check/InventoryCheckCreate.vue";
 import InventoryCheckDetail from "../components/inventory_check/InventoryCheckDetail.vue";
 import InventoryReport from "../components/report/Report.vue";
+
 import WarehouseCreateForm from "../components/NewWarehouse/WarehouseCreateForm.vue";
 import PurchacseOrderManagement from "../components/PO/PurchacseOrderManagement.vue";
 
@@ -156,6 +160,11 @@ const routes = [
       },
 
       {
+        path: "/suppliers",
+        name: "suppliers",
+        component: SuppliersFrom,
+      },
+      {
         path: "/purchaseorder",
         name: "purchaseorder",
         component: PurchacseOrderManagement,
@@ -199,10 +208,17 @@ const routes = [
         component: OutboundOrderDetail,
         props: true,
       },
+      {
+        path: "customer",
+        name: "customer",
+        meta: { title: "khách hàng" },
+        component: CustomerList,
+        props: true,
+      },
       { path: ":pathMatch(.*)*", redirect: "/product" },
 
-    
-    
+
+
     ],
   },
 
