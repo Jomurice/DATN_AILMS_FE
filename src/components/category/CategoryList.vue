@@ -63,6 +63,12 @@
                   </button>
                 </td>
               </tr>
+              <tr v-if="isLoading" class="text-center py-3">
+                <td colspan="6">
+                  <div class="spinner-border text-primary" role="status"></div>
+                  <div class="small mx-2 fs-5 text-primary mt-2">Đang tải...</div>
+                </td>
+              </tr>
               <tr v-if="!isLoading && categories.length === 0">
                 <td colspan="4" class="text-center text-muted py-4">Không có dữ liệu</td>
               </tr>
@@ -95,10 +101,6 @@
 
           <p v-if="error" class="text-danger small p-3">{{ error }}</p>
         </div>
-      </div>
-      <div v-if="isLoading" class="modal-overlay text-center py-5">
-        <div class="spinner-border text-info" role="status"></div>
-        <div class="small mx-2 fs-5 text-info mt-2">Đang tải...</div>
       </div>
     </div>
   </div>

@@ -5,7 +5,7 @@
       <div class="d-flex gap-2">
 
         <div>
-          <button class="btn btn-outitem-primary btn-success" title="Thêm khách hàng mới"
+          <button class="btn btn-outitem-primary btn-primary" title="Thêm khách hàng mới"
             @click="showCustomerForm = true">+ Thêm mới</button>
         </div>
 
@@ -166,8 +166,10 @@
     <div v-if="showCustomerForm" class="modal-overlay">
       <CustomerForm @save="handleCustomerSave" @cancel="showCustomerForm = false" />
     </div>
-
-
+    <div v-if="isLoading" class="modal-overlay-loading text-center py-5">
+      <div class="spinner-border text-info" role="status"></div>
+      <div class="small mx-2 fs-5 text-info mt-2">Đang tải...</div>
+    </div>
   </div>
 </template>
 
@@ -214,9 +216,6 @@ function clip(s, n = 20) {
   if (!s) return "";
   return s.length > n ? s.slice(0, n) + "..." : s;
 }
-
-
-
 
 
 /* -------- import excel/csv -------- */
@@ -332,50 +331,72 @@ function validateAdd() {
 async function handleAddItem() {
   if (!validateAdd()) return;
 
+  isLoading.value = true;
+
   const newItem = {
     productId: form.value.productId,
     orderQuantity: Number(form.value.orderQuantity),
   };
 
-  // nếu chưa có đơn thì tạo mới
-  if (!responseOrder.value.id) {
-    orders.value.items.push(newItem);
-    responseOrder.value = await outboundOrderService.create(orders.value);
-    localStorage.setItem("currentOrder", JSON.stringify({
-      id: responseOrder.value.id,
-      code: responseOrder.value.code,
+  try {
+    // Chưa có order thì tạo mới
+    if (!responseOrder.value.id) {
+      // add item vào giỏ tạm
+      orders.value.items.push(newItem);
+
+      // tạo order
+      responseOrder.value = await outboundOrderService.create(orders.value);
+
+      // lưu localStorage
+      localStorage.setItem(
+        "currentOrder",
+        JSON.stringify({
+          id: responseOrder.value.id,
+          code: responseOrder.value.code,
+        })
+      );
+
+      // add item lên server
+      await outboundItemService.addItem(orders.value, responseOrder.value.id);
+
+      showToast("Đã thêm sản phẩm vào đơn");
+      load();
+      return;
+    }
+
+    //Đã có order rồi thì thêm item
+    let existingItem = responseOrder.value.items.find(
+      (x) => x.product?.id === newItem.productId
+    );
+
+    if (existingItem) {
+      // tăng số lượng
+      existingItem.orderQuantity += newItem.orderQuantity;
+    } else {
+      // thêm mới vào UI
+      responseOrder.value.items.push({
+        product: { id: newItem.productId },
+        orderQuantity: newItem.orderQuantity,
+      });
+    }
+
+    // chuẩn hóa format gửi server
+    orders.value.items = responseOrder.value.items.map((item) => ({
+      productId: item.product.id,
+      orderQuantity: item.orderQuantity,
     }));
+
     await outboundItemService.addItem(orders.value, responseOrder.value.id);
-    showToast('Đã thêm sản phẩm vào đơn');
+
+    showToast("Đã thêm sản phẩm vào đơn");
     load();
-    return;
+  } catch (error) {
+    console.error("Error:", error);
+  } finally {
+    isLoading.value = false;
   }
-
-  // nếu đã có đơn
-  const existingItem = responseOrder.value.items.find(
-    x => x.product?.id === newItem.productId
-  );
-
-  if (existingItem) {
-    existingItem.orderQuantity += newItem.orderQuantity;
-  } else {
-    // chỉ thêm vào UI
-    responseOrder.value.items.push({
-      product: { id: newItem.productId },
-      orderQuantity: newItem.orderQuantity,
-    });
-  }
-
-  // map tất cả items sang format server
-  orders.value.items = responseOrder.value.items.map(item => ({
-    productId: item.product.id,
-    orderQuantity: item.orderQuantity,
-  }));
-
-  await outboundItemService.addItem(orders.value, responseOrder.value.id);
-  showToast('Đã thêm sản phẩm vào đơn');
-  load();
 }
+
 
 
 async function removeItem(idProduct) {
@@ -461,6 +482,7 @@ function selectCustomer(customer) {
 // });
 
 async function load() {
+  isLoading.value = true;
   try {
     products.value = await productService.getAll();
 
@@ -477,6 +499,9 @@ async function load() {
     console.error("loadProduct failed", e);
     products.value = [];
     // filteredProducts.value = [];
+  }
+  finally {
+    isLoading.value = false;
   }
   resetForm();
 }
@@ -710,6 +735,19 @@ onMounted(() => {
   height: 100vh;
   background: rgba(0, 0, 0, 0.6);
   display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-overlay-loading {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  background: rgba(0, 0, 0, 0.147);
   align-items: center;
   justify-content: center;
   z-index: 9999;

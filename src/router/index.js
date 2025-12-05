@@ -28,7 +28,7 @@ import Outbound from "../components/outbound/Outbound.vue";
 import OutboundOrderCreate from "../components/outbound/OutboundOrderCreate.vue";
 import OutboundOrderDetail from "../components/outbound/OutboundOrderDetail.vue";
 import CustomerList from "../components/outbound/CustomerList.vue";
-import SuppliersFrom from "../components/suppliers/SuppliersFrom.vue";
+import SuppliersFrom from "../components/inbound/SuppliersForm.vue";
 
 import InventoryCheckList from "../components/inventory_check/InventoryCheckList.vue";
 import InventoryCheckCreate from "../components/inventory_check/InventoryCheckCreate.vue";

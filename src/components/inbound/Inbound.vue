@@ -221,7 +221,6 @@ import { ref, computed, onMounted } from "vue";
 import { RouterLink } from "vue-router";
 import { purchaseOrderService } from "@/services/purchaseOrder/purchaseOrderService";
 import { tokenService } from "@/services/TokenService";
-
 import api from "@/services/axios";
 import { Html5Qrcode } from "html5-qrcode";
 

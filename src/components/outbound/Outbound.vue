@@ -110,7 +110,7 @@
           </div>
 
           <div class="px-3 py-3 d-flex justify-content-end">
-            <button v-if="isConfirmCancel" class="btn btn-waning mx-2"  @click="rejectCancel()">Không hủy</button>
+            <button v-if="isConfirmCancel" class="btn btn-warning mx-2"  @click="rejectCancel()">Không hủy</button>
             <button v-if="isConfirmCancel" class="btn btn-danger mx-2"  @click="confirmCancel()">Xác nhận
               hủy</button>
             <button class="btn btn-success" :disabled="!isAllScanned || submitting" @click="confirmExport()">
