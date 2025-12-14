@@ -75,5 +75,30 @@ export const purchaseOrderService = {
       params: sku ? { sku } : {}
     });
     return response.data.result;
+  },
+
+
+  async searchPurchaseOrders({ page = 0, size = 10, status = null, keyword = null }) {
+    const response = await api.get('/api/purchase-orders/search-po', {
+      params: { page, size, status, keyword }
+    });
+    return response.data.result;
+  },
+
+  
+  async downloadQrCodes(orderId) {
+    const response = await api.get(`/api/purchase-orders/${orderId}/qrcodes`, {
+      responseType: "blob"
+    });
+
+    const blob = new Blob([response.data], { type: "application/zip" });
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "qrcodes.zip";
+    a.click();
+
+    window.URL.revokeObjectURL(url);
   }
 };
