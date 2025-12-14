@@ -23,6 +23,15 @@
             @click="openOrder(o)"
           >
             <div>
+              <button
+      class="btn btn-outline-success btn-sm qr-btn me-2"
+      title="Tải QR"
+      @click.stop="download(o.id)"
+    >
+      <i class="fa-solid fa-qrcode"></i>
+      <span class="d-none d-md-inline ms-1">QR</span>
+    </button>
+
               <div class="fw-bold">{{ cut(o.code, 20) }}</div>
               <div class="fw-semibold">{{ cut(o.supplier, 20) }}</div>
               <div class="badge bg-light text-dark mt-1">{{ viStatus(o.status) }}</div>
@@ -76,12 +85,14 @@
                 placeholder="Quét nhanh serial… (vd: iphone15prm-0001)"
                 :disabled="!canScan"
               />
-              <button class="btn btn-primary" @click="handleQuickScan">Quét</button>
+              <button class="btn btn-primary" @click="handleQuickScan(serialInput)">Quét</button>
               <button class="btn btn-success" @click="startQrScanner">Quét QR</button>
             </div>
           </div>
 
-          <!-- QR Scanner -->
+          <!-------------------- 
+                QR Scanner 
+          ----------------------->
           <div v-if="qrScannerVisible" class="my-3">
             <div id="qr-reader" style="width: 100%;"></div>
             <button class="btn btn-secondary mt-2" @click="stopQrScanner">Dừng QR</button>
@@ -351,7 +362,9 @@ async function openOrder(o) {
   }
 }
 
-async function handleQuickScan(serialInput) {
+
+
+async function handleQuickCameraScan(serialInput) {
   const serial = serialInput || String(quickSerial.value || "").trim();
   if (!serial) return showToast("Chưa nhập serial");
   if (!selectedOrder.value?.items?.length) return showToast("Chưa chọn phiếu");
@@ -378,6 +391,61 @@ async function handleQuickScan(serialInput) {
     else if (code === "SERIAL_NOT_FOUND") showToast("❌ Serial không tồn tại trong hệ thống");
     else if (code === "SKU_MISMATCH") showToast("⚠️ Serial không khớp với SKU trong phiếu");
     else showToast(msg || "Có lỗi xảy ra khi quét");
+  } finally {
+    quickSerial.value = "";
+    quickInputRef.value?.focus();
+  }
+}
+
+async function handleQuickScan() {
+  const serial = String(quickSerial.value || "").trim();
+  if (!serial) return;
+
+  if (!selectedOrder.value?.items?.length) {
+    toast("Chưa chọn phiếu");
+    return;
+  }
+
+  try {
+    const item = selectedOrder.value.items.find((i) =>
+      serial.toLowerCase().includes(i.sku.toLowerCase())
+    );
+
+    if (!item) {
+      toast("Serial không khớp với SKU nào trong phiếu");
+      return;
+    }
+
+    await api.post("/api/product-details/confirm-scan", {
+      serialNumber: serial,
+      warehouseId: selectedOrder.value?.warehouseId, // hoặc lấy từ order hiện tại
+      scannedByUserId: userId.value,
+    });
+
+    showToast("Quét thành công!");
+    item.scannedQuantity = (item.scannedQuantity || 0) + 1;
+    const updated = await purchaseOrderService.getPurchaseOrderById(
+      selectedOrder.value.id,
+      { includeItems: true }
+    );
+
+    selectedOrder.value = normalizeOrder(updated);
+  } catch (err) {
+    console.error("Scan error", err);
+
+    // ✅ xử lý lỗi chi tiết
+    const code = err.response?.data?.code;
+    const msg = err.response?.data?.message;
+
+    if (code === "SERIAL_ALREADY_SCANNED") {
+      toast("⚠️ Serial này đã được scan trước đó");
+    } else if (code === "SERIAL_NOT_FOUND") {
+      toast("❌ Serial không tồn tại trong hệ thống");
+    } else if (code === "SKU_MISMATCH") {
+      toast("⚠️ Serial không khớp với SKU trong phiếu");
+    } else {
+      toast(msg || "Có lỗi xảy ra khi quét");
+    }
   } finally {
     quickSerial.value = "";
     quickInputRef.value?.focus();
@@ -430,7 +498,7 @@ function startQrScanner() {
       qrbox: 250
     },
     (decodedText) => {
-      handleQuickScan(decodedText);
+      handleQuickCameraScan(decodedText);
       stopQrScanner();
     },
     (errorMessage) => {
@@ -456,6 +524,14 @@ function stopQrScanner() {
     qrScannerVisible.value = false;
   }
 }
+
+const download = async (id) => {
+  try {
+    await purchaseOrderService.downloadQrCodes(id);
+  } catch (e) {
+    console.error(e);
+  }
+};
 
 
 onMounted(async () => {

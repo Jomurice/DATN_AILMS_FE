@@ -25,9 +25,10 @@
             <div class="input-wrapper">
               <input :type="showPassword ? 'text' : 'password'" id="password" v-model="password" @input="clearError('password')" 
               class="form-control modal-input" :class="{ 'is-invalid': errors.password }" placeholder="Nhập mật khẩu" />
-              <i @click="showPassword = !showPassword":class="showPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
-            </div>
+              <i @click="showPassword = !showPassword" :class="showPassword ? 'fa fa-eye-slash' : 'fa fa-eye'"></i>
             <div class="invalid-feedback">{{ errors.password }}</div>
+            </div>
+            
           </div>
 
           <router-link to="/forgot-password" class="link">Quên mật khẩu ?</router-link>
