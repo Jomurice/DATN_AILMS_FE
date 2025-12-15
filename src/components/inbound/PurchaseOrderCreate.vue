@@ -12,6 +12,7 @@
         
         <div class="col">
           <label class="lbl">Mã đơn</label>
+
           <input v-model.trim="form.code" class="ipt" placeholder="Nhập mã..." />
           <small class="muted">Gợi ý: <span class="mono">{{ suggestCode }}</span></small>
         </div>
@@ -147,6 +148,7 @@ import { useRouter, RouterLink } from "vue-router";
 import { purchaseOrderService } from "@/services/purchaseOrderService";
 import { tokenService } from "@/services/TokenService";
 import { warehouseService } from "@/services/WarehouseService";
+
 import { productDetailsService } from "@/services/product/productDetailsService";
 import { supplierService } from "@/services/purchaseOrder/supplierService.js";
 
@@ -177,9 +179,9 @@ const qty = ref(1);
 const err = ref("");
 const submitting = ref(false);
 
+
 const creatorName = ref("");
 const userId = ref("");
-
 
 function todayStr() {
   return new Date().toISOString().slice(0, 10);
@@ -320,6 +322,7 @@ async function submit() {
   submitting.value = true;
 
   try {
+
     const res = await purchaseOrderService.create(payload);
     await productDetailsService.createSerialForPO({
       purchaseOrderId: res.id,
@@ -334,6 +337,7 @@ async function submit() {
     submitting.value = false;
   }
 }
+
 
 /* ---------------- INIT ---------------- */
 async function initAuth() {

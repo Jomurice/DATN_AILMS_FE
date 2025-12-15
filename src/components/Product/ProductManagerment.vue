@@ -44,21 +44,6 @@
           <button @click="selectStatus(false)" :class="{ active: isStatus === false }">Khóa</button>
         </div>
 
-        <div class="asideChildren">
-          <h5>Sắp xếp</h5>
-
-          <select v-model="tableSort" class=" form-select form-select-sm w-100">
-            <optgroup label="Theo tên">
-              <option value="name_asc">Tên A → Z</option>
-              <option value="name_desc">Tên Z → A</option>
-            </optgroup>
-            <optgroup label="Theo loại">
-              <option value="cat_asc">Loại A → Z</option>
-              <option value="cat_desc">Loại Z → A</option>
-            </optgroup>
-          </select>
-
-        </div>
       </aside>
       <button v-if="!isAsideOpen" class="btn p-0 open-btn" @click="toggleAside">
         <i class="fas fa-angle-right"></i>
@@ -118,6 +103,12 @@
                   </button>
                 </td>
               </tr>
+              <tr v-if="isLoading" class="text-center py-3">
+                <td colspan="6">
+                  <div class="spinner-border text-primary" role="status"></div>
+                  <div class="small mx-2 fs-5 text-primary mt-2">Đang tải...</div>
+                </td>
+              </tr>
               <tr v-if="!isLoading && products.length === 0">
                 <td colspan="6" class="text-center text-muted py-4">Không có dữ liệu</td>
               </tr>
@@ -154,13 +145,13 @@
 
 
       <div v-if="isDetailProduct" class="d-flex align-items-center justify-content-center modal-overlay">
-        <product-detail :node="product"  @close="isDetailProduct = false"/>
+        <product-detail :node="product" @close="isDetailProduct = false" />
       </div>
 
-      <div v-if="isLoading" class="modal-overlay text-center py-5">
+      <!-- <div v-if="isLoading" class="modal-overlay text-center py-5">
         <div class="spinner-border text-info" role="status"></div>
         <div class="small mx-2 fs-5 text-info mt-2">Đang tải...</div>
-      </div>
+      </div> -->
     </div>
   </div>
 </template>
@@ -236,6 +227,16 @@ function selectNode(node) {
   selectedNodeId.value = node.id;
 }
 
+function selectSort() {
+  if (isSort.value) {
+    isSort.value = false;
+    payload.value.pageable.sort = 'name,desc';
+  } else {
+    isSort.value = true;
+    payload.value.pageable.sort = 'name,asc';
+  }
+}
+
 
 async function loadAll() {
   isLoading.value = true
@@ -256,9 +257,9 @@ async function loadAll() {
 async function getByProductId(id) {
   try {
     product.value = await productService.getById(id);
-    console.log( 'dsad',product.value);
+    console.log('dsad', product.value);
     const p = await productDetailService.getByProductId(product.value.id);
-    if(p) product.value = { ...product.value, ...p };
+    if (p) product.value = { ...product.value, ...p };
     console.log(product.value);
   } catch (error) {
     console.log("error", error);
@@ -453,6 +454,7 @@ onMounted(() => {
 .table {
   table-layout: fixed;
 }
+
 .name {
   cursor: pointer;
 }
