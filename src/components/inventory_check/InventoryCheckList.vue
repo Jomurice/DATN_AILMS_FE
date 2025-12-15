@@ -7,7 +7,7 @@
         <div class="mb-3 d-flex gap-2 flex-wrap">
           <button class="btn btn-sm" :class="chipCls('ALL')" @click="changeFilter('ALL')">Tất cả</button>
           
-          <button class="btn btn-sm" :class="chipCls('DRAFT')" @click="changeFilter('DRAFT')">chưa kiểm</button>
+          <button class="btn btn-sm" :class="chipCls('DRAFT')" @click="changeFilter('DRAFT')">Phiếu mới</button>
           
           <button class="btn btn-sm" :class="chipCls('IN_PROGRESS')" @click="changeFilter('IN_PROGRESS')">Đang kiểm</button>
           
@@ -73,10 +73,15 @@
                 <label class="fw-bold small text-muted">Trạng thái</label>
                 <div><span class="badge" :class="badgeClass(selectedCheck.status)">{{ viStatus(selectedCheck.status) }}</span></div>
               </div>
+              
               <div class="col-md-6">
-                <label class="fw-bold small text-muted">Ngày đến hạn</label>
-                <div>{{ fmtDate(selectedCheck.deadline) }}</div>
+                <label class="fw-bold small text-muted">Ngày kiểm kê (Ấn định)</label>
+                <div class="fw-bold text-primary">
+                    <i class="fa-regular fa-calendar me-1"></i>
+                    {{ fmtDate(selectedCheck.deadline) }}
+                </div>
               </div>
+
               <div class="col-12">
                 <label class="fw-bold small text-muted">Mục đích kiểm kê</label>
                 <div class="p-2 bg-light rounded text-secondary">{{ selectedCheck.note || 'Không có ghi chú' }}</div>
@@ -89,8 +94,8 @@
               </button>
               
               <RouterLink :to="`/inventory-check/${selectedCheck.id}`" class="btn btn-primary">
-                 {{ getActionLabel(selectedCheck.status) }} 
-                 <i class="fa-solid fa-arrow-right ms-1"></i>
+                  {{ getActionLabel(selectedCheck.status) }} 
+                  <i class="fa-solid fa-arrow-right ms-1"></i>
               </RouterLink>
             </div>
           </div>
@@ -124,7 +129,7 @@ const chipCls = (s) => ({ 'btn-outline-secondary': currentFilter.value !== s, 'b
 
 const viStatus = (s) => {
     const map = { 
-        DRAFT: 'phiếu mới',  // Đổi tên hiển thị cho phù hợp
+        DRAFT: 'Mới tạo', 
         IN_PROGRESS: 'Đang kiểm kê', 
         PENDING_RECONCILIATION: 'Chờ xử lý', 
         CLOSED: 'Đã chốt', 
@@ -144,11 +149,11 @@ const badgeClass = (s) => {
     return map[s] || 'bg-secondary';
 };
 
-// CẬP NHẬT LABEL NÚT HÀNH ĐỘNG
+// LABEL HÀNH ĐỘNG
 const getActionLabel = (status) => {
-    if (status === 'DRAFT') return 'Thực hiện kiểm kê'; // Vào thẳng trang kiểm kê
+    if (status === 'DRAFT') return 'Bắt đầu kiểm kê'; 
     if (status === 'IN_PROGRESS') return 'Tiếp tục kiểm kê';
-    if (status === 'PENDING_RECONCILIATION') return 'Xử lý chênh lệch';
+    if (status === 'PENDING_RECONCILIATION') return 'Xem & Chốt';
     return 'Xem chi tiết';
 }
 

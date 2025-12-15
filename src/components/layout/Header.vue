@@ -1,6 +1,7 @@
 <template>
   <header class="app-header d-flex align-items-center justify-content-end px-3">
     <div class="d-flex align-items-center gap-3">
+      <!-- <div> <button @click="gọi hàm đăng xuất"> Đăng xuất</button></div> -->
       <div class="notion position-relative">
         <i class="fa-solid fa-bell fs-5"></i>
         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger p-1"
@@ -8,7 +9,7 @@
       </div>
       <RouterLink to="/profile" class="profile d-inline-flex align-items-center">
         <div class="img">
-          <i class="fa-regular fa-circle-user fs-1"></i>
+          <i class="fa-regular fa-circle-user fs-1"></i> 
         </div>
       </RouterLink>
     </div>
