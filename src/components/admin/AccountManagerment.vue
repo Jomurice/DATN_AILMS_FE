@@ -340,7 +340,7 @@ async function getUserById(id) {
   } catch (error) {
     console.log("error", error);
   }
-}
+};
 
 async function changeStatus(user) {
 
@@ -352,7 +352,7 @@ async function changeStatus(user) {
     await action.fn(user.id);
     load();
   });
-}
+};
 
 
 const debouncedLoad = debounce(load, 300);
