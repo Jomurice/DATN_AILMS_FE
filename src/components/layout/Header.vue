@@ -6,7 +6,7 @@
         <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger p-1"
           style="font-size: 0.7rem;"></span>
       </div>
-      <RouterLink to="/profile" class="d-inline-flex align-items-center">
+      <RouterLink to="/profile" class="profile d-inline-flex align-items-center">
         <div class="img">
           <i class="fa-regular fa-circle-user fs-1"></i>
         </div>

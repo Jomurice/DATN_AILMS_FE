@@ -254,7 +254,7 @@ async function confirmRemove() {
 async function openProductDetail(item) {
   selectedItemDetails.value = item.productDetails || [];
 
-  // Загружаем имена пользователей, которые сканировали
+ 
   for (const pd of selectedItemDetails.value) {
     if (pd.scannedByUserId && !scannedUserNames.value[pd.scannedByUserId]) {
       try {

@@ -15,14 +15,19 @@
         </div>
 
         <div class="list-group small">
-          <button
-            v-for="o in filteredOrders"
-            :key="o.id"
+          <button v-for="o in filteredOrders" :key="o.id"
             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
-            :class="{ active: selectedOrder?.id === o.id }"
-            @click="openOrder(o)"
-          >
+            :class="{ active: selectedOrder?.id === o.id }" @click="openOrder(o)">
             <div>
+              <button
+      class="btn btn-outline-success btn-sm qr-btn me-2"
+      title="Tải QR"
+      @click.stop="download(o.id)"
+    >
+      <i class="fa-solid fa-qrcode"></i>
+      <span class="d-none d-md-inline ms-1">QR</span>
+    </button>
+
               <div class="fw-bold">{{ cut(o.code, 20) }}</div>
               <div class="fw-semibold">{{ cut(o.supplier, 20) }}</div>
               <div class="badge bg-light text-dark mt-1">{{ viStatus(o.status) }}</div>
@@ -36,7 +41,7 @@
           <div v-if="loading" class="text-center py-3">
             <div class="spinner-border text-dark"></div>
           </div>
-        </div>
+</div>
       </aside>
 
       <!-- Main -->
@@ -57,6 +62,7 @@
               </div>
               <RouterLink class="btn btn-outline-primary btn-sm" to="/inbound/new">+ Tạo đơn mua</RouterLink>
               <button class="btn btn-outline-secondary btn-sm" @click="selectedOrder = null">← Quay lại</button>
+
             </div>
           </div>
 
@@ -76,12 +82,14 @@
                 placeholder="Quét nhanh serial… (vd: iphone15prm-0001)"
                 :disabled="!canScan"
               />
-              <button class="btn btn-primary" @click="handleQuickScan">Quét</button>
+              <button class="btn btn-primary" @click="handleQuickScan(serialInput)">Quét</button>
               <button class="btn btn-success" @click="startQrScanner">Quét QR</button>
             </div>
           </div>
 
-          <!-- QR Scanner -->
+          <!-------------------- 
+                QR Scanner 
+          ----------------------->
           <div v-if="qrScannerVisible" class="my-3">
             <div id="qr-reader" style="width: 100%;"></div>
             <button class="btn btn-secondary mt-2" @click="stopQrScanner">Dừng QR</button>
@@ -103,11 +111,14 @@
               <tbody>
                 <tr v-for="it in selectedOrder.items || []" :key="it.id || it.sku">
                   <td class="mono nowrap">{{ it.sku }}</td>
+
                   <td class="nowrap" :title="it.name">{{ cut(it.name, 28) }}</td>
                   <td class="nowrap">{{ cut(it.categoryName, 18) }}</td>
+
                   <td class="nowrap">{{ cut(it.brandName, 18) }}</td>
                   <td class="nowrap">{{ cut(it.color || '—', 16) }}</td>
                   <td class="text-end nowrap mono">
+
                     <span>{{ it.scannedQuantity != null ? it.scannedQuantity : scannedCount(it.sku) }}/{{ it.orderQuantity }}</span>
                     <button class="btn btn-link btn-sm ms-1" title="Xem serial đã quét" @click="openSerialsModal(it.sku, it.productId)">
                       <i class="fa-solid fa-eye"></i>
@@ -122,6 +133,7 @@
           </div>
 
           <div class="px-3 py-3 d-flex justify-content-end">
+
             <button class="btn btn-success" :disabled="!canComplete" @click="completeOrder">Nhập hàng</button>
           </div>
         </div>
@@ -182,7 +194,9 @@
       <div class="card w-50 p-2 notranslate" translate="no">
         <div class="d-flex align-items-center justify-content-between">
           <h5 class="mb-0">Đã quét Serial — SKU: {{ modalSku }}</h5>
+
           <button class="btn btn-sm btn-outline-secondary" @click="modalSku = null">Đóng</button>
+
         </div>
         <div class="table-responsive mt-2">
           <table class="table table-sm" translate="no">
@@ -220,6 +234,7 @@ import { purchaseOrderService } from "@/services/purchaseOrder/purchaseOrderServ
 import { tokenService } from "@/services/TokenService";
 import api from "@/services/axios";
 import { Html5Qrcode } from "html5-qrcode";
+
 
 // ===== Refs =====
 const contactModalVisible = ref(false);
@@ -288,8 +303,10 @@ const canScan = computed(() => {
   return String(selectedOrder.value.status || "").toUpperCase() !== "COMPLETED";
 });
 
+
 // ======== Methods ========
 const setStatus = (s) => status.value = s;
+
 
 async function initOrders() {
   loading.value = true;
@@ -351,7 +368,9 @@ async function openOrder(o) {
   }
 }
 
-async function handleQuickScan(serialInput) {
+
+
+async function handleQuickCameraScan(serialInput) {
   const serial = serialInput || String(quickSerial.value || "").trim();
   if (!serial) return showToast("Chưa nhập serial");
   if (!selectedOrder.value?.items?.length) return showToast("Chưa chọn phiếu");
@@ -378,6 +397,61 @@ async function handleQuickScan(serialInput) {
     else if (code === "SERIAL_NOT_FOUND") showToast("❌ Serial không tồn tại trong hệ thống");
     else if (code === "SKU_MISMATCH") showToast("⚠️ Serial không khớp với SKU trong phiếu");
     else showToast(msg || "Có lỗi xảy ra khi quét");
+  } finally {
+    quickSerial.value = "";
+    quickInputRef.value?.focus();
+  }
+}
+
+async function handleQuickScan() {
+  const serial = String(quickSerial.value || "").trim();
+  if (!serial) return;
+
+  if (!selectedOrder.value?.items?.length) {
+    toast("Chưa chọn phiếu");
+    return;
+  }
+
+  try {
+    const item = selectedOrder.value.items.find((i) =>
+      serial.toLowerCase().includes(i.sku.toLowerCase())
+    );
+
+    if (!item) {
+      toast("Serial không khớp với SKU nào trong phiếu");
+      return;
+    }
+
+    await api.post("/api/product-details/confirm-scan", {
+      serialNumber: serial,
+      warehouseId: selectedOrder.value?.warehouseId, // hoặc lấy từ order hiện tại
+      scannedByUserId: userId.value,
+    });
+
+    showToast("Quét thành công!");
+    item.scannedQuantity = (item.scannedQuantity || 0) + 1;
+    const updated = await purchaseOrderService.getPurchaseOrderById(
+      selectedOrder.value.id,
+      { includeItems: true }
+    );
+
+    selectedOrder.value = normalizeOrder(updated);
+  } catch (err) {
+    console.error("Scan error", err);
+
+    // ✅ xử lý lỗi chi tiết
+    const code = err.response?.data?.code;
+    const msg = err.response?.data?.message;
+
+    if (code === "SERIAL_ALREADY_SCANNED") {
+      toast("⚠️ Serial này đã được scan trước đó");
+    } else if (code === "SERIAL_NOT_FOUND") {
+      toast("❌ Serial không tồn tại trong hệ thống");
+    } else if (code === "SKU_MISMATCH") {
+      toast("⚠️ Serial không khớp với SKU trong phiếu");
+    } else {
+      toast(msg || "Có lỗi xảy ra khi quét");
+    }
   } finally {
     quickSerial.value = "";
     quickInputRef.value?.focus();
@@ -430,7 +504,7 @@ function startQrScanner() {
       qrbox: 250
     },
     (decodedText) => {
-      handleQuickScan(decodedText);
+      handleQuickCameraScan(decodedText);
       stopQrScanner();
     },
     (errorMessage) => {
@@ -457,6 +531,14 @@ function stopQrScanner() {
   }
 }
 
+const download = async (id) => {
+  try {
+    await purchaseOrderService.downloadQrCodes(id);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
 
 onMounted(async () => {
   await initOrders();
@@ -474,10 +556,13 @@ onMounted(async () => {
 .section-card { background: #fff; border: 1px solid #eef2f7; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
 
 .badge-card {
+
   background: #fff; border: 1px solid #eef2f7; border-radius: 10px;
   padding: 8px 14px; text-align: center; display: inline-flex; flex-direction: column; min-width: 140px;
+
 }
 .badge-card .num { font-weight: 700; color: #1f2937; font-size: 18px; }
+
 
 .table-balanced th, .table-balanced td { vertical-align: middle; white-space: nowrap; height: 56px; }
 .nowrap { white-space: nowrap; }

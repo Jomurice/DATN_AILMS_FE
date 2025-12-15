@@ -74,9 +74,8 @@
         </table>
 
         <div v-if="loading" class="text-center py-3">
-          <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Đang tải...</span>
-          </div>
+          <div class="spinner-border text-primary" role="status"> </div>
+          <div class="small mx-2 fs-5 text-primary mt-2">Đang tải...</div>
         </div>
 
         <div v-if="!loading && productDetails.length === 0" class="text-center text-muted">
