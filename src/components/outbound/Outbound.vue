@@ -1,12 +1,19 @@
 <template>
-  <div class="container-fluid px-3 py-4">
+  <div class="container-fluid px-3 py-2">
     <div class="pbox">
       <!-- Aside -->
       <aside class="side">
         <div class="brand"><i class="fa-solid fa-truck-ramp-box me-2"></i>Đơn xuất (Phiếu xuất)</div>
 
+        <div class="d-flex gap-2">
+          <input type="text" class="form-control mb-3" v-model.trim="searchInput" placeholder="Nhập mã phiếu muốn tìm"
+            @keyup.enter="checkSearInput" />
+          <button class="btn btn-primary mb-3" @click="checkSearInput"><i
+              class="fa-solid fa-magnifying-glass"></i></button>
+        </div>
+
         <div class="mb-2 d-flex gap-2 flex-wrap">
-          <button class="btn btn-sm" :class="chipCls('ALL')" @click="status = 'ALL'">Tất cả</button>
+          <button class="btn btn-sm" :class="chipCls('')" @click="status = ''">Tất cả</button>
           <button class="btn btn-sm" :class="chipCls('CONFIRMED')" @click="status = 'CONFIRMED'">Chờ xử lý</button>
           <button class="btn btn-sm" :class="chipCls('EXPORT')" @click="status = 'EXPORT'">Hoàn tất</button>
           <button class="btn btn-sm" :class="chipCls('PENDING_CANCEL')" @click="status = 'PENDING_CANCEL'">Chờ
@@ -15,7 +22,7 @@
         </div>
 
         <div class="list-group small">
-          <button v-for="o in filteredOrders" :key="o.id"
+          <button v-for="o in orders.content" :key="o.id"
             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
             :class="{ active: selectedOrder?.id === o.id }" @click="openOrder(o)">
             <div>
@@ -26,7 +33,43 @@
             <small class="text-muted">{{ fmtDate(o.createAt) }}</small>
           </button>
 
-          <div v-if="!loading && !filteredOrders.length" class="text-muted p-3">Không có phiếu phù hợp</div>
+          <div class="mt-3 gap-2 d-flex justify-content-center flex-wrap">
+            <!-- Prev -->
+            <button class="btn btn-outline-primary btn-sm" :disabled="payloadSearch.page === 0"
+              @click="changePage(payloadSearch.page - 1)">
+              &lt;
+            </button>
+
+            <!-- First -->
+            <button v-if="visiblePages[0] > 1" class="btn btn-outline-primary btn-sm" @click="changePage(0)">
+              1
+            </button>
+
+            <span v-if="visiblePages[0] > 2">...</span>
+
+            <!-- Pages -->
+            <button v-for="page in visiblePages" :key="page" class="btn btn-sm" :class="(page - 1) === payloadSearch.page
+              ? 'btn-primary text-white'
+              : 'btn-outline-primary'" @click="changePage(page - 1)">
+              {{ page }}
+            </button>
+
+            <span v-if="visiblePages.at(-1) < totalPages - 1">...</span>
+
+            <!-- Last -->
+            <button v-if="visiblePages.at(-1) < totalPages" class="btn btn-outline-primary btn-sm"
+              @click="changePage(totalPages - 1)">
+              {{ totalPages }}
+            </button>
+
+            <!-- Next -->
+            <button class="btn btn-outline-primary btn-sm" :disabled="payloadSearch.page >= totalPages - 1"
+              @click="changePage(payloadSearch.page + 1)">
+              &gt;
+            </button>
+          </div>
+
+          <div v-if="!loading && !orders.content.length" class="text-muted p-3">Không có phiếu phù hợp</div>
           <div v-if="loading" class="text-center py-3">
             <div class="spinner-border text-dark"></div>
           </div>
@@ -69,9 +112,17 @@
             <!-- QUÉT NHANH -->
             <div class="flex-grow-1 d-flex align-items-center gap-2">
               <input ref="quickInputRef" v-model.trim="quickSerial" @keyup.enter="handleQuickScan"
-                class="form-control mono" placeholder="Quét nhanh serial… (vd: iphone15prm-0001)" />
+                class="form-control mono" style="width: 740px;"
+                placeholder="Quét nhanh serial… (vd: iphone15prm-0001)" />
               <button class="btn btn-primary" :disabled="!isCancel" @click="handleQuickScan">Quét</button>
+              <button class="btn btn-success" :disabled="!isCancel" @click="startQrScanner">Quét QR</button>
             </div>
+          </div>
+
+          <!-- qr -->
+          <div v-if="qrScannerVisible" class="my-3">
+            <div id="qr-reader" style="width: 100%;"></div>
+            <button class="btn btn-secondary mt-2" @click="stopQrScanner">Dừng QR</button>
           </div>
 
           <!-- Table (gọn, không sort/pager) -->
@@ -110,14 +161,14 @@
           </div>
 
           <div class="px-3 py-3 d-flex justify-content-end">
-            <button v-if="isConfirmCancel" class="btn btn-warning mx-2"  @click="rejectCancel()">Không hủy</button>
-            <button v-if="isConfirmCancel" class="btn btn-danger mx-2"  @click="confirmCancel()">Xác nhận
+            <button v-if="isConfirmCancel" class="btn btn-warning mx-2" @click="rejectCancel()">Không hủy</button>
+            <button v-if="isConfirmCancel" class="btn btn-danger mx-2" @click="confirmCancel()">Xác nhận
               hủy</button>
             <button class="btn btn-success" :disabled="!isAllScanned || submitting" @click="confirmExport()">
               {{ submitting ? 'Đang xuất hàng...' : 'Xuất hàng' }}
             </button>
             <div v-if="toastMsg" class="toast-box">{{ toastMsg }}</div>
-            <button class="btn btn-danger ms-2" :disabled="!isCancel" @click="cancelModalVisible = true">Hủy
+            <button class="btn btn-danger ms-2" :disabled="!isCancel" @click="showCancelModal = true" >Hủy
               đơn</button>
           </div>
         </div>
@@ -167,6 +218,9 @@
     <div v-if="toastMsg" class="toast-box">{{ toastMsg }}</div>
   </div>
 
+
+
+
   <!-- modal cancel outbound -->
   <div v-if="cancelModalVisible" class="modal-overlay">
     <div class="card p-4 w-50 shadow">
@@ -181,18 +235,23 @@
 
       <div class="mb-3">
         <label class="form-label fw-semibold">Lý do hủy đơn</label>
-        <textarea v-model.trim="note" class="form-control" placeholder="Nhập lý do hủy đơn..." rows="4"></textarea>
+        <textarea v-model.trim="note" class="form-control" placeholder="Nhập lý do hủy đơn" rows="4"></textarea>
       </div>
 
       <div class="d-flex justify-content-end">
         <button class="btn btn-danger px-4" @click="cancelOutbound(selectedOrder.id)">
-          <i class="fa-solid fa-trash-can me-2"></i>
-          {{ canceling ? 'Đang hủy...' : 'Hủy đơn' }}
+          Hủy đơn
         </button>
         <div v-if="toastMsg" class="toast-box">{{ toastMsg }}</div>
       </div>
     </div>
   </div>
+
+  <!-- Modal xác confirm -->
+  <ConfirmModal :show="showCancelModal" title="Xác nhận hủy phiếu xuất"
+    message="Hành động này sẽ hoàn trả serial về kho. Bạn có chắc chắn muốn hủy phiếu này không?"
+    confirm-text="Xác nhận hủy" cancel-text="Không" @confirm="cancelModalVisible = true,showCancelModal = false"" @cancel="showCancelModal = false" />
+
 
   <!-- Modal: Liên hệ Admin -->
   <div v-if="contactModalVisible"
@@ -251,8 +310,11 @@ import { ref, computed, onMounted } from "vue";
 import { RouterLink } from "vue-router";
 import { tokenService } from "@/services/TokenService";
 import { outboundOrderService } from "@/services/outbound/outboundOrderService";
-import { fire, EVENTS } from "@/services/eventBus";
 import { customerService } from "../../services/outbound/CustomerService";
+import { Html5Qrcode } from "html5-qrcode";
+import { watch } from "vue";
+import ConfirmModal from "../modal/ConfirmModal.vue";
+
 
 const auth = tokenService();
 const userId = ref("");
@@ -260,30 +322,38 @@ const userId = ref("");
 const clip = (s, n = 20) => s && s.length > n ? (s.slice(0, n) + '...') : (s || '');
 const fmtDate = d => { if (!d) return '—'; try { if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(d)) return d; const t = new Date(d); return isNaN(+t) ? d : t.toISOString().slice(0, 10) } catch { return d } };
 const norm = s => String(s || '').trim();
-const normKey = s => norm(s).toLowerCase();
-const skuFromSerial = s => String(s || '').split('-')[0]?.trim()?.toLowerCase() || '';
-const inflight = new Set();
 const contactModalVisible = ref(false);
 const cancelModalVisible = ref(false);
 const note = ref('');
 const submitting = ref(false);
 const canceling = ref(false);
+const qrScanner = ref(null);
+const qrScannerVisible = ref(false);
 
 // state
-const orders = ref([]); const loading = ref(true); const status = ref('ALL'); const selectedOrder = ref(null);
-const quickSerial = ref(''); const quickInputRef = ref(null);
+const orders = ref([]); const loading = ref(true); const status = ref(''); const selectedOrder = ref(null);
+const quickSerial = ref('');
+const quickInputRef = ref(null);
 const customer = ref([]);
 const modalSerials = ref({});
 const modalSku = ref(null);
 const toastMsg = ref(""); let toastTimer = null;
+const searchInput = ref("");
+const showCancelModal = ref(false);
+const payloadSearch = ref({
+  search: "",
+  status: null,
+  page: 0,
+  size: 5,
+  sort: "code,asc"
+});
 
 // filters
 const chipCls = s => ({ 'btn-outline-secondary': status.value !== s, 'btn-primary text-white': status.value === s });
 const toViStatus = s => {
   const k = String(s || '').toUpperCase();
-  if (k === 'CONFIRMED' || k === 'UPCOMING') return 'Chờ xử lý';
-  if (k === '') return 'Đang thực hiện';
-  if (k === 'EXPORT' || k === 'DONE') return 'Hoàn tất';
+  if (k === 'CONFIRMED') return 'Chờ xử lý';
+  if (k === 'EXPORT') return 'Hoàn tất';
   if (k === 'PENDING_CANCEL') return 'Chờ hủy';
   if (k === 'CANCELLED') return 'Đã hủy';
   return s || '—';
@@ -297,28 +367,18 @@ const isAllScanned = computed(() => {
   return selectedOrder.value.items.every(it => Number(it.scannedQuantity || 0) >= Number(it.orderQuantity || 0));
 });
 
-
 const isCancel = computed(() => {
   const statusUp = String(selectedOrder.value.status || "").toUpperCase();
   if (statusUp === "EXPORT" || statusUp === "PENDING_CANCEL" || statusUp === "CANCELLED") return false;
   return true;
-})
+});
 
 const isConfirmCancel = computed(() => {
   const statusUp = String(selectedOrder.value.status || "").toUpperCase();
   if (statusUp === "PENDING_CANCEL") return true;
   return false;
-})
-
-const filteredOrders = computed(() => {
-  if (status.value === 'ALL') return orders.value;
-  return orders.value.filter(o => {
-    const k = String(o.status || '').toUpperCase();
-    if (status.value === 'PENDING') return k === 'PENDING' || k === 'UPCOMING';
-    if (status.value === 'COMPLETED') return k === 'COMPLETED' || k === 'DONE';
-    return k === status.value;
-  });
 });
+
 
 async function openSerialsModal(sku) {
   modalSku.value = String(sku || '').toLowerCase();
@@ -328,6 +388,37 @@ async function openSerialsModal(sku) {
   } catch {
     showToast('Không tải được serial đã quét');
   }
+};
+
+const totalPages = computed(() =>
+  Math.ceil((orders.value.totalElements || 0) / payloadSearch.value.size)
+);
+
+const visiblePages = computed(() => {
+  const current = payloadSearch.value.page + 1; // 1-based
+  const total = totalPages.value;
+  const delta = 3; // số trang trước & sau
+
+  let start = Math.max(1, current - delta);
+  let end = Math.min(total, current + delta);
+
+  return Array.from({ length: end - start + 1 }, (_, i) => start + i);
+});
+
+
+function normalizeOrder(order) {
+  const items = (order.items || []).map(x => ({
+    id: x.id ?? x.outboundOrderItemId ?? null,
+    productId: x.productId ?? x.product?.id ?? null,
+    sku: x.sku ?? x.product?.sku ?? '',
+    name: x.name ?? x.product?.name ?? '',
+    categoryName: x.categoryName ?? x.product?.categoryName ?? x.product?.category?.name ?? '',
+    brandName: x.brandName ?? x.product?.brandName ?? x.product?.brand?.name ?? '',
+    color: x.color ?? x.product?.color ?? '',
+    orderQuantity: Number(x.orderQuantity ?? x.qty ?? 0),
+    scannedQuantity: Number(x.scannedQuantity ?? 0),
+  }));
+  return { ...order, items };
 }
 
 async function openOrder(o) {
@@ -339,8 +430,11 @@ async function openOrder(o) {
     customer.value = await customerService.getById(full.customerId);
     selectedOrder.value = normalizeOrder(full);
     modalSerials.value = {};
-  } catch { showToast('Không tải được chi tiết phiếu'); }
-}
+  } catch (error) {
+    console.error('Cannot load order details', error);
+    showToast('Không tải được chi tiết phiếu');
+  }
+};
 
 async function cancelOutbound() {
   if (!selectedOrder.value) return;
@@ -366,7 +460,7 @@ async function cancelOutbound() {
   } finally {
     canceling.value = false;
   }
-}
+};
 
 async function confirmCancel() {
   try {
@@ -377,62 +471,68 @@ async function confirmCancel() {
     console.log('Confirm cancel error:', error);
     showToast('Hủy đơn thất bại');
   }
-}
+};
 
 async function rejectCancel() {
   try {
     await outboundOrderService.rejectCancel(selectedOrder.value.id);
     showToast('Đã từ chối hủy đơn');
+    resetForm();
     orders.value = await outboundOrderService.getAll();
+
   } catch (error) {
     console.log('Reject cancel error:', error);
     showToast('Từ chối hủy đơn thất bại');
   }
-}
+};
 
+async function handleQuickScan(serialInput) {
+  console.log('Handling quick scan for serial:', serialInput);
 
-function normalizeOrder(order) {
-  const items = (order.items || []).map(x => ({
-    id: x.id ?? x.outboundOrderItemId ?? null,
-    productId: x.productId ?? x.product?.id ?? null,
-    sku: x.sku ?? x.product?.sku ?? '',
-    name: x.name ?? x.product?.name ?? '',
-    categoryName: x.categoryName ?? x.product?.categoryName ?? x.product?.category?.name ?? '',
-    brandName: x.brandName ?? x.product?.brandName ?? x.product?.brand?.name ?? '',
-    color: x.color ?? x.product?.color ?? '',
-    orderQuantity: Number(x.orderQuantity ?? x.qty ?? 0),
-    scannedQuantity: Number(x.scannedQuantity ?? 0),
-  }));
-  return { ...order, items };
-}
+  if (typeof serialInput === 'string' && serialInput.trim()) {
+    quickSerial.value = serialInput;
+  }
 
-async function handleQuickScan() {
   const serial = norm(quickSerial.value);
   if (!serial) return;
-  if (!selectedOrder.value?.items?.length) { showToast('Chưa chọn phiếu'); return; }
-  console.log('Auth userId:', userId.value);
-  console.log('Auth userId:', selectedOrder.value.id);
 
-  const reqScanned = ref({
+  if (!selectedOrder.value?.items?.length) {
+    showToast('Chưa chọn phiếu');
+    return;
+  }
+
+  const reqScanned = {
     serialNumber: serial,
-    warehouseId: selectedOrder.value?.warehouseId,
+    warehouseId: selectedOrder.value.warehouseId,
     scannedByUserId: userId.value,
-  })
+  };
+
+  console.log('Quick scanning serial request:', reqScanned);
 
   try {
-    console.log('Quick scanning serial:', reqScanned.value, 'for order:', selectedOrder.value.id);
-    modalSerials.value = await outboundOrderService.scanned(selectedOrder.value.id, reqScanned.value);
+    await outboundOrderService.scanned(
+      selectedOrder.value.id,
+      reqScanned
+    );
+
     showToast('Quét thành công');
-    const updatedOrder = await outboundOrderService.getById(selectedOrder.value.id, { includeItems: true });
+
+    // reload order
+    const updatedOrder = await outboundOrderService.getById(
+      selectedOrder.value.id,
+      { includeItems: true }
+    );
     selectedOrder.value = normalizeOrder(updatedOrder);
+
   } catch (error) {
     const msg = error.response?.data?.message;
     console.log('Quick scan error:', msg);
-    if (msg == 'Serial had been scanned') {
+
+    if (msg === 'Serial had been scanned') {
       showToast('Serial này đã được quét trước đó');
-    } else if (msg == 'Serial not found') {
+    } else if (msg === 'Serial not found') {
       showToast('Không tìm thấy serial này trong kho');
-    } else if (msg == 'Serial not in order') {
+    } else if (msg === 'Serial not in order') {
       showToast('Serial không thuộc sản phẩm trong phiếu');
     } else {
       showToast('Quét thất bại');
@@ -441,10 +541,46 @@ async function handleQuickScan() {
     quickSerial.value = '';
     quickInputRef.value?.focus();
   }
+};
 
-  // await scanSerialForItem(serial, item);
-  // quickSerial.value=''; quickInputRef.value?.focus();
-}
+
+function startQrScanner() {
+  if (!selectedOrder.value) return showToast("Chọn phiếu trước khi quét QR");
+  qrScannerVisible.value = true;
+  qrScanner.value = new Html5Qrcode("qr-reader");
+  qrScanner.value.start(
+    { facingMode: "environment" },
+    {
+      fps: 10,
+      qrbox: 250
+    },
+    (decodedText) => {
+      handleQuickScan(decodedText);
+      stopQrScanner();
+    },
+    (errorMessage) => {
+      console.log("error scan: ", errorMessage)
+    }
+  ).catch(err => {
+    console.error("QR Scanner start error", err);
+    showToast("Không thể mở camera để quét QR");
+    qrScannerVisible.value = false;
+  });
+};
+
+function stopQrScanner() {
+  if (qrScanner.value) {
+    qrScanner.value.stop().then(() => {
+      qrScanner.value.clear();
+      qrScannerVisible.value = false;
+    }).catch(err => {
+      console.error("QR Scanner stop error", err);
+      qrScannerVisible.value = false;
+    });
+  } else {
+    qrScannerVisible.value = false;
+  }
+};
 
 
 async function confirmExport() {
@@ -457,23 +593,68 @@ async function confirmExport() {
     showToast('Đã xuất hàng & xác nhận phiếu');
     const updatedOrder = await outboundOrderService.getById(selectedOrder.value.id, { includeItems: true });
     selectedOrder.value = normalizeOrder(updatedOrder);
+    resetForm();
   } catch (error) {
     console.log('Confirm export error:', error);
     showToast('Xuất hàng thất bại');
   }
-}
+};
+
+function checkSearInput() {
+  if (!searchInput.value) {
+    showToast('Vui lòng nhập mã phiếu để tìm kiếm');
+    return false;
+  }
+  handleSearch();
+  return true;
+};
+
+function changePage(newPage) {
+  orders.value.conntent = [];
+  if (newPage < 0 || newPage >= Math.ceil((orders.value.totalElements || 0) / payloadSearch.value.size)) return;
+  payloadSearch.value.page = newPage;
+  handleSearch();
+};
+
+async function handleSearch() {
+  payloadSearch.value.search = searchInput.value.trim() || null
+  payloadSearch.value.status = status.value || null;
+
+  loading.value = true;
+  console.log('Searching orders with payload:', payloadSearch.value);
+  try {
+    orders.value = await outboundOrderService.search(payloadSearch.value);
+  } catch {
+    showToast('Không tìm thấy phiếu xuất phù hợp');
+  } finally {
+    loading.value = false;
+  }
+};
 
 function showToast(msg = '') { toastMsg.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toastMsg.value = '', 1600); }
 
+function resetForm() {
+  note.value = '';
+  selectedOrder.value = null;
+};
 
 async function load() {
+
+  loading.value = true;
+
   try {
-    orders.value = await outboundOrderService.getAll();
+    orders.value = await outboundOrderService.search(payloadSearch.value);
+    console.log('Loaded orders:', orders.value);
   } catch { showToast('Không tải được danh sách phiếu'); }
   finally { loading.value = false; }
-}
+};
+
+watch(status, () => {
+  orders.value = [];
+  handleSearch();
+});
+
 onMounted(async () => {
-  // userId.value = toke
   auth.loadToken();
   userId.value = auth.userId;
   console.log('Authenticated userId:', userId.value);
@@ -496,7 +677,6 @@ onMounted(async () => {
   padding: 14px;
   position: sticky;
   top: 96px;
-  height: calc(100vh - 110px);
   overflow: auto;
 }
 
@@ -507,6 +687,7 @@ onMounted(async () => {
   align-items: center;
   margin-bottom: 10px;
 }
+
 
 .main {
   flex: 1;

@@ -6,11 +6,6 @@ import { fire, EVENTS } from "../eventBus";
 
 export const outboundOrderService = {
 
-  async getAll() {
-    const response = await api.get('api/outbound-orders');
-    return response.data?.result;
-  },
-
   async create(payload) {
     const response = await api.post('api/outbound-orders', payload);
     return response.data?.result;
@@ -18,6 +13,11 @@ export const outboundOrderService = {
 
   async getById(id) {
     const response = await api.get(`/api/outbound-orders/${id}`);
+    return response.data?.result;
+  },
+
+  async getByCode(code) {
+    const response = await api.get(`/api/outbound-orders/code/${code}`);
     return response.data?.result;
   },
 
@@ -57,4 +57,9 @@ export const outboundOrderService = {
     const response = await api.patch(`/api/outbound-orders/${orderId}/reject-cancel`);
     return response.data?.result;
   },
+
+  async search(payload) {
+    const response = await api.get('api/outbound-orders/search', { params: payload });
+    return response.data?.result;
+  }
 };  

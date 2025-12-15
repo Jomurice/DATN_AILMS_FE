@@ -2,7 +2,7 @@
     <div class="w-50 bg-white rounded-4 shadow">
         <div class="bg-primary text-white p-2 rounded-top d-flex justify-content-between align-items-center">
             <h4 class="m-0">Thêm / Sửa thông tin khách hàng</h4>
-            <button class="btn btn-sm btn-light" @click="$emit('cancel')">X</button>
+            <button class="btn btn-sm btn-light" @click="$emit('cancel')">Đóng</button>
         </div>
 
         <!-- Form -->

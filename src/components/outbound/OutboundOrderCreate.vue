@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="head">
-      <h2>Tạo đơn mua</h2>
+      <h2>Tạo đơn xuất</h2>
       <div class="d-flex gap-2">
 
         <div>
@@ -16,45 +16,69 @@
       </div>
     </div>
 
-    <!-- Thông tin đơn -->
-    <div class="card">
-      <div class="grid">
-        <div class="col">
-          <label class="lbl">Mã phiếu</label>
-          <input v-model.trim="responseOrder.code" class="ipt" disabled />
-        </div>
 
-        <div class="col search-customer-wrapper">
-          <label class="lbl">Khách hàng</label>
+    <div class="mb-3">
+      <button class="btn btn-outline-primary d-flex align-items-center gap-2 shadow-sm mb-2"
+        @click="showForm = !showForm">
+        <i class="fas" :class="showForm ? 'fa-angle-up' : 'fa-plus'"></i>
+        {{ showForm ? "Đóng Form" : "Thông tin đơn hàng" }}
+      </button>
+      <!-- Thông tin đơn -->
+      <Transition name="fade">
+        <div class="card" v-if="showForm">
+          <div class="grid">
+            <div class="col ">
+              <label class="lbl">Mã phiếu</label>
+              <nav class="d-flex gap-2 align-items-center">
+                <div class="position-relative" style="width: 670px;">
+                  <input ref="codeInput" v-model.trim="code" class="ipt" style="width: 670px;" :disabled="!!responseOrder?.id"
+                    placeholder="Nhập mã phiếu muốn tìm" />
 
-          <input type="text" v-model="searchCustomer" class="ipt" placeholder="Nhập tên hoặc số điện thoại khách hàng"
-            @input="searchCustomers" @focus="loadCustomer" />
+                  <button v-if="code || responseOrder?.id" class="btn-clear" @click="clearOrder" type="button">
+                    ✕
+                  </button>
+                </div>
 
-          <!-- Dropdown list -->
-          <div v-if="showDropdown" class="dropdown-list">
-            <div v-if="isLoading" class="dropdown-item loading">Đang tìm...</div>
+                <button class="btn btn-sm btn-primary" :disabled="!!responseOrder?.id"  @click="searchOrders">
+                  <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+              </nav>
 
-            <div v-else-if="customers.length === 0" class="dropdown-item no-result">
-              Không tìm thấy khách hàng
             </div>
 
-            <div v-else class="dropdown-item" v-for="cust in customers" :key="cust.id" @click="selectCustomer(cust)">
-              <div class="name">{{ cust.lastName }} {{ cust.firstName }}</div>
+            <div class="col search-customer-wrapper">
+              <label class="lbl">Khách hàng</label>
+
+              <input type="text" v-model="searchCustomer" class="ipt"
+                placeholder="Nhập tên hoặc số điện thoại khách hàng" @input="searchCustomers" @focus="loadCustomer" />
+
+              <!-- Dropdown list -->
+              <div v-if="showDropdown" class="dropdown-list">
+                <div v-if="isLoading" class="dropdown-item loading">Đang tìm...</div>
+
+                <div v-else-if="customers.length === 0" class="dropdown-item no-result">
+                  Không tìm thấy khách hàng
+                </div>
+
+                <div v-else class="dropdown-item" v-for="cust in customers" :key="cust.id"
+                  @click="selectCustomer(cust)">
+                  <div class="name">{{ cust.lastName }} {{ cust.firstName }}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col">
+              <label class="lbl">Ngày tạo</label>
+              <input v-model="responseOrder.createAt" type="date" class="ipt" disabled />
+            </div>
+
+            <div class="col">
+              <label class="lbl">Người tạo</label>
+              <input type="text" v-model="username" class="ipt" disabled />
             </div>
           </div>
         </div>
-
-
-        <div class="col">
-          <label class="lbl">Ngày tạo</label>
-          <input v-model="responseOrder.createAt" type="date" class="ipt" disabled />
-        </div>
-
-        <div class="col">
-          <label class="lbl">Người tạo</label>
-          <input type="text" v-model="username" class="ipt" disabled />
-        </div>
-      </div>
+      </Transition>
     </div>
 
     <!-- Thêm sản phẩm -->
@@ -205,77 +229,80 @@ const stock = ref(0);
 const searchCustomer = ref("");
 const customers = ref([]);
 const showDropdown = ref(false);
+const showForm = ref(false);
 const isLoading = ref(false);
 const selectedCustomer = ref(null);
 const toastMsg = ref("");
 let toastTimer = null;
 const showCustomerForm = ref(false);
+const code = ref("");
+const searchProduct = ref("");
+const codeInput = ref(null);
 
 
-function clip(s, n = 20) {
-  if (!s) return "";
-  return s.length > n ? s.slice(0, n) + "..." : s;
-}
-
+// function clip(s, n = 20) {
+//   if (!s) return "";
+//   return s.length > n ? s.slice(0, n) + "..." : s;
+// }
 
 /* -------- import excel/csv -------- */
-async function onImport(ev) {
-  const file = ev.target.files?.[0];
-  if (!file) return;
-  try {
-    let rows = [];
-    const ext = file.name.split(".").pop()?.toLowerCase();
+// async function onImport(ev) {
+//   const file = ev.target.files?.[0];
+//   if (!file) return;
+//   try {
+//     let rows = [];
+//     const ext = file.name.split(".").pop()?.toLowerCase();
 
-    if (ext === "xlsx" || ext === "xls") {
-      let XLSX = null;
-      try {
-        XLSX = (await import(/* @vite-ignore */ "xlsx")).default;
-      } catch {
-        // nếu chưa cài xlsx → fallback CSV
-      }
-      if (XLSX) {
-        const buf = await file.arrayBuffer();
-        const wb = XLSX.read(buf);
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        rows = XLSX.utils.sheet_to_json(ws); // [{SKU:'abc', QTY:10}, ...]
-      } else {
-        rows = csvToJson(await file.text());
-      }
-    } else {
-      rows = csvToJson(await file.text());
-    }
-    let added = 0;
-    rows.forEach(r => {
-      const sku = String(r.SKU ?? r.sku ?? "").trim();
-      const q = Number(r.QTY ?? r.qty ?? r.quantity ?? 0);
-      if (!sku || !q || q < 1) return;
-      const p = products.value.find(x => String(x.sku || "").toLowerCase() === sku.toLowerCase());
-      if (!p) return;
-      const ex = form.value.items.find(x => x.productId === p.id);
-      if (ex) ex.orderQuantity = Math.min(9999, (ex.orderQuantity || 0) + q);
-      else form.value.items.push({
-        productId: p.id, orderQuantity: Math.min(9999, q),
-        sku: p.sku, name: p.name, categoryName: p.categoryName, brandName: p.brandName, color: p.color,
-      });
-      added++;
-    });
-    alert(`Đã nhập ${added} dòng từ file.`);
-  } catch (e) { console.error(e); alert("Không đọc được file. Kiểm tra cột SKU và QTY."); }
-  finally { ev.target.value = ""; }
-}
+//     if (ext === "xlsx" || ext === "xls") {
+//       let XLSX = null;
+//       try {
+//         XLSX = (await import(/* @vite-ignore */ "xlsx")).default;
+//       } catch {
+//         // nếu chưa cài xlsx → fallback CSV
+//       }
+//       if (XLSX) {
+//         const buf = await file.arrayBuffer();
+//         const wb = XLSX.read(buf);
+//         const ws = wb.Sheets[wb.SheetNames[0]];
+//         rows = XLSX.utils.sheet_to_json(ws); // [{SKU:'abc', QTY:10}, ...]
+//       } else {
+//         rows = csvToJson(await file.text());
+//       }
+//     } else {
+//       rows = csvToJson(await file.text());
+//     }
+//     let added = 0;
+//     rows.forEach(r => {
+//       const sku = String(r.SKU ?? r.sku ?? "").trim();
+//       const q = Number(r.QTY ?? r.qty ?? r.quantity ?? 0);
+//       if (!sku || !q || q < 1) return;
+//       const p = products.value.find(x => String(x.sku || "").toLowerCase() === sku.toLowerCase());
+//       if (!p) return;
+//       const ex = form.value.items.find(x => x.productId === p.id);
+//       if (ex) ex.orderQuantity = Math.min(9999, (ex.orderQuantity || 0) + q);
+//       else form.value.items.push({
+//         productId: p.id, orderQuantity: Math.min(9999, q),
+//         sku: p.sku, name: p.name, categoryName: p.categoryName, brandName: p.brandName, color: p.color,
+//       });
+//       added++;
+//     });
+//     alert(`Đã nhập ${added} dòng từ file.`);
+//   } catch (e) { console.error(e); alert("Không đọc được file. Kiểm tra cột SKU và QTY."); }
+//   finally { ev.target.value = ""; }
+// }
 
-function csvToJson(text) {
-  const items = text.split(/\r?\n/).filter(Boolean);
-  if (items.length < 2) return [];
-  const headers = splitCSVitem(items[0]); const out = [];
-  for (let i = 1; i < items.length; i++) {
-    const parts = splitCSVitem(items[i]); const obj = {};
-    headers.forEach((h, idx) => (obj[h] = parts[idx]));
-    out.push(obj);
-  }
-  return out;
-}
-function splitCSVitem(item) { return item.split(",").map(x => x.replace(/^"|"$/g, "").trim()); }
+// function csvToJson(text) {
+//   const items = text.split(/\r?\n/).filter(Boolean);
+//   if (items.length < 2) return [];
+//   const headers = splitCSVitem(items[0]); const out = [];
+//   for (let i = 1; i < items.length; i++) {
+//     const parts = splitCSVitem(items[i]); const obj = {};
+//     headers.forEach((h, idx) => (obj[h] = parts[idx]));
+//     out.push(obj);
+//   }
+//   return out;
+// }
+// function splitCSVitem(item) { return item.split(",").map(x => x.replace(/^"|"$/g, "").trim()); }
 
 
 async function createOrder() {
@@ -287,7 +314,6 @@ async function createOrder() {
   submitting.value = true;
 
   orders.value.status = "CONFIRMED";
-  console.log("Creating order:", orders.value);
 
   try {
     await outboundOrderService.updateStatus(responseOrder.value.id, orders.value)
@@ -346,6 +372,7 @@ async function handleAddItem() {
 
       // tạo order
       responseOrder.value = await outboundOrderService.create(orders.value);
+      code.value = responseOrder.value.code;
 
       // lưu localStorage
       localStorage.setItem(
@@ -360,6 +387,7 @@ async function handleAddItem() {
       await outboundItemService.addItem(orders.value, responseOrder.value.id);
 
       showToast("Đã thêm sản phẩm vào đơn");
+
       load();
       return;
     }
@@ -408,8 +436,20 @@ async function removeItem(idProduct) {
 function resetForm() {
   form.value = { productId: "", name: "", orderQuantity: 1, note: "" };
   err.value = "";
+  stock.value = 0;
   searchCustomer.value = "";
-}
+};
+
+function clearOrder() {
+  code.value = "";
+  responseOrder.value = {};
+  localStorage.removeItem("currentOrder");
+
+  nextTick(() => {
+    codeInput.value?.focus();
+  });
+};
+
 
 let debounceTimeout = null;
 
@@ -481,8 +521,46 @@ function selectCustomer(customer) {
 //   }
 // });
 
+async function searchOrders() {
+  if (!code.value.trim()) {
+    showToast("Vui lòng nhập mã phiếu để tìm kiếm.");
+    return;
+  };
+
+  isLoading.value = true;
+
+  try {
+    const order = await outboundOrderService.getByCode(code.value.trim());
+    if (order) {
+      responseOrder.value = order;
+      code.value = order.code;
+      console.log("Found order:", responseOrder.value);
+      localStorage.setItem(
+        "currentOrder",
+        JSON.stringify({
+          id: responseOrder.value.id,
+          code: responseOrder.value.code,
+        })
+      );
+      showToast("Đã tải đơn hàng.");
+    } else {
+      showToast("Không tìm thấy đơn hàng.");
+    }
+  } catch (error) {
+    console.error("Error searching order:", error);
+    const msg = error.response?.data?.message;
+    if (msg === 'Order already completed') {
+      showToast("Đơn hàng đã được tạo !");
+    } else
+      showToast("Lỗi khi tìm đơn hàng.");
+  } finally {
+    isLoading.value = false;
+  }
+};
+
 async function load() {
   isLoading.value = true;
+
   try {
     products.value = await productService.getAll();
 
@@ -493,12 +571,11 @@ async function load() {
     if (savedOrder?.id) {
       const fullOrder = await outboundOrderService.getById(savedOrder.id);
       responseOrder.value = fullOrder || [];
-      console.log("Loaded order items:", responseOrder.value);
+      code.value = fullOrder.code;
     }
   } catch (e) {
     console.error("loadProduct failed", e);
     products.value = [];
-    // filteredProducts.value = [];
   }
   finally {
     isLoading.value = false;
@@ -563,6 +640,22 @@ onMounted(() => {
   padding: 10px 14px;
   border-radius: 8px;
   z-index: 20000;
+}
+
+.btn-clear {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  font-size: 16px;
+  color: #888;
+  cursor: pointer;
+}
+
+.btn-clear:hover {
+  color: #dc3545;
 }
 
 
