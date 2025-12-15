@@ -3,9 +3,12 @@
     
     <div class="d-flex justify-content-between align-items-start mb-3">
       <div>
-        <h4 class="fw-bold mb-1">{{ check.code }} <span class="badge bg-secondary">{{ viStatus(check.status) }}</span></h4>
+        <h4 class="fw-bold mb-1">
+            {{ check.code }} 
+            <span class="badge bg-secondary">{{ viStatus(check.status) }}</span>
+        </h4>
         <div class="text-muted small">
-            Kho: {{ check.warehouseName }} | Người kiểm: {{ check.checkedByName }}
+            Kho: {{ check.warehouseName }}
         </div>
       </div>
 
@@ -13,12 +16,24 @@
         <button class="btn btn-light border" @click="$router.push('/inventory-check')">Danh sách</button>
         
         <template v-if="check.status === 'IN_PROGRESS' || check.status === 'DRAFT'">
-            <button class="btn btn-outline-primary" @click="$router.push('/inventory-check')">Lưu tạm</button>
-            <button class="btn btn-success" @click="handleComplete">Hoàn tất</button>
+            <button class="btn btn-success" @click="handleComplete">
+                <i class="fa-solid fa-check me-1"></i> Hoàn tất
+            </button>
         </template>
 
-        <button v-if="check.status === 'PENDING_RECONCILIATION'" class="btn btn-dark" @click="handleClose">Chốt sổ</button>
+        <button 
+            v-if="check.status === 'PENDING_RECONCILIATION'" 
+            class="btn btn-dark" 
+            @click="handleClose"
+        >
+            <i class="fa-solid fa-gavel me-1"></i> Chốt sổ
+        </button>
       </div>
+    </div>
+
+    <div v-if="check.status === 'IN_PROGRESS' || check.status === 'DRAFT'" class="alert alert-warning border-start border-warning border-4 small mb-3 shadow-sm" role="alert">
+        <i class="fa-solid fa-clock me-2"></i>
+        <strong>LƯU Ý QUAN TRỌNG:</strong> Vui lòng hoàn tất kiểm kê và chốt sổ trước khi kho hoạt động trở lại để đảm bảo chính xác.
     </div>
 
     <div class="alert alert-light border d-flex justify-content-between align-items-center mb-3">
@@ -41,7 +56,16 @@
                 autocomplete="off"
             />
             <button class="btn btn-primary" type="button" @click="handleScan" :disabled="processing">Quét</button>
+            <button class="btn btn-success" @click="startQrScanner">Quét QR</button>
         </div>
+        <!-------------------- 
+                QR Scanner 
+          ----------------------->
+          <div v-if="qrScannerVisible" class="my-3">
+            <div id="qr-reader" style="width: 100%;"></div>
+            <button class="btn btn-secondary mt-2" @click="stopQrScanner">Dừng QR</button>
+          </div>
+
         
         <ul v-if="suggestions.length" class="list-group position-absolute shadow mt-1" style="z-index: 1050; width: 50%;">
             <li v-for="s in suggestions" :key="s" class="list-group-item list-group-item-action cursor-pointer" @click="selectSuggestion(s)">{{ s }}</li>
@@ -80,7 +104,12 @@
           <tbody>
             <tr v-for="item in paginatedItems" :key="item.id" :class="getRowClass(item)">
               <td class="text-start fw-bold text-primary">{{ item.productSku || '-' }}</td>
-              <td class="text-start small">{{ item.productName || '' }}</td>
+              
+              <td class="text-start small">
+                  <span v-if="item.productName">{{ item.productName }}</span>
+                  <span v-else class="text-muted fst-italic opacity-75">-- Chưa xác định --</span>
+              </td>
+
               <td class="font-monospace">{{ item.serialNumber }}</td>
               <td class="small text-muted">{{ item.importDate ? new Date(item.importDate).toLocaleDateString('vi-VN') : '-' }}</td>
               <td>{{ item.systemQuantity }}</td>
@@ -136,6 +165,8 @@ import { ref, onMounted, computed, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { inventoryCheckService } from "../../services/inventoryCheckService";
 import { tokenService } from "../../services/TokenService";
+// import { Html5Qrcode } from "html5-qrcode";
+import { Html5Qrcode } from "html5-qrcode";
 
 const route = useRoute(); const router = useRouter(); const auth = tokenService();
 const checkId = route.params.id;
@@ -149,7 +180,12 @@ const tableFilter = ref('ALL');
 
 // Pagination State
 const currentPage = ref(1);
-const pageSize = ref(10); // Số dòng mỗi trang
+const pageSize = ref(10); 
+
+// QR Scanner
+const qrScanner = ref(null);
+const qrScannerVisible = ref(false);
+
 
 // Stats
 const stats = computed(() => {
@@ -159,12 +195,15 @@ const stats = computed(() => {
     return { counted, notCounted, overage };
 });
 
-// Filter & Sort (Logic cốt lõi)
+const toastMsg = ref("");
+let toastTimer = null;
+
+// Filter & Sort
 const filteredItems = computed(() => {
     let list = [...items.value];
     if (tableFilter.value !== 'ALL') list = list.filter(i => i.status === tableFilter.value);
 
-    // Sort: Chưa quét lên đầu, Mới quét lên đầu nhóm đã quét
+    // Sort: Chưa quét lên đầu khi đang kiểm
     if (check.value?.status === 'IN_PROGRESS' || check.value?.status === 'DRAFT') {
         return list.sort((a, b) => {
             const aCnt = a.countedQuantity || 0;
@@ -175,12 +214,12 @@ const filteredItems = computed(() => {
             return 0;
         });
     }
+    // Sort: Theo trạng thái khi đã xong
     return list.sort((a, b) => {
         const p = { SHORTAGE: 1, OVERAGE: 2, MATCHED: 3, UNKNOWN: 4 };
         return (p[a.status] || 99) - (p[b.status] || 99);
     });
 });
-
 
 const totalPages = computed(() => Math.ceil(filteredItems.value.length / pageSize.value) || 1);
 const paginatedItems = computed(() => {
@@ -214,6 +253,51 @@ const getRowClass = (item) => {
     return '';
 }
 
+// ********* QR
+function showToast(msg = "") {
+  toastMsg.value = msg;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (toastMsg.value = ""), 1600);
+}
+function startQrScanner() {
+  console.log('camera')
+
+  // if (!scanQuery.value) return showToast("Chọn phiếu trước khi quét QR");
+  qrScannerVisible.value = true;
+  qrScanner.value = new Html5Qrcode("qr-reader");
+  qrScanner.value.start(
+    { facingMode: "environment" },
+    {
+      fps: 10,
+      qrbox: 250
+    },
+    (decodedText) => {
+      handleScan(decodedText);
+      stopQrScanner(); // hàm tắt camera tự động
+    },
+    (errorMessage) => {
+      console.log("error scan: ",errorMessage)
+    }
+  ).catch(err => {
+    console.error("QR Scanner start error", err);
+    showToast("Không thể mở camera để quét QR");
+    qrScannerVisible.value = false;
+  });
+}
+function stopQrScanner() {
+  if (qrScanner.value) {
+    qrScanner.value.stop().then(() => {
+      qrScanner.value.clear();
+      qrScannerVisible.value = false;
+    }).catch(err => {
+      console.error("QR Scanner stop error", err);
+      qrScannerVisible.value = false;
+    });
+  } else {
+    qrScannerVisible.value = false;
+  }
+}
+
 async function loadData() {
   try {
     check.value = await inventoryCheckService.getById(checkId);
@@ -221,8 +305,11 @@ async function loadData() {
   } catch (e) { router.push('/inventory-check'); }
 }
 
-// ✅ HÀM SCAN (ĐÃ SỬA ĐỂ BẮT LỖI TRÙNG CHÍNH XÁC)
-async function handleScan() {
+async function handleScan(serialCamera) {
+  if (typeof serialCamera === 'string' && serialCamera.trim()) {
+    scanQuery.value = serialCamera;
+  }
+  
     const sn = scanQuery.value.trim(); 
     if (!sn) return;
     
@@ -243,14 +330,12 @@ async function handleScan() {
         if (idx !== -1) items.value[idx] = res; else items.value.push(res);
         items.value = [...items.value];
         
-        // Reset về trang 1 để thấy dòng mới nhất
         currentPage.value = 1;
         
         nextTick(() => scanInput.value?.focus());
 
     } catch (e) {
         scanError.value = true;
-        // Lấy toàn bộ object lỗi hoặc message
         const errData = e.response?.data;
         let msg = "";
 
@@ -277,8 +362,21 @@ function handleSuggest() {
 }
 function selectSuggestion(s) { scanQuery.value = s; suggestions.value = []; handleScan(); }
 
-async function handleComplete() { if(confirm("Hoàn tất?")) { await inventoryCheckService.completeCheck(checkId); await loadData(); } }
-async function handleClose() { if(confirm("Chốt sổ?")) { await inventoryCheckService.closeCheck(checkId); await loadData(); } }
+async function handleComplete() { if(confirm("Xác nhận hoàn tất phiên đếm?")) { await inventoryCheckService.completeCheck(checkId); await loadData(); } }
+
+async function handleClose() { 
+    // Thông báo chuẩn nghiệp vụ "Chỉ báo cáo - Không tự động sửa"
+    const msg = "Xác nhận CHỐT SỔ?\n\n- Hệ thống sẽ ghi nhận kết quả kiểm kê.\n- Số liệu chênh lệch (Thừa/Thiếu) sẽ được lưu lại để bộ phận kế toán xử lý sau.\n\nBạn có chắc chắn muốn đóng phiếu không?";
+    if(confirm(msg)) { 
+        try {
+            await inventoryCheckService.closeCheck(checkId, auth.userId); 
+            alert("Đã đóng phiếu kiểm kê thành công!");
+            await loadData();
+        } catch(e) {
+            alert("Lỗi: " + (e.response?.data?.message || e.message));
+        }
+    } 
+}
 
 onMounted(() => { auth.loadToken(); loadData(); });
 </script>
@@ -287,7 +385,6 @@ onMounted(() => { auth.loadToken(); loadData(); });
 .cursor-pointer { cursor: pointer; }
 .table th { font-weight: 600; font-size: 0.9rem; vertical-align: middle; }
 .table td { vertical-align: middle; font-size: 0.95rem; }
-/* Style pagination */
 .page-link { cursor: pointer; color: #333; }
 .page-item.disabled .page-link { background: #f8f9fa; color: #6c757d; }
 .page-item:not(.disabled) .page-link:hover { background: #e9ecef; }

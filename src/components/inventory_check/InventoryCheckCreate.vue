@@ -1,5 +1,6 @@
 <template>
   <div class="container py-4" style="max-width: 1000px;">
+    
     <div class="d-flex justify-content-between align-items-center mb-4">
       <h4 class="fw-bold mb-0">Tạo phiếu kiểm kê</h4>
       <button class="btn btn-outline-secondary" @click="$router.push('/inventory-check')">
@@ -15,15 +16,15 @@
     <div class="card border-0 shadow-sm mb-4">
       <div class="card-body p-4">
         <form @submit.prevent="submit" class="row g-3">
+          
           <div class="col-md-6">
             <div class="mb-3">
-              <label class="form-label fw-bold">Mã phiếu</label>
+              <label class="form-label fw-bold">Mã phiếu (Tự động)</label>
               <div class="input-group">
                 <span class="input-group-text bg-light"><i class="fa-solid fa-barcode"></i></span>
                 <input type="text" class="form-control bg-light fw-bold text-primary" 
                        :value="draftCode" disabled />
               </div>
-              <div class="form-text text-muted small"></div>
             </div>
 
             <div class="mb-3">
@@ -40,8 +41,23 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-bold">Ngày đến hạn<span class="text-danger">*</span></label>
-              <input v-model="form.deadline" type="datetime-local" class="form-control" required />
+              <label class="form-label fw-bold">Ngày kiểm kê (Ấn định) <span class="text-danger">*</span></label>
+              <div class="input-group">
+                 <span class="input-group-text"><i class="fa-regular fa-calendar-days"></i></span>
+                 <input 
+                    v-model="form.inventoryDate" 
+                    type="date" 
+                    class="form-control fw-bold" 
+                    required 
+                    :min="minDate"
+                 />
+              </div>
+              
+              <div class="alert alert-warning border-0 bg-warning-subtle text-warning-emphasis small mt-2 mb-0 p-2">
+                  <i class="fa-solid fa-clock me-1"></i> 
+                  <strong>Lưu ý quan trọng:</strong> 
+                  Việc kiểm kê bắt buộc phải thực hiện và hoàn tất trong ngày đã chọn. Vui lòng thực hiện khi <strong>ĐÓNG CỬA (Ngừng nhập/xuất)</strong> để đảm bảo số liệu chính xác.
+              </div>
             </div>
           </div>
 
@@ -59,7 +75,7 @@
             <div class="mb-3">
               <label class="form-label fw-bold">Mục đích kiểm kê</label>
               <textarea v-model="form.note" class="form-control" rows="5" 
-                        placeholder="Nhập mục đích cho đợt kiểm kê này..."></textarea>
+                        placeholder="Ví dụ: Kiểm kê định kỳ cuối tháng, Kiểm kê đột xuất..."></textarea>
             </div>
           </div>
 
@@ -172,10 +188,11 @@ const loadingPreview = ref(false);
 const submitting = ref(false);
 const error = ref("");
 const currentCheckCount = ref(0); 
+const minDate = ref(""); // Biến lưu ngày tối thiểu (hôm nay)
 
-// ✅ State Phân trang
+// Phân trang
 const currentPage = ref(1);
-const pageSize = ref(10); // Số dòng mỗi trang (tùy chỉnh)
+const pageSize = ref(10); 
 
 // Current User Info
 const currentUser = ref({ 
@@ -189,7 +206,7 @@ const form = ref({
   warehouseId: "",
   createdBy: auth.userId,
   checkedBy: auth.userId,
-  deadline: "",
+  inventoryDate: "", 
   note: ""
 });
 
@@ -203,7 +220,7 @@ const draftCode = computed(() => {
     return `INVCHK-${yyyy}${mm}${dd}-${nextNum}`;
 });
 
-// ✅ Computed: Phân trang Client-side
+// Computed: Phân trang Client-side
 const totalPages = computed(() => Math.ceil(previewItems.value.length / pageSize.value) || 1);
 
 const paginatedPreviewItems = computed(() => {
@@ -215,6 +232,18 @@ const paginatedPreviewItems = computed(() => {
 // 1. Load Data
 async function loadData() {
   try {
+    // ✅ XỬ LÝ NGÀY GIỜ: Lấy ngày hôm nay theo giờ địa phương (Local Time)
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    const todayStr = `${year}-${month}-${day}`;
+
+    // Set ngày tối thiểu là hôm nay
+    minDate.value = todayStr;
+    // Set mặc định form cũng là hôm nay
+    form.value.inventoryDate = todayStr;
+
     warehouses.value = await warehouseService.getAllWarehouses() || [];
     const allChecks = await inventoryCheckService.getAll("ALL", 0, 1);
     if(allChecks && allChecks.totalElements) {
@@ -232,7 +261,7 @@ async function onWarehouseChange() {
     
     loadingPreview.value = true;
     previewItems.value = [];
-    currentPage.value = 1; // Reset về trang 1 khi đổi kho
+    currentPage.value = 1; 
     error.value = ""; 
 
     try {
@@ -250,7 +279,7 @@ async function onWarehouseChange() {
 
 // 3. Submit Form
 async function submit() {
-  if (!form.value.warehouseId || !form.value.deadline) {
+  if (!form.value.warehouseId || !form.value.inventoryDate) {
     error.value = "Vui lòng điền đầy đủ các trường bắt buộc (*)";
     return;
   }
@@ -259,9 +288,17 @@ async function submit() {
   error.value = "";
   
   try {
+    // Xử lý logic Deadline:
+    // Vì kiểm kê phải xong trong ngày, nên deadline thực tế gửi xuống Backend sẽ là 23:59:59 của ngày đó.
+    const selectedDate = new Date(form.value.inventoryDate);
+    selectedDate.setHours(23, 59, 59, 999);
+
     const payload = {
-      ...form.value,
-      deadline: new Date(form.value.deadline).toISOString()
+      warehouseId: form.value.warehouseId,
+      createdBy: form.value.createdBy,
+      checkedBy: form.value.checkedBy,
+      note: form.value.note,
+      deadline: selectedDate.toISOString() // Gửi lên BE dưới dạng ISO String cuối ngày
     };
 
     await inventoryCheckService.create(payload);
@@ -277,10 +314,9 @@ async function submit() {
 
 onMounted(loadData);
 </script>
-<!-- skdffw -->
+
 <style scoped>
 .card { border-radius: 12px; }
-/* Pagination Style */
 .page-link { cursor: pointer; color: #333; }
 .page-item.disabled .page-link { background: #f8f9fa; color: #6c757d; }
 .page-item:not(.disabled) .page-link:hover { background: #e9ecef; }
