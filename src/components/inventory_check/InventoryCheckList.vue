@@ -75,7 +75,7 @@
               </div>
               
               <div class="col-md-6">
-                <label class="fw-bold small text-muted">Ngày kiểm kê (Ấn định)</label>
+                <label class="fw-bold small text-muted">Ngày thực hiện</label>
                 <div class="fw-bold text-primary">
                     <i class="fa-regular fa-calendar me-1"></i>
                     {{ fmtDate(selectedCheck.deadline) }}
@@ -89,7 +89,7 @@
             </div>
 
             <div class="d-flex justify-content-end gap-2 mt-4">
-              <button v-if="selectedCheck.status !== 'CLOSED'" class="btn btn-danger" @click="deleteCheck">
+              <button v-if="selectedCheck.status === 'DRAFT'" class="btn btn-danger" @click="deleteCheck">
                   <i class="fa-solid fa-trash me-1"></i> Xóa
               </button>
               
@@ -195,7 +195,7 @@ async function deleteCheck() {
     await inventoryCheckService.delete(selectedCheck.value.id);
     selectedCheck.value = null;
     load();
-  } catch (e) { alert("Xóa thất bại"); }
+  } catch (e) { alert("Xóa thất bại: " + (e.response?.data?.message || "Có lỗi xảy ra")); }
 }
 
 onMounted(load);

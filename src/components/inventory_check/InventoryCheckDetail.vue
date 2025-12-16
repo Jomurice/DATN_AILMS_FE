@@ -1,6 +1,21 @@
 <template>
   <div class="container-fluid px-4 py-4" v-if="check">
     
+    <div v-if="toastMsg" class="position-fixed top-0 end-0 p-3" style="z-index: 9999">
+        <div class="toast show align-items-center shadow border-0" 
+             :class="toastIsError ? 'bg-white text-danger border border-danger' : 'bg-success text-white'"
+             role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body fw-bold">
+                    <i :class="toastIsError ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-check-circle'" class="me-2"></i>
+                    {{ toastMsg }}
+                </div>
+                <button type="button" class="btn-close me-2 m-auto" 
+                        :class="!toastIsError ? 'btn-close-white' : ''" 
+                        @click="toastMsg=''"></button>
+            </div>
+        </div>
+    </div>
     <div class="d-flex justify-content-between align-items-start mb-3">
       <div>
         <h4 class="fw-bold mb-1">
@@ -58,15 +73,12 @@
             <button class="btn btn-primary" type="button" @click="handleScan" :disabled="processing">Quét</button>
             <button class="btn btn-success" @click="startQrScanner">Quét QR</button>
         </div>
-        <!-------------------- 
-                QR Scanner 
-          ----------------------->
-          <div v-if="qrScannerVisible" class="my-3">
-            <div id="qr-reader" style="width: 100%;"></div>
-            <button class="btn btn-secondary mt-2" @click="stopQrScanner">Dừng QR</button>
-          </div>
-
         
+        <div v-if="qrScannerVisible" class="my-3">
+           <div id="qr-reader" style="width: 100%;"></div>
+           <button class="btn btn-secondary mt-2" @click="stopQrScanner">Dừng QR</button>
+        </div>
+
         <ul v-if="suggestions.length" class="list-group position-absolute shadow mt-1" style="z-index: 1050; width: 50%;">
             <li v-for="s in suggestions" :key="s" class="list-group-item list-group-item-action cursor-pointer" @click="selectSuggestion(s)">{{ s }}</li>
         </ul>
@@ -82,8 +94,8 @@
           
           <div class="btn-group btn-group-sm" v-if="check.status !== 'DRAFT' && check.status !== 'IN_PROGRESS'">
              <button class="btn btn-outline-secondary" @click="tableFilter='ALL'; currentPage=1" :class="{active: tableFilter==='ALL'}">Tất cả</button>
+             <button class="btn btn-outline-success" @click="tableFilter='MATCHED'; currentPage=1" :class="{active: tableFilter==='MATCHED'}">Khớp</button>
              <button class="btn btn-outline-danger" @click="tableFilter='SHORTAGE'; currentPage=1" :class="{active: tableFilter==='SHORTAGE'}">Thiếu</button>
-             <button class="btn btn-outline-warning text-dark" @click="tableFilter='OVERAGE'; currentPage=1" :class="{active: tableFilter==='OVERAGE'}">Thừa</button>
           </div>
       </div>
       
@@ -165,7 +177,6 @@ import { ref, onMounted, computed, nextTick } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { inventoryCheckService } from "../../services/inventoryCheckService";
 import { tokenService } from "../../services/TokenService";
-// import { Html5Qrcode } from "html5-qrcode";
 import { Html5Qrcode } from "html5-qrcode";
 
 const route = useRoute(); const router = useRouter(); const auth = tokenService();
@@ -186,7 +197,6 @@ const pageSize = ref(10);
 const qrScanner = ref(null);
 const qrScannerVisible = ref(false);
 
-
 // Stats
 const stats = computed(() => {
     const counted = items.value.filter(i => i.countedQuantity > 0).length;
@@ -196,6 +206,7 @@ const stats = computed(() => {
 });
 
 const toastMsg = ref("");
+const toastIsError = ref(false); // Thêm state để biết là lỗi hay thành công
 let toastTimer = null;
 
 // Filter & Sort
@@ -253,34 +264,30 @@ const getRowClass = (item) => {
     return '';
 }
 
-// ********* QR
-function showToast(msg = "") {
+// ********* QR & TOAST
+// 🔥 2. SỬA HÀM showToast ĐỂ HỖ TRỢ HIỂN THỊ LỖI
+function showToast(msg = "", isError = false) {
   toastMsg.value = msg;
+  toastIsError.value = isError;
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (toastMsg.value = ""), 1600);
+  toastTimer = setTimeout(() => (toastMsg.value = ""), 3000); // Tăng lên 3s để kịp đọc
 }
+
 function startQrScanner() {
   console.log('camera')
-
-  // if (!scanQuery.value) return showToast("Chọn phiếu trước khi quét QR");
   qrScannerVisible.value = true;
   qrScanner.value = new Html5Qrcode("qr-reader");
   qrScanner.value.start(
     { facingMode: "environment" },
-    {
-      fps: 10,
-      qrbox: 250
-    },
+    { fps: 10, qrbox: 250 },
     (decodedText) => {
       handleScan(decodedText);
-      stopQrScanner(); // hàm tắt camera tự động
+      stopQrScanner(); 
     },
-    (errorMessage) => {
-      console.log("error scan: ",errorMessage)
-    }
+    (errorMessage) => { console.log("error scan: ",errorMessage) }
   ).catch(err => {
     console.error("QR Scanner start error", err);
-    showToast("Không thể mở camera để quét QR");
+    showToast("Không thể mở camera để quét QR", true);
     qrScannerVisible.value = false;
   });
 }
@@ -290,7 +297,6 @@ function stopQrScanner() {
       qrScanner.value.clear();
       qrScannerVisible.value = false;
     }).catch(err => {
-      console.error("QR Scanner stop error", err);
       qrScannerVisible.value = false;
     });
   } else {
@@ -322,6 +328,7 @@ async function handleScan(serialCamera) {
         if(check.value.status === 'DRAFT') check.value.status = 'IN_PROGRESS';
 
         scanMessage.value = `OK: ${res.serialNumber}`; 
+        // showToast(`Đã quét: ${res.serialNumber}`); // Có thể bật nếu muốn thông báo cả khi thành công
         scanError.value = false;
         scanQuery.value = ""; 
         suggestions.value = []; 
@@ -331,23 +338,26 @@ async function handleScan(serialCamera) {
         items.value = [...items.value];
         
         currentPage.value = 1;
-        
         nextTick(() => scanInput.value?.focus());
 
     } catch (e) {
         scanError.value = true;
         const errData = e.response?.data;
         let msg = "";
+        let backendMsg = errData?.message || e.message || "Quét thất bại";
 
-        if (
-            (errData && errData.message && errData.message.includes("SERIAL_ALREADY_SCANNED")) || 
-            (e.message && e.message.includes("SERIAL_ALREADY_SCANNED"))
-        ) {
+        // 🔥 3. GỌI showToast ĐỂ HIỆN LỖI LÊN GÓC TRÊN CÙNG
+        if (backendMsg.includes("SERIAL_ALREADY_SCANNED")) {
             msg = "Serial này đã được quét rồi!";
+            showToast(msg, true);
+        } else if (backendMsg.includes("không có trong sổ sách") || backendMsg.includes("hàng thừa")) {
+            msg = "Lỗi: Serial này không có trong sổ sách tồn kho của kho này";
+            showToast(msg, true);
         } else {
-            msg = "Lỗi: " + (errData?.message || e.message || "Quét thất bại");
+            msg = "Lỗi: " + backendMsg;
+            showToast(msg, true);
         }
-        scanMessage.value = msg;
+        scanMessage.value = msg; // Vẫn giữ hiển thị ở dưới ô input
     } finally {
         processing.value = false;
         nextTick(() => scanInput.value?.focus());
@@ -365,8 +375,7 @@ function selectSuggestion(s) { scanQuery.value = s; suggestions.value = []; hand
 async function handleComplete() { if(confirm("Xác nhận hoàn tất phiên đếm?")) { await inventoryCheckService.completeCheck(checkId); await loadData(); } }
 
 async function handleClose() { 
-    // Thông báo chuẩn nghiệp vụ "Chỉ báo cáo - Không tự động sửa"
-    const msg = "Xác nhận CHỐT SỔ?\n\n- Hệ thống sẽ ghi nhận kết quả kiểm kê.\n- Số liệu chênh lệch (Thừa/Thiếu) sẽ được lưu lại để bộ phận kế toán xử lý sau.\n\nBạn có chắc chắn muốn đóng phiếu không?";
+    const msg = "Xác nhận CHỐT SỔ?\n\n- Hệ thống sẽ ghi nhận kết quả kiểm kê.\n- Số liệu chênh lệch (Khớp/Thiếu) sẽ được lưu lại để bộ phận kế toán xử lý sau.\n\nBạn có chắc chắn muốn đóng phiếu không?";
     if(confirm(msg)) { 
         try {
             await inventoryCheckService.closeCheck(checkId, auth.userId); 
