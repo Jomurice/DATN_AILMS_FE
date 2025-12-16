@@ -41,22 +41,21 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label fw-bold">Ngày kiểm kê (Ấn định) <span class="text-danger">*</span></label>
+              <label class="form-label fw-bold">Ngày kiểm kê (Hôm nay) <span class="text-danger">*</span></label>
               <div class="input-group">
-                 <span class="input-group-text"><i class="fa-regular fa-calendar-days"></i></span>
+                 <span class="input-group-text bg-light"><i class="fa-regular fa-calendar-days"></i></span>
                  <input 
                     v-model="form.inventoryDate" 
                     type="date" 
-                    class="form-control fw-bold" 
+                    class="form-control fw-bold bg-light" 
                     required 
-                    :min="minDate"
+                    disabled 
                  />
               </div>
               
-              <div class="alert alert-warning border-0 bg-warning-subtle text-warning-emphasis small mt-2 mb-0 p-2">
+              <div class="alert alert-info border-0 bg-info-subtle text-info-emphasis small mt-2 mb-0 p-2">
                   <i class="fa-solid fa-clock me-1"></i> 
-                  <strong>Lưu ý quan trọng:</strong> 
-                  Việc kiểm kê bắt buộc phải thực hiện và hoàn tất trong ngày đã chọn. Vui lòng thực hiện khi <strong>ĐÓNG CỬA (Ngừng nhập/xuất)</strong> để đảm bảo số liệu chính xác.
+                  <strong>Lưu ý:</strong> Phiếu kiểm kê chỉ có hiệu lực và phải được thực hiện trong <strong>Ngày hôm nay</strong> theo quy định chốt sổ.
               </div>
             </div>
           </div>
@@ -188,7 +187,7 @@ const loadingPreview = ref(false);
 const submitting = ref(false);
 const error = ref("");
 const currentCheckCount = ref(0); 
-const minDate = ref(""); // Biến lưu ngày tối thiểu (hôm nay)
+const minDate = ref(""); 
 
 // Phân trang
 const currentPage = ref(1);
@@ -232,16 +231,14 @@ const paginatedPreviewItems = computed(() => {
 // 1. Load Data
 async function loadData() {
   try {
-    // ✅ XỬ LÝ NGÀY GIỜ: Lấy ngày hôm nay theo giờ địa phương (Local Time)
+    // ✅ AUTO SET NGÀY HÔM NAY (Vì chỉ cho phép tạo phiếu hôm nay)
     const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
     const todayStr = `${year}-${month}-${day}`;
 
-    // Set ngày tối thiểu là hôm nay
-    minDate.value = todayStr;
-    // Set mặc định form cũng là hôm nay
+    // Gán cứng vào form (UI đã disable không cho sửa)
     form.value.inventoryDate = todayStr;
 
     warehouses.value = await warehouseService.getAllWarehouses() || [];
@@ -279,8 +276,8 @@ async function onWarehouseChange() {
 
 // 3. Submit Form
 async function submit() {
-  if (!form.value.warehouseId || !form.value.inventoryDate) {
-    error.value = "Vui lòng điền đầy đủ các trường bắt buộc (*)";
+  if (!form.value.warehouseId) {
+    error.value = "Vui lòng chọn kho cần kiểm kê.";
     return;
   }
 
@@ -288,17 +285,16 @@ async function submit() {
   error.value = "";
   
   try {
-    // Xử lý logic Deadline:
-    // Vì kiểm kê phải xong trong ngày, nên deadline thực tế gửi xuống Backend sẽ là 23:59:59 của ngày đó.
-    const selectedDate = new Date(form.value.inventoryDate);
-    selectedDate.setHours(23, 59, 59, 999);
-
+    // Luôn lấy ngày hôm nay làm chuẩn
+    const now = new Date();
+    
+    // Gửi payload
     const payload = {
       warehouseId: form.value.warehouseId,
       createdBy: form.value.createdBy,
       checkedBy: form.value.checkedBy,
       note: form.value.note,
-      deadline: selectedDate.toISOString() // Gửi lên BE dưới dạng ISO String cuối ngày
+      deadline: now.toISOString() // BE sẽ override lại lần nữa cho chắc
     };
 
     await inventoryCheckService.create(payload);
