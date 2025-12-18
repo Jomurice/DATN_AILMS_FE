@@ -33,7 +33,8 @@ import SuppliersFrom from "../components/inbound/SuppliersForm.vue";
 import InventoryCheckList from "../components/inventory_check/InventoryCheckList.vue";
 import InventoryCheckCreate from "../components/inventory_check/InventoryCheckCreate.vue";
 import InventoryCheckDetail from "../components/inventory_check/InventoryCheckDetail.vue";
-import InventoryReport from "../components/report/Report.vue";
+
+import InventoryReport from "../components/report/InventoryReport.vue";
 
 import WarehouseCreateForm from "../components/NewWarehouse/WarehouseCreateForm.vue";
 import PurchacseOrderManagement from "../components/PO/PurchacseOrderManagement.vue";
@@ -215,10 +216,14 @@ const routes = [
         component: CustomerList,
         props: true,
       },
-      { path: ":pathMatch(.*)*", redirect: "/product" },
-
-
-
+      { 
+        path: ":pathMatch(.*)*", 
+        redirect: "/product" 
+      },
+      {
+        path:"dashboard",
+        component: Dashboard,
+      }
     ],
   },
 
@@ -249,6 +254,27 @@ const routes = [
       },
     ],
   },
+  
 ];
+const router = createRouter({
+  history: createWebHistory(),
+  routes,
+});
 
-export default createRouter({ history: createWebHistory(), routes });
+router.beforeEach((to, from, next) => {
+  const token = localStorage.getItem("accessToken");
+  if (to.path !== "/login" && !token) {
+    next("/login");
+    return;
+  }
+
+  if (to.path === "/login" && token) {
+    next("/dashboard");
+    return;
+  }
+
+  next();
+});
+
+ export default router;
+// export default createRouter({ history: createWebHistory(), routes });
