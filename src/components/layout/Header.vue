@@ -38,13 +38,18 @@ const router = useRouter();
 const showConfirm = ref(false);
 
 function confirmLogout() {
-  api.post("/auth/logout")
-    .finally(() => {
-      localStorage.removeItem("accessToken");
-      showConfirm.value = false;
-      router.replace("/login");
-    });
+  const token = localStorage.getItem("accessToken");
+
+  api.post("/auth/logout", {
+    token: token
+  }).finally(() => {
+    localStorage.removeItem("accessToken");
+    showConfirm.value = false;
+    router.replace("/login");
+  });
 }
+
+
 </script>
 <style scoped>
 /* ===== HEADER ===== */

@@ -256,6 +256,9 @@ const routes = [
   },
   
 ];
+//========================== 
+// Chặn trình duyệt quay lại khi đã đăng xuất
+// =========================
 const router = createRouter({
   history: createWebHistory(),
   routes,
