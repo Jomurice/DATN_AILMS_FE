@@ -118,7 +118,7 @@ const isModal = ref(false);
 const isLoading = ref(false);
 const categories = ref([]);
 const brands = ref([]);
-const form = ref({ sku: '', name: '', brandId: null, specifications: '', color: '', storage: '', categoryId: null })
+const form = ref({ sku: '', name: '',serialPrefix:'', brandId: null, specifications: '', color: '', storage: '', categoryId: null })
 const submitting = ref(false)
 const error = ref('')
 const touched = ref({ brand: false, name: false, brandId: false, color: false, categoryId: false })
@@ -169,6 +169,7 @@ async function submitForm() {
   // if (brandError.value || colorError.value || nameError.value || categoryError.value) return
   // submitting.value = true; error.value = ''
   submitting.value = true;
+  form.value.serialPrefix = form.value.sku;
   console.log(form.value);
   try {
     if (isEdit.value) await productService.update(productId, { ...form.value })
@@ -182,7 +183,7 @@ async function submitForm() {
   } finally {
     submitting.value = false
   }
-  console.log(form.value);
+
 }
 
 

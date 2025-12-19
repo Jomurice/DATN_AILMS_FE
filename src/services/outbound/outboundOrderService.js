@@ -21,9 +21,9 @@ export const outboundOrderService = {
     return response.data?.result;
   },
 
-  async getSerials(orderId, sku) {
+  async getSerials(orderId, payload) {
     const response = await api.get(`/api/outbound-orders/${orderId}/serials`, {
-      params: { sku }
+      params: payload
     });
     return response.data?.result;
   },
