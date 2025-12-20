@@ -176,10 +176,7 @@ onMounted(() => {
       <!-- HEADER -->
       <div class="d-flex align-items-center bg-white border-bottom p-2 justify-content-between">
         <div class="input-group input-group-sm" style="max-width: 250px;">
-          <input type="text" class="form-control" placeholder="Tìm kiếm..." />
-          <span class="input-group-text">
-            <i class="fa-solid fa-magnifying-glass"></i>
-          </span>
+      
         </div>
 
         <button
