@@ -31,6 +31,7 @@
             <div class="dropdown" v-show="open === 'hanghoa'">
               <RouterLink to="/product">Hàng hóa</RouterLink>
               <RouterLink to="/category">Loại hàng</RouterLink>
+              <RouterLink class="tab" to="/brand">Thương hiệu</RouterLink>
             </div>
           </div>
 

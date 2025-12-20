@@ -41,6 +41,8 @@ import InventoryReport from "../components/report/InventoryReport.vue";
 import WarehouseCreateForm from "../components/NewWarehouse/WarehouseCreateForm.vue";
 import PurchacseOrderManagement from "../components/PO/PurchacseOrderManagement.vue";
 
+import BrandView from "../components/brand/BrandView.vue";
+
 const routes = [
   { path: "/", redirect: "/login" },
   { path: "/login", name: "login", component: Login },
@@ -55,6 +57,12 @@ const routes = [
     path: "/",
     component: HomeView,
     children: [
+      {
+        path: "brand",
+        name: "brand",
+        meta: { title: "Quản lý Thương hiệu" },
+        component: BrandView,
+      },
       {
         path: "inventory-check",
         name: "inventory-check-list",
