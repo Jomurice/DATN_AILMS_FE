@@ -1,28 +1,17 @@
+
 <script setup>
+import HomeUser from './components/home/HomeUser.vue';
 </script>
+<style>
+html, body, #app {
+  background: #eff0f3 !important;  
+  background-image: none !important;
+}
+
+</style>
 
 <template>
-  <div>
-    <nav style="margin-bottom:20px;">
-      <router-link to="/users">Danh sách Users</router-link> |
-      <router-link to="/users/add">Admin</router-link>
-    </nav>
-    <router-view></router-view>
-  </div>
+    <RouterView></RouterView>
 </template>
 
-<style scoped>
-nav {
-  background: #f5f5f5;
-  padding: 10px;
-}
-nav a {
-  margin-right: 10px;
-  text-decoration: none;
-  color: #333;
-}
-nav a.router-link-active {
-  font-weight: bold;
-  color: #42b983;
-}
-</style>
+
