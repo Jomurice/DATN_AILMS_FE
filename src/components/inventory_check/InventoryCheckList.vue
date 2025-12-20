@@ -198,7 +198,6 @@ async function deleteCheck() {
     selectedCheck.value = null;
     load();
   } catch (e) {
-  
     // alert("Xóa thất bại: " + (e.response?.data?.message || "Có lỗi xảy ra"));
     toast.error("Xóa phiếu kiểm kê thất bại.");
   }

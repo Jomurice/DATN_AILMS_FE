@@ -386,6 +386,7 @@ async function openSerialsModal(sku) {
   modalSerials.value = [];
   try {
     modalSerials.value = await outboundOrderService.getSerials(selectedOrder.value.id, sku);
+    
   } catch {
     // showToast('Không tải được serial đã quét');
     toast.error('Không tải được serial đã quét');

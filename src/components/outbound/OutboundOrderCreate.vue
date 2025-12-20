@@ -207,6 +207,7 @@ import { stockService } from "../../services/StockService";
 import { customerService } from "../../services/outbound/CustomerService";
 import CustomerForm from "./CustomerForm.vue";
 import { toast } from "vue-sonner";
+import router from "../../router";
 
 const auth = tokenService();
 auth.loadToken();
@@ -319,21 +320,30 @@ async function createOrder() {
   try {
     await outboundOrderService.updateStatus(responseOrder.value.id, orders.value)
     localStorage.removeItem("currentOrder");
-    showToast('Tạo đơn hàng thành công');
+    toast.success("Tạo đơn hàng thành công");
+    // showToast('Tạo đơn hàng thành công');
+    router.push("/outbound");
     resetForm();
     responseOrder.value = [];
   } catch (error) {
     console.error("Error creating order:", error);
+    toast.error("Tạo đơn hàng thất bại.");
   } finally {
     submitting.value = false;
   }
 }
 
 async function selectProduct(product) {
-  form.value.productId = product.id;
-  form.value.name = product.name;
-  stock.value = await stockService.getStocks(product.id);
-  console.log("Selected product:", form.value, "Stock:", stock.value, " Product:", product.id);
+  try {
+    form.value.productId = product.id;
+    form.value.name = product.name;
+    stock.value = await stockService.getStocks(product.id);
+    console.log("Selected product:", form.value, "Stock:", stock.value, " Product:", product.id);
+    
+  } catch (error) {
+    toast.error("Không thể tải thông tin tồn kho.");
+  }
+  
 }
 
 function validateAdd() {
@@ -348,6 +358,7 @@ function validateAdd() {
   }
 
   if (form.value.orderQuantity > stock.value) {
+    toast.warning(`Số lượng vượt quá tồn kho (${stock.value}).`);
     showToast(`Số lượng vượt quá tồn kho (${stock.value}).`);
     return false;
   }
@@ -387,7 +398,7 @@ async function handleAddItem() {
       // add item lên server
       await outboundItemService.addItem(orders.value, responseOrder.value.id);
 
-      showToast("Đã thêm sản phẩm vào đơn");
+      toast.success("Đã thêm sản phẩm vào đơn");
 
       load();
       return;
@@ -417,10 +428,11 @@ async function handleAddItem() {
 
     await outboundItemService.addItem(orders.value, responseOrder.value.id);
 
-    showToast("Đã thêm sản phẩm vào đơn");
+    toast.success("Đã thêm sản phẩm vào đơn");
     load();
   } catch (error) {
     console.error("Error:", error);
+    toast.error("Không thể thêm sản phẩm vào đơn.");
   } finally {
     isLoading.value = false;
   }
@@ -429,9 +441,16 @@ async function handleAddItem() {
 
 
 async function removeItem(idProduct) {
-  if (!confirm("Bạn có chắc muốn xóa sản phẩm khỏi đơn ?")) return;
-  await outboundItemService.deleteItem(responseOrder.value.id, idProduct);
-  load();
+  try {
+    if (!confirm("Bạn có chắc muốn xóa sản phẩm khỏi đơn ?")) return;
+    await outboundItemService.deleteItem(responseOrder.value.id, idProduct);
+    load();
+    toast.success("Đã xóa sản phẩm khỏi đơn");
+  } catch (error) {
+    console.error("Error removing item:", error);
+    toast.error("Không thể xóa sản phẩm khỏi đơn.");
+  }
+  
 }
 
 function resetForm() {
@@ -502,6 +521,7 @@ async function loadCustomer() {
       console.log("Loaded customers:", customers.value);
     } catch (error) {
       console.error("Error loading customers:", error);
+      toast.error("Không thể tải danh sách khách hàng.");
       customers.value = [];
     }
   }
@@ -524,7 +544,7 @@ function selectCustomer(customer) {
 
 async function searchOrders() {
   if (!code.value.trim()) {
-    showToast("Vui lòng nhập mã phiếu để tìm kiếm.");
+    toast.error("Vui lòng nhập mã phiếu để tìm kiếm.");
     return;
   };
 
@@ -543,17 +563,21 @@ async function searchOrders() {
           code: responseOrder.value.code,
         })
       );
-      showToast("Đã tải đơn hàng.");
+      toast.success("Đã tải đơn hàng.");
+      
     } else {
-      showToast("Không tìm thấy đơn hàng.");
+      toast.error("Không tìm thấy đơn hàng.");
+      
     }
   } catch (error) {
     console.error("Error searching order:", error);
     const msg = error.response?.data?.message;
     if (msg === 'Order already completed') {
-      showToast("Đơn hàng đã được tạo !");
+      toast.error("Đơn hàng đã hoàn thành, không thể chỉnh sửa.");
+      
     } else
-      showToast("Lỗi khi tìm đơn hàng.");
+    toast.error("Lỗi khi tìm đơn hàng.");
+    
   } finally {
     isLoading.value = false;
   }
@@ -576,6 +600,7 @@ async function load() {
     }
   } catch (e) {
     console.error("loadProduct failed", e);
+    toast.error("Không thể tải danh sách sản phẩm.");
     products.value = [];
   }
   finally {
