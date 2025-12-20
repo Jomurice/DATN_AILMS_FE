@@ -7,6 +7,7 @@
           <RouterLink class="tab" to="/product" exact-active-class="active">Hàng hóa</RouterLink>
           <RouterLink class="tab" to="/productDetails" exact-active-class="active">Hàng hóa chi tiết</RouterLink>
           <RouterLink class="tab" to="/category" exact-active-class="active">Loại hàng</RouterLink>
+          <RouterLink class="tab" to="/brand" exact-active-class="active">Thương hiệu</RouterLink>
           <RouterLink class="tab" to="/inbound/new" exact-active-class="active">Đơn mua</RouterLink>
           <RouterLink class="tab" to="/inbound" exact-active-class="active">Nhập hàng</RouterLink>
           <RouterLink class="tab" to="/outbound/new" exact-active-class="active">Đơn xuất</RouterLink>
@@ -14,7 +15,7 @@
           <RouterLink class="tab" to="/inventory-check/new" exact-active-class="active">Tạo phiếu kiểm</RouterLink>
           <RouterLink class="tab" to="/inventory-check" exact-active-class="active">Kiểm kê kho</RouterLink>
           <!-- <RouterLink class="tab" to="/warehouse" exact-active-class="active">Kho</RouterLink> -->
-          <!-- <RouterLink class="tab" to="/inventory-report" exact-active-class="active">Báo cáo</RouterLink> -->
+          <RouterLink class="tab" to="/inventory-report" exact-active-class="active">Báo cáo</RouterLink>
           <RouterLink class="tab" to="/admin/account" exact-active-class="active">Nhân sự</RouterLink>
           <RouterLink class="tab" to="/warehousesmenu" exact-active-class="active">Kho</RouterLink>
           <RouterLink class="tab" to="/purchaseorder" exact-active-class="active">PO</RouterLink>

@@ -74,13 +74,13 @@
                 <div><span class="badge" :class="badgeClass(selectedCheck.status)">{{ viStatus(selectedCheck.status) }}</span></div>
               </div>
               
-              <div class="col-md-6">
-                <label class="fw-bold small text-muted">Ngày thực hiện</label>
-                <div class="fw-bold text-primary">
-                    <i class="fa-regular fa-calendar me-1"></i>
-                    {{ fmtDate(selectedCheck.deadline) }}
-                </div>
-              </div>
+                      <div class="col-md-6">
+          <label class="fw-bold small text-muted">Ngày thực hiện</label>
+          <div class="fw-bold text-primary">
+            <i class="fa-regular fa-calendar me-1"></i>
+            {{ new Date().toLocaleDateString('vi-VN') }}
+          </div>
+        </div>
 
               <div class="col-12">
                 <label class="fw-bold small text-muted">Mục đích kiểm kê</label>
@@ -157,7 +157,10 @@ const getActionLabel = (status) => {
     return 'Xem chi tiết';
 }
 
-const fmtDate = (d) => d ? new Date(d).toLocaleDateString('vi-VN') : '—';
+const fmtDate = (d) => {
+    // Luôn trả về ngày hôm nay bất kể dữ liệu đầu vào là gì
+    return new Date().toLocaleDateString('vi-VN');
+};
 
 async function load() {
   loading.value = true;
