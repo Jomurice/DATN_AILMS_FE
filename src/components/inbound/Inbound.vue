@@ -234,6 +234,8 @@ import { purchaseOrderService } from "@/services/purchaseOrder/purchaseOrderServ
 import { tokenService } from "@/services/TokenService";
 import api from "@/services/axios";
 import { Html5Qrcode } from "html5-qrcode";
+import { toast } from "vue-sonner";
+import TopNavAdmin from "../layout/TopNavAdmin.vue";
 
 
 // ===== Refs =====
@@ -315,7 +317,8 @@ async function initOrders() {
     userId.value = auth.userId;
     orders.value = await purchaseOrderService.getAllPurchaseOrders();
   } catch {
-    showToast("Không tải được danh sách phiếu");
+    toast.error("Lỗi tải danh sách phiếu");
+    
   } finally {
     loading.value = false;
   }
@@ -362,9 +365,10 @@ async function openOrder(o) {
     const idx = orders.value.findIndex(x => x.id === selectedOrder.value.id);
     if (idx !== -1) orders.value[idx] = selectedOrder.value;
     showToast("Đã tải chi tiết phiếu thành công!");
+    toast.success("Đã tải chi tiết phiếu thành công!");
   } catch (err) {
     console.error("openOrder error", err);
-    showToast("Không tải được chi tiết phiếu nhập.");
+    toast.error("Lỗi tải chi tiết phiếu");
   }
 }
 
@@ -372,12 +376,12 @@ async function openOrder(o) {
 
 async function handleQuickCameraScan(serialInput) {
   const serial = serialInput || String(quickSerial.value || "").trim();
-  if (!serial) return showToast("Chưa nhập serial");
-  if (!selectedOrder.value?.items?.length) return showToast("Chưa chọn phiếu");
+  if (!serial) return toast.error("Vui lòng nhập serial để quét");
+  if (!selectedOrder.value?.items?.length) return toast.error("Chưa chọn phiếu");
 
   try {
     const item = selectedOrder.value.items.find(i => serial.toLowerCase().includes(i.sku.toLowerCase()));
-    if (!item) return showToast("Serial không khớp với SKU nào trong phiếu");
+    if (!item) return toast.error("Serial không khớp với SKU nào trong phiếu");
 
     await api.post("/api/product-details/confirm-scan", {
       serialNumber: serial,
@@ -385,7 +389,7 @@ async function handleQuickCameraScan(serialInput) {
       scannedByUserId: userId.value
     });
 
-    showToast("Quét thành công!");
+    toast.success("Quét thành công!");
     item.scannedQuantity = (item.scannedQuantity || 0) + 1;
 
     const updated = await purchaseOrderService.getPurchaseOrderById(selectedOrder.value.id, { includeItems: true });
@@ -393,10 +397,10 @@ async function handleQuickCameraScan(serialInput) {
   } catch (err) {
     const code = err.response?.data?.code;
     const msg = err.response?.data?.message;
-    if (code === "SERIAL_ALREADY_SCANNED") showToast("⚠️ Serial này đã được scan trước đó");
-    else if (code === "SERIAL_NOT_FOUND") showToast("❌ Serial không tồn tại trong hệ thống");
-    else if (code === "SKU_MISMATCH") showToast("⚠️ Serial không khớp với SKU trong phiếu");
-    else showToast(msg || "Có lỗi xảy ra khi quét");
+    if (code === "SERIAL_ALREADY_SCANNED") toast.error("Serial này đã được scan trước đó");
+    else if (code === "SERIAL_NOT_FOUND")  toast.error("Serial không tồn tại trong hệ thống");
+    else if (code === "SKU_MISMATCH")  toast.error("Serial không khớp với SKU trong phiếu");
+    else  toast.error(msg || "Có lỗi xảy ra khi quét");
   } finally {
     quickSerial.value = "";
     quickInputRef.value?.focus();
@@ -408,7 +412,7 @@ async function handleQuickScan() {
   if (!serial) return;
 
   if (!selectedOrder.value?.items?.length) {
-    toast("Chưa chọn phiếu");
+    toast.error("Chưa chọn phiếu");
     return;
   }
 
@@ -418,7 +422,7 @@ async function handleQuickScan() {
     );
 
     if (!item) {
-      toast("Serial không khớp với SKU nào trong phiếu");
+      toast.error("Serial không khớp với SKU nào trong phiếu");
       return;
     }
 
@@ -428,7 +432,7 @@ async function handleQuickScan() {
       scannedByUserId: userId.value,
     });
 
-    showToast("Quét thành công!");
+    toast.success("Quét thành công!");
     item.scannedQuantity = (item.scannedQuantity || 0) + 1;
     const updated = await purchaseOrderService.getPurchaseOrderById(
       selectedOrder.value.id,
@@ -444,13 +448,13 @@ async function handleQuickScan() {
     const msg = err.response?.data?.message;
 
     if (code === "SERIAL_ALREADY_SCANNED") {
-      toast("⚠️ Serial này đã được scan trước đó");
+      toast.error("Serial này đã được scan trước đó");
     } else if (code === "SERIAL_NOT_FOUND") {
-      toast("❌ Serial không tồn tại trong hệ thống");
+      toast.error("Serial không tồn tại trong hệ thống");
     } else if (code === "SKU_MISMATCH") {
-      toast("⚠️ Serial không khớp với SKU trong phiếu");
+      toast.error("Serial không khớp với SKU trong phiếu");
     } else {
-      toast(msg || "Có lỗi xảy ra khi quét");
+      toast.error(msg || "Có lỗi xảy ra khi quét");
     }
   } finally {
     quickSerial.value = "";
@@ -462,12 +466,13 @@ async function completeOrder() {
   if (!selectedOrder.value) return showToast("Chưa chọn phiếu");
   try {
     await api.post(`/api/purchase-orders/${selectedOrder.value.id}/complete`, {}, { params: { userId: userId.value } });
-    showToast("Nhập kho thành công!");
+    toast.success("Nhập kho thành công!");
     await initOrders();
     selectedOrder.value = null;
   } catch (err) {
     console.error("Complete error", err);
-    showToast(err.response?.data?.message || "Có lỗi khi nhập kho");
+    toast.error("Có lỗi khi nhập kho");
+    
   }
 }
 
@@ -480,6 +485,7 @@ async function openSerialsModal(sku, productId) {
     modalSerials.value = Array.isArray(res.data.result) ? res.data.result : [];
   } catch (err) {
     console.error("Load serials error", err);
+    toast.error("Lỗi tải serials");
     showToast("Không tải được serials");
   }
 }
@@ -505,6 +511,7 @@ function startQrScanner() {
     },
     (decodedText) => {
       handleQuickCameraScan(decodedText);
+      toast.success(`Quét thành công: ${decodedText}`);
       stopQrScanner();
     },
     (errorMessage) => {
@@ -512,7 +519,7 @@ function startQrScanner() {
     }
   ).catch(err => {
     console.error("QR Scanner start error", err);
-    showToast("Không thể mở camera để quét QR");
+    toast.error("Lỗi khi khởi động camera");
     qrScannerVisible.value = false;
   });
 }
@@ -525,6 +532,7 @@ function stopQrScanner() {
     }).catch(err => {
       console.error("QR Scanner stop error", err);
       qrScannerVisible.value = false;
+      toast.error("Lỗi khi dừng camera");
     });
   } else {
     qrScannerVisible.value = false;
@@ -534,8 +542,10 @@ function stopQrScanner() {
 const download = async (id) => {
   try {
     await purchaseOrderService.downloadQrCodes(id);
+    toast.success('Tải QR thành công !');
   } catch (e) {
     console.error(e);
+    toast.error('Tải QR thất bại !');
   }
 };
 

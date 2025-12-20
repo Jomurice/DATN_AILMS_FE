@@ -210,6 +210,7 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { debounce } from 'chart.js/helpers'
 import { userService } from '../../services/UserService'
 import { roleService } from '../../services/RoleService'
+import { toast } from 'vue-sonner';
 
 
 const payload = ref({
@@ -326,6 +327,7 @@ async function load() {
     pages.value = response.result;
   } catch (e) {
     error.value = e?.message || 'Lỗi tải danh sách.'
+    toast.error(error.value);
     console.log("error", e);
   } finally {
     loading.value = false
@@ -337,7 +339,9 @@ async function getUserById(id) {
   try {
     user.value = await userService.getUserById(id);
     console.log(user.value);
+    toast.success('Tải dữ liệu thành công!');
   } catch (error) {
+    toast.error('Tải dữ liệu thất bại !');
     console.log("error", error);
   }
 };

@@ -23,7 +23,7 @@
               <div class="input-group">
                 <span class="input-group-text bg-light"><i class="fa-solid fa-barcode"></i></span>
                 <input type="text" class="form-control bg-light fw-bold text-primary" 
-                       :value="draftCode" disabled />
+                      :value="draftCode" disabled />
               </div>
             </div>
 
@@ -103,8 +103,8 @@
         </div>
         
         <div v-if="loadingPreview" class="text-center py-5">
-           <div class="spinner-border text-primary"></div>
-           <div class="mt-2 text-muted">Đang đồng bộ dữ liệu từ hệ thống...</div>
+          <div class="spinner-border text-primary"></div>
+          <div class="mt-2 text-muted">Đang đồng bộ dữ liệu từ hệ thống...</div>
         </div>
 
         <div v-else class="table-responsive">
@@ -175,6 +175,7 @@ import { useRouter } from "vue-router";
 import { inventoryCheckService } from "../../services/inventoryCheckService";
 import { warehouseService } from "../../services/WarehouseService";
 import { tokenService } from "../../services/TokenService";
+import { toast } from "vue-sonner";
 
 const router = useRouter();
 const auth = tokenService();
@@ -249,6 +250,7 @@ async function loadData() {
   } catch (e) {
     console.error("Error loading data:", e);
     error.value = "Không thể tải dữ liệu.";
+    toast.error("Không thể tải dữ liệu.");
   }
 }
 
@@ -269,6 +271,7 @@ async function onWarehouseChange() {
     } catch (e) {
         console.error("Lỗi tải tồn kho:", e);
         error.value = "Không thể tải dữ liệu tồn kho.";
+        toast.error("Không thể tải dữ liệu tồn kho.");
     } finally {
         loadingPreview.value = false;
     }
@@ -298,10 +301,12 @@ async function submit() {
     };
 
     await inventoryCheckService.create(payload);
+    toast.success("Tạo phiếu kiểm kê thành công!");
     router.push('/inventory-check');
 
   } catch (e) {
     error.value = e.response?.data?.message || "Có lỗi xảy ra khi tạo phiếu. Vui lòng thử lại.";
+    toast.error(error.value);
     window.scrollTo(0,0);
   } finally {
     submitting.value = false;

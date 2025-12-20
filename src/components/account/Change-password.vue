@@ -31,6 +31,7 @@ import { ref } from 'vue';
 import { authService } from '../../services/authService';
 import { useRouter } from 'vue-router';
 import { passwordService } from '../../services/PasswordService';
+import { toast } from 'vue-sonner';
 
 const router = useRouter();
 const formPassword = ref({
@@ -57,12 +58,14 @@ async function handleChangePass() {
     isLoading.value = true;
 
     if (formPassword.value.newPassword.length < 6) {
+        toast.error('Mật khẩu phải có ít nhất 6 ký tự !');
         showMessage('Mật khẩu phải có ít nhất 6 ký tự !', 'error');
         isLoading.value = false;
         return;
     }
 
     if (formPassword.value.newPassword !== formPassword.value.confirmPassword) {
+        toast.error('Mật khẩu xác nhận phải giống mật khẩu mới !');
         showMessage('Mật khẩu xác nhận phải giống mật khẩu mới !', 'error');
         isLoading.value = false;
         return;
@@ -71,11 +74,14 @@ async function handleChangePass() {
     formPassword.value.email = localStorage.getItem('email');
     try {
         await passwordService.resetPassword(formPassword.value);
+        toast.success('Đổi mật khẩu thành công!');
         router.push('/');
     } catch (error) {
         console.log("error", error);
         const errorMsg = "Đã xảy ra lỗi. Vui lòng thử lại sau.";
+        toast.error(errorMsg);
         showMessage(errorMsg, 'error');
+    
     } finally {
         isLoading.value = false;
     }

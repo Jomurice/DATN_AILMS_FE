@@ -84,6 +84,7 @@ import {
   getInboundOutboundSeries,
 } from "@/services/dashboardService";
 import { warehouseService } from "@/services/WarehouseService";
+import { toast } from "vue-sonner";
 
 
 const loading = ref(false);
@@ -227,6 +228,7 @@ async function loadStats() {
     stats.value = s;
   } catch (error) {
     console.error("Lỗi khi tải thống kê bảng điều khiển:", error);
+    toast.error('Tải thống kê thất bại !');
   } finally {
     loading.value = false;
   }

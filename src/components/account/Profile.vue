@@ -114,7 +114,7 @@ import { userService } from "../../services/UserService";
 import { tokenService } from '../../services/TokenService';
 import { passwordService } from "../../services/PasswordService";
 import { useRouter } from "vue-router";
-
+import { toast } from "vue-sonner";
 
 const router = useRouter();
 const auth = tokenService();
@@ -160,6 +160,7 @@ async function loadProfile() {
 
   } catch (error) {
     console.log("Failed to load profile: ", error);
+    toast.error("Tải thông tin cá nhân thất bại.");
   }
 }
 
@@ -186,6 +187,7 @@ async function submitChangePassword() {
     console.log(auth.token)
     await passwordService.update(changePasswordForm.value, auth.token);
     changePasswordError.value = "Đổi mật khẩu thành công!";
+    toast.success("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
     localStorage.removeItem("accessToken");
     router.push('/');
     resetForm();
@@ -194,6 +196,7 @@ async function submitChangePassword() {
   } catch (error) {
     changePasswordError.value = "Đổi mật khẩu thất bại.";
     console.error("Error changing password:", error);
+    toast.error("Đổi mật khẩu thất bại.");
   }
 
 }

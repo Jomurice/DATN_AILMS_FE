@@ -130,6 +130,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { customerService } from '../../services/outbound/CustomerService';
 import CustomerForm from './CustomerForm.vue';
+import { toast } from 'vue-sonner';
 
 const payload = ref({
     search: '',
@@ -176,7 +177,10 @@ async function loadCustomers() {
         });
         customers.value = res.content ?? [];
         pages.value = res;
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error(e);
+        toast.error('Lỗi tải danh sách khách hàng.');
+    }
     finally { loading.value = false; }
 }
 
@@ -191,7 +195,15 @@ function editCustomer(c) {
     errors.value = {};
 }
 
-async function toggleStatus(c) { try { await customerService.active(c.id); loadCustomers(); } catch (e) { console.error(e); } }
+async function toggleStatus(c) { 
+    try { 
+        await customerService.active(c.id); loadCustomers(); 
+        toast.success('Thay đổi trạng thái khách hàng thành công!');
+    } catch (e) 
+    { 
+        console.error(e); 
+        toast.error('Không thể thay đổi trạng thái khách hàng.');
+    } }
 
 function formatDate(date) { if (!date) return '-'; const d = new Date(date); return d.toLocaleDateString('vi-VN') + ' ' + d.toLocaleTimeString('vi-VN', { hour12: false }); }
 

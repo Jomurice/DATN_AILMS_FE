@@ -53,6 +53,7 @@ import { useRouter } from "vue-router"
 import { authService } from "../services/authService";
 import { tokenService } from "../services/TokenService";
 import { passwordService } from "../services/PasswordService";
+import { toast } from "vue-sonner";
 
 const router = useRouter();
 const auth = tokenService();
@@ -100,13 +101,14 @@ const handleLogin = async () => {
   loading.value = true;
   try {
     const data = await authService.login(username.value, password.value)
+    toast.success("Đăng nhập thành công!");
     console.log(data)
     auth.setToken(data.result?.token);
     router.push("/profile");
   } catch (error) {
     if (error.response?.data?.message === 'User blocked') { apiError.value = "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với quản lý để được hỗ trợ !"; }
     else apiError.value = "Tên đăng nhập hoặc mật khẩu không đúng !";
-
+    toast.error("Đăng nhập thất bại!");
   } finally {
     loading.value = false;
   }

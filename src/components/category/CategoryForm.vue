@@ -48,6 +48,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { categoryService } from '../../services/categoryService'
+import { toast } from 'vue-sonner'
 
 const route = useRoute()
 const router = useRouter()
@@ -64,13 +65,21 @@ const existing = ref([])
 
 const nameError = computed(() => {
   const v = form.value.name?.trim() || ''
-  if (!v) return 'Vui lòng nhập tên loại.'
-  if (v.length > 100) return 'Tên loại tối đa 100 ký tự.'
+  if (!v){ 
+    toast.error('Vui lòng nhập tên loại.');
+    return 'Vui lòng nhập tên loại.'
+  }
+  if (v.length > 100) {
+    toast.error('Tên loại tối đa 100 ký tự.');
+    return 'Tên loại tối đa 100 ký tự.'
+  }
   const dup = existing.value.find(c =>
     c.name?.trim().toLowerCase() === v.toLowerCase() &&
     (!isEdit.value || c.id !== categoryId)
   )
-  if (dup) return 'Tên loại đã tồn tại.'
+  if (dup){ 
+    toast.error('Tên loại đã tồn tại.');
+    return 'Tên loại đã tồn tại.'}
   return ''
 })
 
@@ -89,6 +98,7 @@ async function loadData() {
       isEdit.value = true
       const item = await categoryService.getById(categoryId)
       if (!item) {
+        toast.error('Không tìm thấy loại hàng.');
         showMessage('Không tìm thấy loại hàng.')
       } else {
         form.value = { name: item.name || '', description: item.description || '' }
@@ -98,6 +108,7 @@ async function loadData() {
     }
   } catch (e) {
     error.value = e?.message || 'Không thể tải dữ liệu.'
+    toast.error(error.value);
   }
 }
 
@@ -110,12 +121,15 @@ async function handleSubmit() {
   try {
     if (isEdit.value) {
       await categoryService.update(categoryId, { ...form.value })
+      toast.success('Cập nhật loại hàng thành công!');
     } else {
       await categoryService.create({ ...form.value }) // <-- tạo đúng payload
+      toast.success('Thêm loại hàng thành công!');
     }
     router.push('/category')
   } catch (e) {
     error.value = e?.response?.data?.message || e.message || 'Lưu thất bại.'
+    toast.error(error.value);
   } finally {
     submitting.value = false
   }
