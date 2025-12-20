@@ -25,6 +25,10 @@ export const tokenService = defineStore("auth", {
       userRole: (state) =>
       state.user?.scope || // fallback cuối
       "",
+
+    userRole: (state) =>
+      state.user?.scope || // fallback cuối
+      "",
   },
   actions: {
     setToken(token) {

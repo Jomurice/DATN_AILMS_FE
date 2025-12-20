@@ -13,7 +13,7 @@
           <button
             type="button"
             class="btn-close"
-            @click="onCancel"
+            @click="closeModal"
           ></button>
         </div>
 
@@ -41,19 +41,20 @@ import { Modal } from "bootstrap";
 
 const props = defineProps({
   show: Boolean,
+  modalId: {type: String, required: true},
   title: { type: String, default: "Xác nhận" },
   message: { type: String, default: "Bạn có chắc chắn?" },
   confirmText: { type: String, default: "Xác nhận" },
   cancelText: { type: String, default: "Hủy" },
 });
 
-const emit = defineEmits(["confirm", "cancel"]);
+const emit = defineEmits(["confirm", "cancel","closeModal"]);
 
 let modalInstance;
-const modalId = "confirmModal";
+// const modalId = "confirmModal";
 
 onMounted(() => {
-  const el = document.getElementById(modalId);
+  const el = document.getElementById(props.modalId);
   modalInstance = new Modal(el, { backdrop: "static" });
 });
 
@@ -71,5 +72,9 @@ function onConfirm() {
 
 function onCancel() {
   emit("cancel");
+}
+
+function closeModal(){
+  emit("closeModal")
 }
 </script>

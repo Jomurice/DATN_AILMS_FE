@@ -30,6 +30,8 @@ import OutboundOrderDetail from "../components/outbound/OutboundOrderDetail.vue"
 import CustomerList from "../components/outbound/CustomerList.vue";
 import SuppliersFrom from "../components/inbound/SuppliersForm.vue";
 
+import OutboundPage from "../components/outbound/OutboundPage.vue";
+
 import InventoryCheckList from "../components/inventory_check/InventoryCheckList.vue";
 import InventoryCheckCreate from "../components/inventory_check/InventoryCheckCreate.vue";
 import InventoryCheckDetail from "../components/inventory_check/InventoryCheckDetail.vue";
@@ -194,7 +196,7 @@ const routes = [
         path: "outbound",
         name: "outbound",
         meta: { title: "Xuất hàng" },
-        component: Outbound,
+        component: OutboundPage,
       },
       {
         path: "outbound/new",

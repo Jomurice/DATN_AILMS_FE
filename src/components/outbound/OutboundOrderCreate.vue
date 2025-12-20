@@ -67,7 +67,32 @@
               </div>
             </div>
 
-            <div class="col">
+            <div class="col search-customer-wrapper">
+              <label class="lbl">Kho</label>
+
+              <input type="text" v-model="searchWarehouse" class="ipt" :disabled="!!responseOrder?.warehouseId"
+                placeholder="Nhập tên kho"  @focus="loadWarehouse" />
+
+              <!-- Dropdown list -->
+              <div v-if="showDropdownW" class="dropdown-list">
+                <div v-if="isLoading" class="dropdown-item loading">Đang tìm...</div>
+
+                <div v-else-if="warehouse.length === 0" class="dropdown-item no-result">
+                  Không tìm thấy kho
+                </div>
+
+                <div v-else class="dropdown-item" v-for="w in warehouse" :key="w.id"
+                  @click="selectWarehouse(w)">
+                  <div class="name">{{ w.name }} </div>
+                </div>
+              </div>
+            </div>
+
+
+            <div class="d-flex gap-2">
+  
+
+            <div class="col col-6">
               <label class="lbl">Ngày tạo</label>
               <input v-model="responseOrder.createAt" type="date" class="ipt" disabled />
             </div>
@@ -76,6 +101,8 @@
               <label class="lbl">Người tạo</label>
               <input type="text" v-model="username" class="ipt" disabled />
             </div>
+            </div>
+
           </div>
         </div>
       </Transition>
@@ -205,6 +232,7 @@ import { outboundOrderService } from "../../services/outbound/outboundOrderServi
 import { outboundItemService } from "../../services/outbound/OutboundOrderItemService";
 import { stockService } from "../../services/StockService";
 import { customerService } from "../../services/outbound/CustomerService";
+import { warehouseService} from "../../services/WarehouseService";
 import CustomerForm from "./CustomerForm.vue";
 import { toast } from "vue-sonner";
 import router from "../../router";
@@ -219,11 +247,15 @@ const orders = ref({
   customerId: "",
   createdBy: auth.userId || null,
   createAt: "",
+  warehouseId: "",
   items: [],
 });
 
 const products = ref([]);
 const responseOrder = ref([]);
+const warehouse = ref([]);
+const searchWarehouse = ref("");
+const selectedWarehouse = ref(null);
 const form = ref({ productId: "", name: "", orderQuantity: 1, note: "" });
 const err = ref("");
 const submitting = ref(false);
@@ -231,6 +263,7 @@ const stock = ref(0);
 const searchCustomer = ref("");
 const customers = ref([]);
 const showDropdown = ref(false);
+const showDropdownW = ref(false);
 const showForm = ref(false);
 const isLoading = ref(false);
 const selectedCustomer = ref(null);
@@ -242,77 +275,16 @@ const searchProduct = ref("");
 const codeInput = ref(null);
 
 
-// function clip(s, n = 20) {
-//   if (!s) return "";
-//   return s.length > n ? s.slice(0, n) + "..." : s;
-// }
-
-/* -------- import excel/csv -------- */
-// async function onImport(ev) {
-//   const file = ev.target.files?.[0];
-//   if (!file) return;
-//   try {
-//     let rows = [];
-//     const ext = file.name.split(".").pop()?.toLowerCase();
-
-//     if (ext === "xlsx" || ext === "xls") {
-//       let XLSX = null;
-//       try {
-//         XLSX = (await import(/* @vite-ignore */ "xlsx")).default;
-//       } catch {
-//         // nếu chưa cài xlsx → fallback CSV
-//       }
-//       if (XLSX) {
-//         const buf = await file.arrayBuffer();
-//         const wb = XLSX.read(buf);
-//         const ws = wb.Sheets[wb.SheetNames[0]];
-//         rows = XLSX.utils.sheet_to_json(ws); // [{SKU:'abc', QTY:10}, ...]
-//       } else {
-//         rows = csvToJson(await file.text());
-//       }
-//     } else {
-//       rows = csvToJson(await file.text());
-//     }
-//     let added = 0;
-//     rows.forEach(r => {
-//       const sku = String(r.SKU ?? r.sku ?? "").trim();
-//       const q = Number(r.QTY ?? r.qty ?? r.quantity ?? 0);
-//       if (!sku || !q || q < 1) return;
-//       const p = products.value.find(x => String(x.sku || "").toLowerCase() === sku.toLowerCase());
-//       if (!p) return;
-//       const ex = form.value.items.find(x => x.productId === p.id);
-//       if (ex) ex.orderQuantity = Math.min(9999, (ex.orderQuantity || 0) + q);
-//       else form.value.items.push({
-//         productId: p.id, orderQuantity: Math.min(9999, q),
-//         sku: p.sku, name: p.name, categoryName: p.categoryName, brandName: p.brandName, color: p.color,
-//       });
-//       added++;
-//     });
-//     alert(`Đã nhập ${added} dòng từ file.`);
-//   } catch (e) { console.error(e); alert("Không đọc được file. Kiểm tra cột SKU và QTY."); }
-//   finally { ev.target.value = ""; }
-// }
-
-// function csvToJson(text) {
-//   const items = text.split(/\r?\n/).filter(Boolean);
-//   if (items.length < 2) return [];
-//   const headers = splitCSVitem(items[0]); const out = [];
-//   for (let i = 1; i < items.length; i++) {
-//     const parts = splitCSVitem(items[i]); const obj = {};
-//     headers.forEach((h, idx) => (obj[h] = parts[idx]));
-//     out.push(obj);
-//   }
-//   return out;
-// }
-// function splitCSVitem(item) { return item.split(",").map(x => x.replace(/^"|"$/g, "").trim()); }
 
 
 async function createOrder() {
 
   orders.value = responseOrder.value
   orders.value.customerId = selectedCustomer.value ? selectedCustomer.value.id : null;
-  if (!orders.value.customerId?.trim()) return showToast("Chưa nhập thông tin khách hàng.");
-  if (responseOrder.value.length === 0) return showToast("Chưa có sản phẩm nào trong đơn.");
+  orders.value.warehouseId = selectedWarehouse.value ? selectedWarehouse.value.id : null;
+  console.log(orders.value)
+  if (!orders.value.customerId?.trim()) return toast.error("Chưa nhập thông tin khách hàng.");
+  if (responseOrder.value.length === 0) return toast.error("Chưa có sản phẩm nào trong đơn.");
   submitting.value = true;
 
   orders.value.status = "CONFIRMED";
@@ -325,26 +297,41 @@ async function createOrder() {
     router.push("/outbound");
     resetForm();
     responseOrder.value = [];
+    code.value = '';
+    searchCustomer.value = '';
+    searchWarehouse.value = '';
   } catch (error) {
     console.error("Error creating order:", error);
     toast.error("Tạo đơn hàng thất bại.");
   } finally {
     submitting.value = false;
   }
+
+  resetForm();
+  
 }
 
 async function selectProduct(product) {
+  form.value.productId = product.id;
+  form.value.name = product.name;
+
+  if(!selectedWarehouse.value){
+    showToast("Vui lòng chọn kho !")
+    form.value.productId = '';
+    return;
+  }
+
+  const payload = {
+    productId:product.id,
+    warehouseId:selectedWarehouse.value.id
+  }
   try {
-    form.value.productId = product.id;
-    form.value.name = product.name;
-    stock.value = await stockService.getStocks(product.id);
+    stock.value = await stockService.getStocks(payload);
     console.log("Selected product:", form.value, "Stock:", stock.value, " Product:", product.id);
-    
   } catch (error) {
     toast.error("Không thể tải thông tin tồn kho.");
   }
-  
-}
+};
 
 function validateAdd() {
   err.value = "";
@@ -375,6 +362,7 @@ async function handleAddItem() {
     productId: form.value.productId,
     orderQuantity: Number(form.value.orderQuantity),
   };
+  orders.value.warehouseId = selectedWarehouse.value.id
 
   try {
     // Chưa có order thì tạo mới
@@ -383,6 +371,7 @@ async function handleAddItem() {
       orders.value.items.push(newItem);
 
       // tạo order
+      console.log(orders.value)
       responseOrder.value = await outboundOrderService.create(orders.value);
       code.value = responseOrder.value.code;
 
@@ -436,6 +425,8 @@ async function handleAddItem() {
   } finally {
     isLoading.value = false;
   }
+
+  resetForm();
 }
 
 
@@ -457,7 +448,6 @@ function resetForm() {
   form.value = { productId: "", name: "", orderQuantity: 1, note: "" };
   err.value = "";
   stock.value = 0;
-  searchCustomer.value = "";
 };
 
 function clearOrder() {
@@ -491,7 +481,7 @@ async function searchCustomers() {
 
     isLoading.value = true;
     try {
-      console.log("Search:", searchCustomer.value.trim());
+
       const res = await customerService.getAll({
         page: 0,
         size: 10,
@@ -527,6 +517,26 @@ async function loadCustomer() {
   }
 }
 
+async function loadWarehouse() {
+  showDropdownW.value = true;
+  if (!searchWarehouse.value.trim()) {
+     try {
+    warehouse.value = await warehouseService.getAllWarehouses();
+  } catch (error) {
+    console.error("Error loading warehouse:", error);
+    warehouse.value = [];
+  }
+  }
+}
+
+function selectWarehouse(warehouse) {
+  selectedWarehouse.value = warehouse;
+  searchWarehouse.value = warehouse.name;
+  stock.value = 0
+  form.value.productId = ""
+  warehouse.value = [];
+  showDropdownW.value = false;
+}
 
 function selectCustomer(customer) {
   selectedCustomer.value = customer;
@@ -597,6 +607,10 @@ async function load() {
       const fullOrder = await outboundOrderService.getById(savedOrder.id);
       responseOrder.value = fullOrder || [];
       code.value = fullOrder.code;
+      
+      const warehouse = await warehouseService.getWarehouseById(fullOrder.warehouseId);
+      selectedWarehouse.value = warehouse;
+      searchWarehouse.value = warehouse?.name;
     }
   } catch (e) {
     console.error("loadProduct failed", e);
@@ -606,7 +620,7 @@ async function load() {
   finally {
     isLoading.value = false;
   }
-  resetForm();
+  // resetForm();
 }
 
 function showToast(msg = '') { toastMsg.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toastMsg.value = '', 1600); }
