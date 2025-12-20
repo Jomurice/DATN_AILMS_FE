@@ -7,26 +7,37 @@
           <i class="fa-solid fa-receipt me-2"></i>Đơn mua (Phiếu nhập)
         </div>
 
+        <!-- Search Input -->
+        <div class="mb-3">
+          <input
+            v-model="searchKeyword"
+            @input="debounceSearch"
+            class="form-control"
+            placeholder="Tìm kiếm theo mã đơn, nhà cung cấp..."
+          />
+        </div>
+
+        <!-- Status Filter -->
         <div class="mb-2 d-flex gap-2 flex-wrap">
           <button class="btn btn-sm" :class="chip('ALL')" @click="setStatus('ALL')">Tất cả</button>
-          <button class="btn btn-sm" :class="chip('PENDING')" @click="setStatus('PENDING')">Chờ xử lý</button>
+          <button class="btn btn-sm" :class="chip('IN_BOUND')" @click="setStatus('IN_BOUND')">Chờ xử lý</button>
           <button class="btn btn-sm" :class="chip('IN_PROGRESS')" @click="setStatus('IN_PROGRESS')">Đang thực hiện</button>
           <button class="btn btn-sm" :class="chip('COMPLETED')" @click="setStatus('COMPLETED')">Hoàn tất</button>
         </div>
 
         <div class="list-group small">
-          <button v-for="o in filteredOrders" :key="o.id"
+          <button v-for="o in orders" :key="o.id"
             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
             :class="{ active: selectedOrder?.id === o.id }" @click="openOrder(o)">
             <div>
               <button
-      class="btn btn-outline-success btn-sm qr-btn me-2"
-      title="Tải QR"
-      @click.stop="download(o.id)"
-    >
-      <i class="fa-solid fa-qrcode"></i>
-      <span class="d-none d-md-inline ms-1">QR</span>
-    </button>
+                class="btn btn-outline-success btn-sm qr-btn me-2"
+                title="Tải QR"
+                @click.stop="download(o.id)"
+              >
+                <i class="fa-solid fa-qrcode"></i>
+                <span class="d-none d-md-inline ms-1">QR</span>
+              </button>
 
               <div class="fw-bold">{{ cut(o.code, 20) }}</div>
               <div class="fw-semibold">{{ cut(o.supplier, 20) }}</div>
@@ -35,13 +46,36 @@
             <small class="text-muted">{{ formatDate(o.createdAt || o.eta) }}</small>
           </button>
 
-          <div v-if="!loading && !filteredOrders.length" class="text-muted p-3">
+          <div v-if="!loading && !orders.length" class="text-muted p-3">
             Không có phiếu phù hợp
           </div>
           <div v-if="loading" class="text-center py-3">
             <div class="spinner-border text-dark"></div>
           </div>
-</div>
+        </div>
+
+        <!-- Pagination -->
+        <div v-if="totalPages > 1" class="d-flex justify-content-between align-items-center mt-3 gap-2">
+          <button 
+            class="btn btn-sm btn-outline-secondary" 
+            :disabled="currentPage === 0"
+            @click="goToPage(currentPage - 1)"
+          >
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+          
+          <span class="small text-muted">
+            Trang {{ currentPage + 1 }} / {{ totalPages }}
+          </span>
+          
+          <button 
+            class="btn btn-sm btn-outline-secondary"
+            :disabled="currentPage >= totalPages - 1"
+            @click="goToPage(currentPage + 1)"
+          >
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
       </aside>
 
       <!-- Main -->
@@ -55,14 +89,8 @@
               </small>
             </div>
             <div class="d-flex gap-2">
-              <div class="text-center">
-                <button class="btn btn-outline-danger btn-sm" @click="contactModalVisible = true">
-                  <i class="fa-solid fa-envelope me-1"></i> Liên hệ Admin
-                </button>
-              </div>
               <RouterLink class="btn btn-outline-primary btn-sm" to="/inbound/new">+ Tạo đơn mua</RouterLink>
               <button class="btn btn-outline-secondary btn-sm" @click="selectedOrder = null">← Quay lại</button>
-
             </div>
           </div>
 
@@ -82,17 +110,35 @@
                 placeholder="Quét nhanh serial… (vd: iphone15prm-0001)"
                 :disabled="!canScan"
               />
-              <button class="btn btn-primary" @click="handleQuickScan(serialInput)">Quét</button>
-              <button class="btn btn-success" @click="startQrScanner">Quét QR</button>
+              <button class="btn btn-primary" @click="handleQuickScan" :disabled="!canScan">Quét</button>
+              <button class="btn btn-success" @click="startQrScanner" :disabled="!canScan">Quét QR</button>
             </div>
           </div>
 
           <!-------------------- 
                 QR Scanner 
           ----------------------->
-          <div v-if="qrScannerVisible" class="my-3">
-            <div id="qr-reader" style="width: 100%;"></div>
-            <button class="btn btn-secondary mt-2" @click="stopQrScanner">Dừng QR</button>
+          <div v-if="qrScannerVisible" class="qr-scanner-container my-3 px-3">
+            <div class="qr-scanner-header mb-3">
+              <div class="d-flex align-items-center justify-content-between">
+                <div>
+                  <h6 class="mb-1"><i class="fa-solid fa-camera me-2"></i>Quét mã QR</h6>
+                  <small class="text-muted">Đặt mã QR vào giữa khung hình</small>
+                </div>
+                <button class="btn btn-secondary btn-sm" @click="stopQrScanner">
+                  <i class="fa-solid fa-times me-1"></i>Đóng
+                </button>
+              </div>
+            </div>
+            <div class="qr-reader-wrapper">
+              <div id="qr-reader"></div>
+              <div class="qr-scanner-overlay">
+                <div class="qr-scanner-corner top-left"></div>
+                <div class="qr-scanner-corner top-right"></div>
+                <div class="qr-scanner-corner bottom-left"></div>
+                <div class="qr-scanner-corner bottom-right"></div>
+              </div>
+            </div>
           </div>
 
           <!-- Table -->
@@ -111,15 +157,12 @@
               <tbody>
                 <tr v-for="it in selectedOrder.items || []" :key="it.id || it.sku">
                   <td class="mono nowrap">{{ it.sku }}</td>
-
                   <td class="nowrap" :title="it.name">{{ cut(it.name, 28) }}</td>
                   <td class="nowrap">{{ cut(it.categoryName, 18) }}</td>
-
                   <td class="nowrap">{{ cut(it.brandName, 18) }}</td>
                   <td class="nowrap">{{ cut(it.color || '—', 16) }}</td>
                   <td class="text-end nowrap mono">
-
-                    <span>{{ it.scannedQuantity != null ? it.scannedQuantity : scannedCount(it.sku) }}/{{ it.orderQuantity }}</span>
+                    <span>{{ it.scannedQuantity || 0 }}/{{ it.orderQuantity }}</span>
                     <button class="btn btn-link btn-sm ms-1" title="Xem serial đã quét" @click="openSerialsModal(it.sku, it.productId)">
                       <i class="fa-solid fa-eye"></i>
                     </button>
@@ -133,8 +176,13 @@
           </div>
 
           <div class="px-3 py-3 d-flex justify-content-end">
-
-            <button class="btn btn-success" :disabled="!canComplete" @click="completeOrder">Nhập hàng</button>
+            <button 
+              class="btn btn-success" 
+              :disabled="!canComplete" 
+              @click="completeOrder"
+            >
+              Nhập hàng
+            </button>
           </div>
         </div>
 
@@ -148,73 +196,30 @@
       </main>
     </div>
 
-    <!-- Contact Admin Modal -->
-    <div v-if="contactModalVisible" class="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-dark bg-opacity-50">
-      <div class="card p-4 w-50 shadow">
-        <div class="d-flex align-items-center justify-content-between mb-3">
-          <h5 class="mb-0"><i class="fa-solid fa-envelope me-2 text-primary"></i>Liên hệ Admin</h5>
-          <button class="btn btn-sm btn-outline-secondary" @click="contactModalVisible = false">Đóng</button>
-        </div>
-
-        <div class="table-responsive mb-3">
-          <table class="table table-striped table-bordered table-hover align-middle text-center">
-            <thead class="table-primary">
-              <tr>
-                <th scope="col">SKU</th>
-                <th scope="col">Tên hàng hóa</th>
-                <th scope="col">Loại</th>
-                <th scope="col">Hãng</th>
-                <th scope="col">Màu</th>
-                <th scope="col">Số lượng</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td colspan="6" class="text-muted">Không có dữ liệu</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-
-        <div class="mb-3">
-          <label class="form-label fw-semibold">Tin nhắn</label>
-          <textarea v-model.trim="contactMessage" class="form-control" placeholder="Nhập tin nhắn của bạn..." rows="4"></textarea>
-        </div>
-
-        <div class="d-flex justify-content-end">
-          <button class="btn btn-primary px-4" @click="sendMessageToAdmin">
-            <i class="fa-solid fa-paper-plane me-2"></i>Gửi
-          </button>
-        </div>
-      </div>
-    </div>
-
     <!-- Serial Modal -->
     <div v-if="modalSku" class="modal-overlay d-flex align-items-center justify-content-center">
-      <div class="card w-50 p-2 notranslate" translate="no">
-        <div class="d-flex align-items-center justify-content-between">
+      <div class="card serial-modal-card p-3 notranslate" translate="no">
+        <div class="d-flex align-items-center justify-content-between mb-3">
           <h5 class="mb-0">Đã quét Serial — SKU: {{ modalSku }}</h5>
-
           <button class="btn btn-sm btn-outline-secondary" @click="modalSku = null">Đóng</button>
-
         </div>
-        <div class="table-responsive mt-2">
-          <table class="table table-sm" translate="no">
-            <thead>
+        <div class="serial-table-wrapper">
+          <table class="table table-sm table-hover mb-0" translate="no">
+            <thead class="sticky-top bg-white">
               <tr>
                 <th class="notranslate">Serial</th>
                 <th>Trạng thái</th>
-                <th>Vị trí (Bin)</th>
+            
               </tr>
             </thead>
             <tbody>
               <tr v-for="s in modalSerials" :key="s.serialNumber">
                 <td class="mono nowrap notranslate">{{ s.serialNumber }}</td>
                 <td class="nowrap">{{ s.status }}</td>
-                <td class="nowrap notranslate">{{ s.binId || s.warehouseId || '—' }}</td>
+
               </tr>
               <tr v-if="!modalSerials.length">
-                <td colspan="3" class="text-center text-muted">Chưa có serial</td>
+                <td colspan="3" class="text-center text-muted py-4">Chưa có serial</td>
               </tr>
             </tbody>
           </table>
@@ -235,12 +240,8 @@ import { tokenService } from "@/services/TokenService";
 import api from "@/services/axios";
 import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "vue-sonner";
-import TopNavAdmin from "../layout/TopNavAdmin.vue";
-
 
 // ===== Refs =====
-const contactModalVisible = ref(false);
-const contactMessage = ref("");
 const auth = tokenService();
 const userId = ref("");
 const orders = ref([]);
@@ -254,6 +255,14 @@ const modalSku = ref(null);
 const modalSerials = ref([]);
 const toastMsg = ref("");
 let toastTimer = null;
+
+// Pagination & Search
+const currentPage = ref(0);
+const pageSize = ref(10);
+const totalPages = ref(0);
+const totalElements = ref(0);
+const searchKeyword = ref("");
+let searchTimeout = null;
 
 // QR Scanner
 const qrScanner = ref(null);
@@ -277,48 +286,93 @@ const key = (s) => String(s || "").trim().toLowerCase();
 const chip = (s) => ({ "btn-outline-secondary": status.value !== s, "btn-primary text-white": status.value === s });
 const viStatus = (s) => {
   const k = String(s || "").toUpperCase();
-  if (k === "PENDING" || k === "UPCOMING") return "Chờ xử lý";
+  if (k === "IN_BOUND" ) return "Chờ xử lý";
   if (k === "IN_PROGRESS") return "Đang thực hiện";
-  if (k === "COMPLETED" || k === "DONE") return "Hoàn tất";
+  if (k === "COMPLETED") return "Hoàn tất";
   return s || "—";
 };
-const filteredOrders = computed(() => {
-  if (status.value === "ALL") return orders.value;
-  return orders.value.filter(o => {
-    const k = String(o.status || "").toUpperCase();
-    if (status.value === "PENDING") return k === "PENDING" || k === "UPCOMING";
-    if (status.value === "COMPLETED") return k === "COMPLETED" || k === "DONE";
-    return k === status.value;
-  });
-});
 
 // ======== Computed ========
-const scannedCount = (sku) => scannedBySku.value[key(sku)]?.count || 0;
+
+
 const canComplete = computed(() => {
   if (!selectedOrder.value) return false;
   const s = String(selectedOrder.value.status || "").toUpperCase();
+  
+ 
   if (s === "COMPLETED" || s === "DONE") return false;
-  return Object.keys(scannedBySku.value).some(k => (scannedBySku.value[k]?.count || 0) > 0);
+  
+  
+  if (!selectedOrder.value.items?.length) return false;
+  
+  const allItemsScanned = selectedOrder.value.items.every(item => {
+    return (item.scannedQuantity || 0) >= (item.orderQuantity || 0);
+  });
+  
+  return allItemsScanned;
 });
+
 const canScan = computed(() => {
   if (!selectedOrder.value) return false;
-  return String(selectedOrder.value.status || "").toUpperCase() !== "COMPLETED";
+  const s = String(selectedOrder.value.status || "").toUpperCase();
+  return s !== "COMPLETED" && s !== "DONE";
 });
 
 
-// ======== Methods ========
-const setStatus = (s) => status.value = s;
+const setStatus = (s) => {
+  console.log('Setting status to:', s);
+  status.value = s;
+  currentPage.value = 0;
+  loadOrders();
+};
 
 
-async function initOrders() {
+const debounceSearch = () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(() => {
+    currentPage.value = 0;
+    loadOrders();
+  }, 500);
+};
+
+const goToPage = (page) => {
+  if (page >= 0 && page < totalPages.value) {
+    currentPage.value = page;
+    loadOrders();
+  }
+};
+
+async function loadOrders() {
   loading.value = true;
   try {
     auth.loadToken();
     userId.value = auth.userId;
-    orders.value = await purchaseOrderService.getAllPurchaseOrders();
-  } catch {
-    toast.error("Lỗi tải danh sách phiếu");
     
+    const statusParam = status.value === "ALL" ? null : status.value;
+    const keywordParam = searchKeyword.value.trim() || null;
+    
+    console.log('Loading orders with params:', { 
+      page: currentPage.value, 
+      size: pageSize.value, 
+      status: statusParam, 
+      keyword: keywordParam 
+    });
+    
+    const result = await purchaseOrderService.searchPurchaseOrders({
+      page: currentPage.value,
+      size: pageSize.value,
+      status: statusParam,
+      keyword: keywordParam
+    });
+    
+    console.log('Loaded orders:', result);
+    
+    orders.value = result.content || [];
+    totalPages.value = result.totalPages || 0;
+    totalElements.value = result.totalElements || 0;
+  } catch (err) {
+    console.error("Load orders error", err);
+    toast.error("Lỗi tải danh sách phiếu");
   } finally {
     loading.value = false;
   }
@@ -362,17 +416,12 @@ async function openOrder(o) {
         })) || []
       };
     }
-    const idx = orders.value.findIndex(x => x.id === selectedOrder.value.id);
-    if (idx !== -1) orders.value[idx] = selectedOrder.value;
-    showToast("Đã tải chi tiết phiếu thành công!");
     toast.success("Đã tải chi tiết phiếu thành công!");
   } catch (err) {
     console.error("openOrder error", err);
     toast.error("Lỗi tải chi tiết phiếu");
   }
 }
-
-
 
 async function handleQuickCameraScan(serialInput) {
   const serial = serialInput || String(quickSerial.value || "").trim();
@@ -390,17 +439,35 @@ async function handleQuickCameraScan(serialInput) {
     });
 
     toast.success("Quét thành công!");
-    item.scannedQuantity = (item.scannedQuantity || 0) + 1;
 
     const updated = await purchaseOrderService.getPurchaseOrderById(selectedOrder.value.id, { includeItems: true });
     selectedOrder.value = normalizeOrder(updated);
+    
+    const orderIndex = orders.value.findIndex(o => o.id === selectedOrder.value.id);
+    if (orderIndex !== -1) {
+      orders.value[orderIndex].status = selectedOrder.value.status;
+    }
+    
+    
+    scannedBySku.value = {};
+    for (const itm of selectedOrder.value.items || []) {
+      scannedBySku.value[key(itm.sku)] = {
+        count: itm.scannedQuantity || 0,
+        details: itm.productDetails?.map(pd => ({
+          serialNumber: pd.serialNumber,
+          status: pd.status,
+          binId: pd.binId
+        })) || []
+      };
+    }
   } catch (err) {
     const code = err.response?.data?.code;
     const msg = err.response?.data?.message;
     if (code === "SERIAL_ALREADY_SCANNED") toast.error("Serial này đã được scan trước đó");
-    else if (code === "SERIAL_NOT_FOUND")  toast.error("Serial không tồn tại trong hệ thống");
-    else if (code === "SKU_MISMATCH")  toast.error("Serial không khớp với SKU trong phiếu");
-    else  toast.error(msg || "Có lỗi xảy ra khi quét");
+    else if ( msg=== "Serial already scanned or in warehouse") toast.error("Serial tồn tại trong hệ thống");
+    else if (code === "SERIAL_NOT_FOUND") toast.error("Serial không tồn tại trong hệ thống");
+    else if (code === "SKU_MISMATCH") toast.error("Serial không khớp với SKU trong phiếu");
+    else toast.error(msg || "Có lỗi xảy ra khi quét");
   } finally {
     quickSerial.value = "";
     quickInputRef.value?.focus();
@@ -428,22 +495,39 @@ async function handleQuickScan() {
 
     await api.post("/api/product-details/confirm-scan", {
       serialNumber: serial,
-      warehouseId: selectedOrder.value?.warehouseId, // hoặc lấy từ order hiện tại
+      warehouseId: selectedOrder.value?.warehouseId,
       scannedByUserId: userId.value,
     });
 
     toast.success("Quét thành công!");
-    item.scannedQuantity = (item.scannedQuantity || 0) + 1;
+    
+    
     const updated = await purchaseOrderService.getPurchaseOrderById(
       selectedOrder.value.id,
       { includeItems: true }
     );
-
     selectedOrder.value = normalizeOrder(updated);
+    
+  
+    const orderIndex = orders.value.findIndex(o => o.id === selectedOrder.value.id);
+    if (orderIndex !== -1) {
+      orders.value[orderIndex].status = selectedOrder.value.status;
+    }
+    
+    
+    scannedBySku.value = {};
+    for (const itm of selectedOrder.value.items || []) {
+      scannedBySku.value[key(itm.sku)] = {
+        count: itm.scannedQuantity || 0,
+        details: itm.productDetails?.map(pd => ({
+          serialNumber: pd.serialNumber,
+          status: pd.status,
+          binId: pd.binId
+        })) || []
+      };
+    }
   } catch (err) {
     console.error("Scan error", err);
-
-    // ✅ xử lý lỗi chi tiết
     const code = err.response?.data?.code;
     const msg = err.response?.data?.message;
 
@@ -463,16 +547,24 @@ async function handleQuickScan() {
 }
 
 async function completeOrder() {
-  if (!selectedOrder.value) return showToast("Chưa chọn phiếu");
+  if (!selectedOrder.value) return;
+  
   try {
-    await api.post(`/api/purchase-orders/${selectedOrder.value.id}/complete`, {}, { params: { userId: userId.value } });
+    await api.post(`/api/purchase-orders/${selectedOrder.value.id}/complete`, {}, { 
+      params: { userId: userId.value } 
+    });
+    
     toast.success("Nhập kho thành công!");
-    await initOrders();
+    
+    
+    await loadOrders();
+    
+    
     selectedOrder.value = null;
   } catch (err) {
     console.error("Complete error", err);
-    toast.error("Có lỗi khi nhập kho");
-    
+    const msg = err.response?.data?.message;
+    toast.error(msg || "Có lỗi khi nhập kho");
   }
 }
 
@@ -486,7 +578,6 @@ async function openSerialsModal(sku, productId) {
   } catch (err) {
     console.error("Load serials error", err);
     toast.error("Lỗi tải serials");
-    showToast("Không tải được serials");
   }
 }
 
@@ -496,32 +587,33 @@ function showToast(msg = "") {
   toastTimer = setTimeout(() => (toastMsg.value = ""), 1600);
 }
 
-
-
-
 function startQrScanner() {
-  if (!selectedOrder.value) return showToast("Chọn phiếu trước khi quét QR");
+  if (!selectedOrder.value) return toast.error("Chọn phiếu trước khi quét QR");
+  if (!canScan.value) return toast.error("Không thể quét cho phiếu đã hoàn tất");
+  
   qrScannerVisible.value = true;
-  qrScanner.value = new Html5Qrcode("qr-reader");
-  qrScanner.value.start(
-    { facingMode: "environment" },
-    {
-      fps: 10,
-      qrbox: 250
-    },
-    (decodedText) => {
-      handleQuickCameraScan(decodedText);
-      toast.success(`Quét thành công: ${decodedText}`);
-      stopQrScanner();
-    },
-    (errorMessage) => {
-      console.log("error scan: ",errorMessage)
-    }
-  ).catch(err => {
-    console.error("QR Scanner start error", err);
-    toast.error("Lỗi khi khởi động camera");
-    qrScannerVisible.value = false;
-  });
+  
+  setTimeout(() => {
+    qrScanner.value = new Html5Qrcode("qr-reader");
+    qrScanner.value.start(
+      { facingMode: "environment" },
+      { 
+        fps: 30,
+        qrbox: { width: 300, height: 300 },
+        aspectRatio: 1.0
+      },
+      (decodedText) => {
+        handleQuickCameraScan(decodedText);
+        
+      },
+      (errorMessage) => {
+      }
+    ).catch(err => {
+      console.error("QR Scanner start error", err);
+      toast.error("Lỗi khi khởi động camera");
+      qrScannerVisible.value = false;
+    });
+  }, 100);
 }
 
 function stopQrScanner() {
@@ -549,9 +641,8 @@ const download = async (id) => {
   }
 };
 
-
 onMounted(async () => {
-  await initOrders();
+  await loadOrders();
 });
 </script>
 
@@ -566,13 +657,10 @@ onMounted(async () => {
 .section-card { background: #fff; border: 1px solid #eef2f7; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
 
 .badge-card {
-
   background: #fff; border: 1px solid #eef2f7; border-radius: 10px;
   padding: 8px 14px; text-align: center; display: inline-flex; flex-direction: column; min-width: 140px;
-
 }
 .badge-card .num { font-weight: 700; color: #1f2937; font-size: 18px; }
-
 
 .table-balanced th, .table-balanced td { vertical-align: middle; white-space: nowrap; height: 56px; }
 .nowrap { white-space: nowrap; }
@@ -582,8 +670,165 @@ onMounted(async () => {
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000; }
 .toast-box { position: fixed; bottom: 20px; right: 20px; background: #111; color: #fff; padding: 10px 14px; border-radius: 8px; z-index: 20000; }
 
+.serial-modal-card {
+  width: 90%;
+  max-width: 700px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+}
+
+.serial-table-wrapper {
+  overflow-y: auto;
+  max-height: calc(80vh - 100px);
+  border: 1px solid #eef2f7;
+  border-radius: 8px;
+}
+
+.serial-table-wrapper::-webkit-scrollbar {
+  width: 8px;
+}
+
+.serial-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.serial-table-wrapper::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.serial-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.serial-table-wrapper .sticky-top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* QR Scanner Styles */
+.qr-scanner-container {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.qr-scanner-header h6 {
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.qr-reader-wrapper {
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+#qr-reader {
+  width: 100% !important;
+  border: none !important;
+  border-radius: 12px;
+}
+
+#qr-reader video {
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.qr-scanner-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.qr-scanner-corner {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  border: 4px solid #28a745;
+  box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
+}
+
+.qr-scanner-corner.top-left {
+  top: 50%;
+  left: 50%;
+  margin-top: -150px;
+  margin-left: -150px;
+  border-right: none;
+  border-bottom: none;
+  border-radius: 12px 0 0 0;
+}
+
+.qr-scanner-corner.top-right {
+  top: 50%;
+  right: 50%;
+  margin-top: -150px;
+  margin-right: -150px;
+  border-left: none;
+  border-bottom: none;
+  border-radius: 0 12px 0 0;
+}
+
+.qr-scanner-corner.bottom-left {
+  bottom: 50%;
+  left: 50%;
+  margin-bottom: -150px;
+  margin-left: -150px;
+  border-right: none;
+  border-top: none;
+  border-radius: 0 0 0 12px;
+}
+
+.qr-scanner-corner.bottom-right {
+  bottom: 50%;
+  right: 50%;
+  margin-bottom: -150px;
+  margin-right: -150px;
+  border-left: none;
+  border-top: none;
+  border-radius: 0 0 12px 0;
+}
+
 @media (max-width: 992px) {
   .pbox { flex-direction: column; }
   .side { width: 100%; height: auto; position: static; }
+  .serial-modal-card { width: 95%; max-width: none; }
+  
+  .qr-scanner-corner {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .qr-scanner-corner.top-left {
+    margin-top: -100px;
+    margin-left: -100px;
+  }
+  
+  .qr-scanner-corner.top-right {
+    margin-top: -100px;
+    margin-right: -100px;
+  }
+  
+  .qr-scanner-corner.bottom-left {
+    margin-bottom: -100px;
+    margin-left: -100px;
+  }
+  
+  .qr-scanner-corner.bottom-right {
+    margin-bottom: -100px;
+    margin-right: -100px;
+  }
 }
 </style>
