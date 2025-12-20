@@ -1,222 +1,197 @@
 <script setup>
 import { ref, onMounted, watch } from "vue";
 import { useRouter } from "vue-router";
-import { locationService } from "../../services/locationService";
 import { warehouseService } from "../../services/warehouseService";
+import { toast } from "vue-sonner";
 
 const router = useRouter();
-const sidebarOpen = ref(true);
-const cities = ref([]);
-const wardsList = ref([]);
+
+/* =====================
+   CONSTANT
+===================== */
+const MAX_LENGTH = 60;
+
+/* =====================
+   STATE
+===================== */
 const selectedLocationId = ref(null);
 const warehouses = ref([]);
 const loading = ref(false);
 
-
 const showEditModal = ref(false);
+
 const editForm = ref({
   id: null,
   name: "",
   code: "",
   type: "",
-  currentQuantity: 0,
-  capacity: 0,
+  currentQuantity: null,
+  capacity: null,
   parentId: null,
-  locationId: null,
+  location: "",
 });
 
+/* =====================
+   VALIDATION STATE
+===================== */
+const errors = ref({
+  name: "",
+  code: "",
+  type: "",
+  location: "",
+});
 
-async function loadCities() {
-  try {
-    const all = await locationService.getAllLocation();
-    for (const city of all) {
-      const detail = await locationService.getLocationById(city.id);
-      city.children = detail.children || [];
-    }
-    cities.value = all;
+/* =====================
+   VALIDATION
+===================== */
+function validateForm() {
+  let ok = true;
 
+  errors.value = {
+    name: "",
+    code: "",
+    type: "",
+    location: "",
+  };
 
-    wardsList.value = cities.value.flatMap(city =>
-      city.children?.map(ward => ({
-        id: ward.id,
-        name: `${city.name} - ${ward.name}`,
-      })) || []
-    );
-  } catch (err) {
-    console.error("Lỗi tải cities:", err);
+  if (!editForm.value.name) {
+    errors.value.name = "Tên kho là bắt buộc";
+    ok = false;
+  } else if (editForm.value.name.length > MAX_LENGTH) {
+    errors.value.name = `Tối đa ${MAX_LENGTH} ký tự`;
+    ok = false;
   }
+
+  if (!editForm.value.code) {
+    errors.value.code = "Code là bắt buộc";
+    ok = false;
+  } else if (editForm.value.code.length > MAX_LENGTH) {
+    errors.value.code = `Tối đa ${MAX_LENGTH} ký tự`;
+    ok = false;
+  }
+
+  if (!editForm.value.type) {
+    errors.value.type = "Loại kho là bắt buộc";
+    ok = false;
+  }
+
+  if (!editForm.value.location) {
+    errors.value.location = "Vị trí là bắt buộc";
+    ok = false;
+  } else if (editForm.value.location.length > MAX_LENGTH) {
+    errors.value.location = `Tối đa ${MAX_LENGTH} ký tự`;
+    ok = false;
+  }
+
+  return ok;
 }
 
-
-function flattenWarehouses(tree, parentName = null) {
-  let result = [];
-  for (const node of tree) {
-    result.push({
-      id: node.id,
-      name: node.name,
-      code: node.code,
-      location: node.location?.name || "-",
-      createdAt: node.createdAt || "-",
-      productCount: node.productCount || 0,
-      parent: parentName,
-      type: node.type,
-      currentQuantity: node.currentQuantity,
-      capacity: node.capacity,
-      parentId: node.parentId || null,
-      locationId: node.locationId || null,
-    });
-    if (node.children?.length) {
-      result = result.concat(flattenWarehouses(node.children, node.name));
-    }
-  }
-  return result;
-}
-
-
+/* =====================
+   LOAD WAREHOUSES
+===================== */
 async function loadWarehouses() {
   try {
     if (selectedLocationId.value) {
-      const tree = await warehouseService.getTreeByLocation(selectedLocationId.value);
-      warehouses.value = flattenWarehouses(tree);
+      warehouses.value =
+        await warehouseService.getTreeByLocation(selectedLocationId.value);
     } else {
-      const all = await warehouseService.getAllWarehouses();
-      warehouses.value = all;
+      warehouses.value = await warehouseService.getAllWarehouses();
     }
   } catch (err) {
     console.error("Lỗi tải warehouses:", err);
+    toast.error("Lỗi tải danh sách kho");
   }
 }
 
-
+/* =====================
+   NAVIGATE
+===================== */
 function goToCreateWarehouse() {
   router.push("/warehouses/create");
 }
 
-
+/* =====================
+   OPEN EDIT MODAL
+===================== */
 function openEditModal(w) {
   editForm.value = {
     id: w.id,
-    name: w.name,
-    code: w.code,
-    type: w.type,
+    name: w.name || "",
+    code: w.code || "",
+    type: w.type || "",
     currentQuantity: w.currentQuantity,
     capacity: w.capacity,
     parentId: w.parentId,
-    locationId: w.locationId,
+    location: w.location || "",
   };
+
+  errors.value = {
+    name: "",
+    code: "",
+    type: "",
+    location: "",
+  };
+
   showEditModal.value = true;
 }
 
-
+/* =====================
+   UPDATE WAREHOUSE
+===================== */
 async function updateWarehouse() {
+  if (!validateForm()) {
+    toast.warning("Vui lòng kiểm tra lại dữ liệu");
+    return;
+  }
+
   loading.value = true;
   try {
     const { id, ...payload } = editForm.value;
     await warehouseService.updateWarehouse(id, payload);
     showEditModal.value = false;
     await loadWarehouses();
+    toast.success("Cập nhật kho thành công");
   } catch (err) {
     console.error("Lỗi cập nhật warehouse:", err);
-    alert("Cập nhật thất bại");
+    toast.error("Cập nhật thất bại");
   } finally {
     loading.value = false;
   }
 }
 
-
-watch(
-  () => editForm.value.parentId,
-  (newParentId) => {
-    if (newParentId) {
-      const parent = warehouses.value.find(w => w.id === newParentId);
-      if (parent?.locationId) {
-        editForm.value.locationId = parent.locationId;
-      }
-    }
-  }
-);
-
-watch(selectedLocationId, () => {
-  loadWarehouses();
-});
+/* =====================
+   WATCH + MOUNT
+===================== */
+watch(selectedLocationId, loadWarehouses);
 
 onMounted(() => {
-  loadCities();
   loadWarehouses();
 });
 </script>
 
 <template>
   <div class="d-flex vh-100">
-    <!-- Sidebar -->
-    <!-- <div class="d-flex flex-column">
-      <div class="bg-light border-end p-2 text-center">
+    <div class="flex-grow-1 d-flex flex-column">
+
+      <!-- HEADER -->
+      <div class="d-flex align-items-center bg-white border-bottom p-2 justify-content-between">
+        <div class="input-group input-group-sm" style="max-width: 250px;">
+          <input type="text" class="form-control" placeholder="Tìm kiếm..." />
+          <span class="input-group-text">
+            <i class="fa-solid fa-magnifying-glass"></i>
+          </span>
+        </div>
+
         <button
-          class="btn btn-sm btn-outline-secondary w-100"
-          @click="sidebarOpen = !sidebarOpen"
+          class="btn btn-success d-flex align-items-center gap-2 px-3 py-1"
+          @click="goToCreateWarehouse"
         >
-          <span v-if="sidebarOpen">✖</span>
-          <span v-else>☰</span>
+          <i class="fa-solid fa-plus"></i>
+          <span>Thêm</span>
         </button>
       </div>
-      <transition name="slide">
-        <div v-if="sidebarOpen" class="bg-light border-end p-3 sidebar flex-grow-1">
-          <h5 class="fw-bold mb-3">Danh sách địa chỉ</h5>
-          <ul class="list-unstyled">
-            <li>
-              <button
-                class="btn btn-sm w-100 mb-2 btn-outline-primary"
-                @click="selectedLocationId = null"
-              >
-                <i class="fa-solid fa-warehouse"></i>
-              </button>
-            </li>
-            <li v-for="city in cities" :key="city.id">
-              <details>
-                <summary class="fw-semibold">{{ city.name }}</summary>
-                <ul class="ms-3 text-secondary">
-                  <li
-                    v-for="ward in city.children"
-                    :key="ward.id"
-                    class="py-1"
-                    @click="selectedLocationId = ward.id"
-                    style="cursor: pointer;"
-                  >
-                    <span :class="{ 'text-primary fw-semibold': selectedLocationId === ward.id }">
-                      + {{ ward.name }}
-                    </span>
-                  </li>
-                  <li v-if="!city.children?.length" class="text-muted fst-italic">
-                    (Không có phường)
-                  </li>
-                </ul>
-              </details>
-            </li>
-          </ul>
-        </div>
-      </transition>
-    </div> -->
 
-    <!--  Table -->
-    <div class="flex-grow-1 d-flex flex-column">
-      <div class="d-flex align-items-center bg-white border-bottom p-2 justify-content-between">
-        <div class="d-flex align-items-center gap-3">
-          <div class="input-group input-group-sm" style="max-width: 250px;">
-            <input type="text" class="form-control" placeholder="Tìm kiếm..." />
-            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
-          </div>
-        </div>
-        <div class="d-flex align-items-center gap-3">
-          <button 
-            class="btn btn-success d-flex align-items-center gap-2 px-3 py-1" 
-            @click="goToCreateWarehouse"
-          >
-            <i class="fa-solid fa-plus"></i>
-            <span>Thêm</span>
-          </button>
-        </div>
-      </div>
-
+      <!-- TABLE -->
       <div class="p-3 overflow-auto">
         <table class="table table-bordered table-striped align-middle">
           <thead class="table-light">
@@ -224,9 +199,8 @@ onMounted(() => {
               <th>#</th>
               <th>Tên kho</th>
               <th>Code</th>
-              <th>Kho cha</th>
+              <th>Loại Kho</th>
               <th>Vị trí</th>
-              <th>Ngày tạo</th>
               <th>Hành động</th>
             </tr>
           </thead>
@@ -235,17 +209,19 @@ onMounted(() => {
               <td>{{ index + 1 }}</td>
               <td>{{ w.name }}</td>
               <td>{{ w.code }}</td>
-              <td>{{ w.parent || "-" }}</td>
+              <td>{{ w.type }}</td>
               <td>{{ w.location }}</td>
-              <td>{{ w.createdAt }}</td>
               <td>
                 <button class="btn btn-outline-warning" @click="openEditModal(w)">
                   <i class="fa-solid fa-pen"></i>
                 </button>
               </td>
             </tr>
+
             <tr v-if="!warehouses.length">
-              <td colspan="8" class="text-center text-muted">Không có dữ liệu</td>
+              <td colspan="6" class="text-center text-muted">
+                Không có dữ liệu
+              </td>
             </tr>
           </tbody>
         </table>
@@ -253,90 +229,91 @@ onMounted(() => {
     </div>
   </div>
 
-  <!-- Edit Modal -->
-  <div v-if="showEditModal" class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
-    <div class="modal-dialog  modal-dialog-centered">
+  <!-- EDIT MODAL -->
+  <div
+    v-if="showEditModal"
+    class="modal fade show d-block"
+    tabindex="-1"
+    style="background: rgba(0,0,0,0.5);"
+  >
+    <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
+
         <div class="modal-header">
           <h5 class="modal-title">Chỉnh sửa kho</h5>
-          <button type="button" class="btn-close" @click="showEditModal = false"></button>
+          <button class="btn-close" @click="showEditModal = false"></button>
         </div>
+
         <div class="modal-body">
           <div class="row g-3">
+
+            <!-- NAME -->
             <div class="col-md-6">
               <label class="form-label">Tên kho</label>
-              <input v-model="editForm.name" type="text" class="form-control" />
+              <input
+                v-model="editForm.name"
+                class="form-control"
+                :maxlength="MAX_LENGTH"
+                :class="{ 'is-invalid': errors.name }"
+              />
+              <div class="invalid-feedback d-block">{{ errors.name }}</div>
             </div>
+
+            <!-- CODE -->
             <div class="col-md-6">
               <label class="form-label">Code</label>
-              <input v-model="editForm.code" type="text" class="form-control" />
+              <input
+                v-model="editForm.code"
+                class="form-control"
+                :maxlength="MAX_LENGTH"
+                :class="{ 'is-invalid': errors.code }"
+              />
+              <div class="invalid-feedback d-block">{{ errors.code }}</div>
             </div>
+
+            <!-- TYPE -->
             <div class="col-md-6">
               <label class="form-label">Loại</label>
-              <select v-model="editForm.type" class="form-select">
+              <select
+                v-model="editForm.type"
+                class="form-select"
+                :class="{ 'is-invalid': errors.type }"
+              >
                 <option value="WAREHOUSE">WAREHOUSE</option>
-                <option value="ZONE">ZONE</option>
-                <option value="AISLE">AISLE</option>
-                <option value="SHELF">SHELF</option>
-                <option value="BIN">BIN</option>
               </select>
+              <div class="invalid-feedback d-block">{{ errors.type }}</div>
             </div>
-            <div class="col-md-3">
-              <label class="form-label">Số lượng hiện tại</label>
-              <input v-model.number="editForm.currentQuantity" type="number" min="0" class="form-control" />
-            </div>
-            <div class="col-md-3">
-              <label class="form-label">Sức chứa</label>
-              <input v-model.number="editForm.capacity" type="number" min="0" class="form-control" />
-            </div>
+
+            <!-- LOCATION -->
             <div class="col-md-6">
-              <label class="form-label">Kho cha</label>
-              <select v-model="editForm.parentId" class="form-select">
-                <option :value="null">— Không có</option>
-                <option v-for="w in warehouses" :key="w.id" :value="w.id">
-                  {{ w.name }} ({{ w.code }})
-                </option>
-              </select>
+              <label class="form-label">Vị trí</label>
+              <input
+                v-model="editForm.location"
+                class="form-control"
+                :maxlength="MAX_LENGTH"
+                :class="{ 'is-invalid': errors.location }"
+              />
+              <div class="invalid-feedback d-block">{{ errors.location }}</div>
             </div>
-            <div class="col-md-6">
-              <label class="form-label">Vị trí (Ward)</label>
-              <select v-model="editForm.locationId" class="form-select">
-                <option disabled value="">-- Chọn ward --</option>
-                <option v-for="w in wardsList" :key="w.id" :value="w.id">
-                  {{ w.name }}
-                </option>
-              </select>
-            </div>
+
           </div>
         </div>
+
         <div class="modal-footer">
-          <button class="btn btn-secondary" @click="showEditModal = false">Hủy</button>
+          <button class="btn btn-secondary" @click="showEditModal = false">
+            Hủy
+          </button>
           <button class="btn btn-success" @click="updateWarehouse" :disabled="loading">
             {{ loading ? "Đang lưu..." : "Lưu" }}
           </button>
         </div>
+
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.sidebar {
-  width: 250px;
-  min-width: 250px;
-  max-width: 250px;
-  overflow-y: auto;
-  transition: all 0.3s ease;
-}
-.slide-enter-active,
-.slide-leave-active {
-  transition: all 0.3s ease;
-}
-.slide-enter-from,
-.slide-leave-to {
-  opacity: 0;
-  transform: translateX(-100%);
-}
 .modal {
   display: block;
 }

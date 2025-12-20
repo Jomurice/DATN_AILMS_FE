@@ -69,6 +69,7 @@
 import { ref, onMounted, computed } from "vue";
 import { useRoute, useRouter, RouterLink } from "vue-router";
 import { outboundOrderService } from "@/services/outbound/outboundOrderService";
+import { toast } from "vue-sonner";
 
 const route = useRoute(); const router = useRouter();
 const order = ref(null);
@@ -81,18 +82,35 @@ function fmtDate(d){ if(!d) return '—'; try{ if(typeof d==='string' && /^\d{4}
 
 async function load(){
   const { id } = route.params;
-  const data = await outboundOrderService.getById(id, { includeItems: true });
-  order.value = data;
-  if(order.value?.items?.length && !selectedItemId.value) selectedItemId.value = order.value.items[0].id;
+  try {
+    const data = await outboundOrderService.getById(id, { includeItems: true });
+    order.value = data;
+    if(order.value?.items?.length && !selectedItemId.value) selectedItemId.value = order.value.items[0].id;
+  } catch (error) {
+    toast.error('Không thể tải phiếu xuất hàng !');
+    console.log("Failed to load outbound order:", error);
+  }
+  
+  
 }
 
 async function scan(){
-  const s = (serial.value||"").trim(); if(!s || !selectedItemId.value) return;
-  await outboundOrderService.scanItem(selectedItemId.value, s, userId.value);
-  serial.value=""; await load();
+  try {
+    const s = (serial.value||"").trim(); if(!s || !selectedItemId.value) return;
+    await outboundOrderService.scanItem(selectedItemId.value, s, userId.value);
+    serial.value=""; await load();
+  } catch (error) {
+    console.log("Scan error:", error);
+    toast.error('Quét serial thất bại !');
+  }
 }
 
 async function removeItem(itemId){
+  try {
+    
+  } catch (error) {
+    
+  }
   if(!confirm("Xóa dòng này?")) return;
   await outboundOrderService.removeItem(itemId);
   await load();

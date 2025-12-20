@@ -75,27 +75,25 @@
     </div>
   </div>
 </template>
-
 <script setup>
-import { ref, computed, onMounted, watch } from "vue";
+// Khi BE hỗ trợ lọc theo kho, có thể thêm watch(warehouseId, ...) để gọi API filter theo kh<script setup>
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import Chart from "chart.js/auto";
-import {
-  getDashboardStats,
-  getInboundOutboundSeries,
-} from "@/services/dashboardService";
+import { getDashboardStats, getInboundOutboundSeries } from "@/services/dashboardService";
 import { warehouseService } from "@/services/WarehouseService";
-
+import { toast } from "vue-sonner";
 
 const loading = ref(false);
-/* ===== UI state ===== */
-const timeframes = ["24H", "7D", "1M", "1Y", "All"]; // giữ như cũ
+const timeframe = ref("7D");
+const series = ref("all");
+
+
+const timeframes = ["24H", "7D", "1M", "1Y", "All"];
 const seriesOptions = [
   { label: "Tổng", value: "all" },
   { label: "Nhập", value: "inbound" },
   { label: "Xuất", value: "outbound" },
 ];
-const timeframe = ref("7D");
-const series = ref("all");
 
 /* ===== Kho (dropdown nhỏ) ===== */
 const warehouses = ref([]);
@@ -128,134 +126,94 @@ const statCards = computed(() => [
   },
 ]);
 
-/* ===== Chart ===== */
+/* ===== Chart Logic ===== */
 const chartRef = ref(null);
-let chart;
-
-const colors = {
-  inbound: { bg: "rgba(59,130,246,.35)", border: "rgba(59,130,246,1)" }, // xanh
-  outbound: { bg: "rgba(239,68,68,.35)", border: "rgba(239,68,68,1)" }, // đỏ
-};
+let chartInstance = null; // Đổi tên để tránh nhầm lẫn
 
 async function drawChart() {
-  // Hiện tại service chưa nhận warehouseId -> vẫn gọi như cũ.
-  // Khi BE có filter theo kho, chỉ cần sửa service để nhận thêm param.
+  if (!chartRef.value) return;
+
   const { labels, inbound, outbound } = await getInboundOutboundSeries(
     timeframe.value,
     warehouseId.value
   );
 
+  // QUAN TRỌNG: Hủy chart cũ trước khi vẽ chart mới trên canvas mới
+  if (chartInstance) {
+    chartInstance.destroy();
+  }
+
   const datasets = [];
   if (series.value === "all" || series.value === "inbound") {
     datasets.push({
-      type: "bar",
       label: "Nhập",
       data: inbound,
-      backgroundColor: colors.inbound.bg,
-      borderColor: colors.inbound.border,
+      backgroundColor: "rgba(59,130,246,.35)",
+      borderColor: "rgba(59,130,246,1)",
       borderWidth: 1,
-      categoryPercentage: 0.6,
-      barPercentage: 0.9,
     });
   }
   if (series.value === "all" || series.value === "outbound") {
     datasets.push({
-      type: "bar",
       label: "Xuất",
       data: outbound,
-      backgroundColor: colors.outbound.bg,
-      borderColor: colors.outbound.border,
+      backgroundColor: "rgba(239,68,68,.35)",
+      borderColor: "rgba(239,68,68,1)",
       borderWidth: 1,
-      categoryPercentage: 0.6,
-      barPercentage: 0.9,
     });
   }
 
-  const cfg = {
+  chartInstance = new Chart(chartRef.value.getContext("2d"), {
     type: "bar",
     data: { labels, datasets },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: "top",
-          onClick: () => { },
-          labels: { color: "#6b7280", font: { weight: 500 } },
-        },
-        tooltip: { mode: "index", intersect: false },
-      },
-      scales: {
-        x: {
-          stacked: false,
-          ticks: { color: "#6b7280" },
-          grid: { color: "#f1f5f9" },
-          title: {
-            display: true,
-            text: "Thời gian",
-            color: "#6b7280",
-            font: { weight: 500 },
-          },
-        },
-        y: {
-          beginAtZero: true,
-          ticks: { precision: 0, color: "#6b7280" },
-          grid: { color: "#f1f5f9" },
-          title: {
-            display: true,
-            text: "Số lượng",
-            color: "#6b7280",
-            font: { weight: 500 },
-          },
-        },
-      },
+      scales: { y: { beginAtZero: true } }
     },
-  };
-
-  if (!chart) chart = new Chart(chartRef.value.getContext("2d"), cfg);
-  else {
-    chart.data.labels = labels;
-    chart.data.datasets = datasets;
-    chart.update();
-  }
+  });
 }
 
-async function loadStats() {
+/* ===== Data Loading ===== */
+async function updateDashboardData() { // Thống nhất tên hàm
   loading.value = true;
   try {
+    // 1. Load Stats (Cards)
     const s = await getDashboardStats(timeframe.value, warehouseId.value);
     stats.value = s;
+
+    // 2. Tắt loading để Vue render lại thẻ <canvas>
+    loading.value = false;
+    
+    // 3. Đợi DOM cập nhật xong rồi mới vẽ Chart
+    await nextTick();
+    await drawChart();
   } catch (error) {
-    console.error("Lỗi khi tải thống kê bảng điều khiển:", error);
-  } finally {
+    console.error("Lỗi tải dashboard:", error);
+    toast.error('Tải dữ liệu thất bại!');
     loading.value = false;
   }
-
 }
 
 onMounted(async () => {
   try {
     warehouses.value = (await warehouseService.getAllWarehouses()) || [];
-  } catch { }
-  await loadStats();
-  await drawChart();
+  } catch {}
+  await updateDashboardData();
 });
 
-watch(timeframe, async () => {
-  await loadStats();
-  await drawChart();
+/* ===== Watchers (Chỉ cần 2 cái này là đủ) ===== */
+
+// Khi thay đổi thời gian hoặc kho -> Load lại tất cả
+watch([timeframe, warehouseId], async () => {
+  await updateDashboardData();
 });
-watch(warehouseId, async () => {
-  await loadStats();
-  await drawChart();
-})
+
+// Khi chỉ thay đổi loại hiển thị (Nhập/Xuất) -> Chỉ vẽ lại chart, không gọi API stats
 watch(series, async () => {
   await drawChart();
 });
-
-// Khi BE hỗ trợ lọc theo kho, có thể thêm watch(warehouseId, ...) để gọi API filter theo kho
 </script>
-
 <style scoped>
 .dbox {
   display: flex;

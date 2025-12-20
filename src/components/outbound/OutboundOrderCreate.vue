@@ -234,6 +234,7 @@ import { stockService } from "../../services/StockService";
 import { customerService } from "../../services/outbound/CustomerService";
 import { warehouseService} from "../../services/WarehouseService";
 import CustomerForm from "./CustomerForm.vue";
+import { toast } from "vue-sonner";
 
 const auth = tokenService();
 auth.loadToken();

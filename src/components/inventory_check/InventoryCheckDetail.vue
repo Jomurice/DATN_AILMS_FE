@@ -3,8 +3,8 @@
     
     <div v-if="toastMsg" class="position-fixed top-0 end-0 p-3" style="z-index: 9999">
         <div class="toast show align-items-center shadow border-0" 
-             :class="toastIsError ? 'bg-white text-danger border border-danger' : 'bg-success text-white'"
-             role="alert" aria-live="assertive" aria-atomic="true">
+            :class="toastIsError ? 'bg-white text-danger border border-danger' : 'bg-success text-white'"
+            role="alert" aria-live="assertive" aria-atomic="true">
             <div class="d-flex">
                 <div class="toast-body fw-bold">
                     <i :class="toastIsError ? 'fa-solid fa-circle-exclamation' : 'fa-solid fa-check-circle'" class="me-2"></i>
@@ -75,8 +75,8 @@
         </div>
         
         <div v-if="qrScannerVisible" class="my-3">
-           <div id="qr-reader" style="width: 100%;"></div>
-           <button class="btn btn-secondary mt-2" @click="stopQrScanner">Dừng QR</button>
+          <div id="qr-reader" style="width: 100%;"></div>
+          <button class="btn btn-secondary mt-2" @click="stopQrScanner">Dừng QR</button>
         </div>
 
         <ul v-if="suggestions.length" class="list-group position-absolute shadow mt-1" style="z-index: 1050; width: 50%;">
@@ -178,6 +178,7 @@ import { useRoute, useRouter } from "vue-router";
 import { inventoryCheckService } from "../../services/inventoryCheckService";
 import { tokenService } from "../../services/TokenService";
 import { Html5Qrcode } from "html5-qrcode";
+import { toast } from "vue-sonner";
 
 const route = useRoute(); const router = useRouter(); const auth = tokenService();
 const checkId = route.params.id;
@@ -282,11 +283,13 @@ function startQrScanner() {
     { fps: 10, qrbox: 250 },
     (decodedText) => {
       handleScan(decodedText);
+      toast.success(`Đã quét: ${decodedText}`);
       stopQrScanner(); 
     },
     (errorMessage) => { console.log("error scan: ",errorMessage) }
   ).catch(err => {
     console.error("QR Scanner start error", err);
+    toast.error("Không thể mở camera để quét QR");
     showToast("Không thể mở camera để quét QR", true);
     qrScannerVisible.value = false;
   });
@@ -308,7 +311,11 @@ async function loadData() {
   try {
     check.value = await inventoryCheckService.getById(checkId);
     items.value = await inventoryCheckService.getItems(checkId);
-  } catch (e) { router.push('/inventory-check'); }
+  } catch (e) { 
+    toast.error("Không tải được dữ liệu phiếu kiểm kê.");
+    console.error("Error loading inventory check data:", e);
+    router.push('/inventory-check'); 
+  }
 }
 
 async function handleScan(serialCamera) {
@@ -328,6 +335,7 @@ async function handleScan(serialCamera) {
         if(check.value.status === 'DRAFT') check.value.status = 'IN_PROGRESS';
 
         scanMessage.value = `OK: ${res.serialNumber}`; 
+        toast.success(`Đã quét: ${res.serialNumber}`);
         // showToast(`Đã quét: ${res.serialNumber}`); // Có thể bật nếu muốn thông báo cả khi thành công
         scanError.value = false;
         scanQuery.value = ""; 
@@ -349,13 +357,16 @@ async function handleScan(serialCamera) {
         // 🔥 3. GỌI showToast ĐỂ HIỆN LỖI LÊN GÓC TRÊN CÙNG
         if (backendMsg.includes("SERIAL_ALREADY_SCANNED")) {
             msg = "Serial này đã được quét rồi!";
-            showToast(msg, true);
+            toast.error(msg);
+            // showToast(msg, true);
         } else if (backendMsg.includes("không có trong sổ sách") || backendMsg.includes("hàng thừa")) {
             msg = "Lỗi: Serial này không có trong sổ sách tồn kho của kho này";
-            showToast(msg, true);
+            toast.error(msg);
+            // showToast(msg, true);
         } else {
             msg = "Lỗi: " + backendMsg;
-            showToast(msg, true);
+            toast.error(msg);
+            // showToast(msg, true);
         }
         scanMessage.value = msg; // Vẫn giữ hiển thị ở dưới ô input
     } finally {
@@ -368,7 +379,12 @@ let suggestTimeout;
 function handleSuggest() {
   clearTimeout(suggestTimeout);
   if (!scanQuery.value || scanQuery.value.length < 2) { suggestions.value = []; return; }
-  suggestTimeout = setTimeout(async () => { try { suggestions.value = await inventoryCheckService.suggestSerials(checkId, scanQuery.value); } catch {} }, 300);
+  suggestTimeout = setTimeout(async () => { 
+    try { 
+      suggestions.value = await inventoryCheckService.suggestSerials(checkId, scanQuery.value); 
+    } catch {
+
+    } }, 300);
 }
 function selectSuggestion(s) { scanQuery.value = s; suggestions.value = []; handleScan(); }
 

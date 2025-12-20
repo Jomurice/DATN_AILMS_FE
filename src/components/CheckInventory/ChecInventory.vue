@@ -159,6 +159,7 @@ import { ref, computed, onMounted, watch } from "vue";
 import { RouterLink } from "vue-router";
 import { inventoryCheckService } from "@/services/inventory/CreateInventoryService.js"; 
 import { tokenService } from "@/services/TokenService.js"; 
+import { toast } from "vue-sonner";
 
 // ===== Refs =====
 const auth = tokenService();
@@ -253,9 +254,12 @@ async function initChecks() {
     userId.value = auth.userId;
     const response = await inventoryCheckService.getAll(); // Giả sử service có getAll()
     checks.value = response;
+    toast.success("Đã tải danh sách phiếu kiểm kê thành công!");
   } catch (error) {
     console.error("Lỗi load danh sách phiếu:", error);
+    toast.error("Không tải được danh sách phiếu kiểm kê.");
     showToast("Không tải được danh sách phiếu kiểm kê.");
+    
   } finally {
     loading.value = false;
   }
@@ -266,10 +270,14 @@ async function openCheck(o) {
     const full = await inventoryCheckService.getCheckById(o.id); // Giả sử service có getById()
     selectedCheck.value = full;
     console.log('Chi tiết phiếu:', full);
+    toast.success("Đã tải chi tiết phiếu thành công!");
     showToast("Đã tải chi tiết phiếu thành công!");
+    
   } catch (err) {
     console.error("Lỗi open check:", err);
-    showToast("Không tải được chi tiết phiếu kiểm kê.");
+    toast.error("Không tải được chi tiết phiếu kiểm kê.");
+    // showToast("Không tải được chi tiết phiếu kiểm kê.");
+    
   }
 }
 
@@ -304,10 +312,12 @@ async function handleScanSerial() {
       });
     }
     scanSerial.value = '';
-    showToast(`✅ Quét serial ${serial} thành công.`);
+    // showToast(`✅ Quét serial ${serial} thành công.`);
+    toast.success(`Quét serial ${serial} thành công.`);
   } catch (error) {
     console.error('Lỗi scan:', error);
-    showToast(`❌ Lỗi quét serial: ${error.response?.data?.message || error.message}`);
+    // showToast(`❌ Lỗi quét serial: ${error.response?.data?.message || error.message}`);
+    toast.error(`Lỗi quét serial: ${error.response?.data?.message || error.message}`);
   }
 }
 
@@ -326,10 +336,12 @@ async function updateItem(item) {
       note: item.note,
     };
     await inventoryCheckService.updateItem(item.id, payload); // Giả sử service có updateItem
-    showToast('Cập nhật item thành công.');
+    // showToast('Cập nhật item thành công.');
+    toast.success('Cập nhật item thành công.');
   } catch (error) {
     console.error('Lỗi update item:', error);
-    showToast('Lỗi cập nhật item.');
+    // showToast('Lỗi cập nhật item.');
+    toast.error('Lỗi cập nhật item.');
   }
 }
 
@@ -341,10 +353,12 @@ async function handleSaveTemporary() {
         await updateItem(item);
       }
     }
-    showToast('Lưu tạm thành công.');
+    toast.success('Lưu tạm thành công.');
+    
   } catch (error) {
     console.error('Lỗi save temporary:', error);
-    showToast('Lỗi lưu tạm.');
+    // showToast('Lỗi lưu tạm.');
+    toast.error('Lỗi lưu tạm.');
   } finally {
     submitting.value = false;
   }
@@ -356,12 +370,14 @@ async function handleCompleteCheck() {
     submitting.value = true;
     const response = await inventoryCheckService.completeCheck(selectedCheck.value.id); // Giả sử service có completeCheck
     console.log('Complete response:', response);
-    showToast(`✅ Hoàn tất phiếu ${selectedCheck.value.code} thành công!`);
+    // showToast(`✅ Hoàn tất phiếu ${selectedCheck.value.code} thành công!`);
+    toast.success(`Hoàn tất phiếu ${selectedCheck.value.code} thành công!`);
     await initChecks(); // Reload list
     selectedCheck.value = null;
   } catch (error) {
     console.error('Lỗi complete:', error);
-    showToast(`❌ Lỗi hoàn tất: ${error.response?.data?.message || error.message}`);
+    // showToast(`❌ Lỗi hoàn tất: ${error.response?.data?.message || error.message}`);
+    toast.error(`Lỗi hoàn tất: ${error.response?.data?.message || error.message}`);
   } finally {
     submitting.value = false;
   }

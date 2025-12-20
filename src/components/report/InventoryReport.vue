@@ -126,6 +126,7 @@ import * as XLSX from 'xlsx';
 import { reportService } from '../../services/report/reportService';
 import { productService } from '../../services/product/productService';
 import { warehouseService } from '../../services/WarehouseService';
+import { toast } from 'vue-sonner';
 
 export default {
   name: 'InventoryReport',
@@ -161,6 +162,7 @@ export default {
         this.products = await productService.getAll();
       } catch (e) {
         console.error(e);
+        toast.error('Tải dữ liệu thất bại!');
       }
     },
 
@@ -177,7 +179,7 @@ export default {
 
     async loadReport() {
       if (!this.warehouseId) {
-        alert('Vui lòng chọn kho');
+        toast.error('Vui lòng chọn kho!');
         return;
       }
 
@@ -197,6 +199,7 @@ export default {
         this.totalElements = res.result.totalElements;
       } catch (e) {
         console.error(e);
+        toast.error('Tải báo cáo thất bại!');
       } finally {
         this.loading = false;
       }

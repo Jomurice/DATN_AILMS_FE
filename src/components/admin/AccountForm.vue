@@ -103,6 +103,7 @@ import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { userService } from '../../services/UserService'
 import { roleService } from '../../services/RoleService'
+import { toast } from 'vue-sonner'
 
 
 const route = useRoute()
@@ -150,15 +151,20 @@ async function submit() {
     if (isEdit.value) {
       delete payload.password
       await userService.updateUser(form.value.id, payload)
+      toast.success('Cập nhật người dùng thành công !');
     } else {
-      if(form.value.password.length <6 ) return error.value = 'Mật khẩu phải nhiều hơn 6 ký tự !';
+      if(form.value.password.length < 6 ) return error.value = 'Mật khẩu phải nhiều hơn 6 ký tự !';
       if (form.value.password != passwordConfirm.value) return error.value = 'Mật khẩu xác nhận phải giống mật khẩu đã nhập !';
       console.log(form.value);
       await userService.createUser(form.value)
+      toast.success('Thêm người dùng thành công !');
 
     }
     router.push('/admin/account')
-  } catch (e) { error.value = e?.response?.data?.message || e.message || 'Lưu thất bại.' }
+  } catch (e) { 
+    error.value = e?.response?.data?.message || e.message || 'Lưu thất bại.' 
+    toast.error(error.value); 
+  }
   finally { submitting.value = false }
 }
 

@@ -109,6 +109,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { categoryService } from '../../services/categoryService'
+import { toast } from 'vue-sonner'
 
 const categories = ref([])
 const isLoading = ref(false)
@@ -141,7 +142,10 @@ async function loadAll() {
   isLoading.value = true
   error.value = ''
   try { categories.value = await categoryService.getAll() }
-  catch (e) { error.value = 'Lỗi tải danh mục.' }
+  catch (e) { 
+    error.value = 'Lỗi tải danh mục.'
+    toast.error("Lỗi tải danh mục.")
+}
   finally { isLoading.value = false }
 }
 

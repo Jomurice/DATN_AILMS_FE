@@ -94,6 +94,7 @@ import { userService } from "../../services/UserService";
 import { productService } from "../../services/product/productService";
 import { brandService } from "../../services/BrandService";
 import { categoryService } from "../../services/categoryService";
+import { toast } from "vue-sonner";
 
 
 const productDetails = ref([]);
@@ -147,6 +148,7 @@ async function getProductDetails() {
     }
   } catch (error) {
     console.error("Lỗi khi tải product details:", error);
+    toast.error("Lỗi tải danh sách chi tiết sản phẩm");
   } finally {
     loading.value = false;
   }
@@ -167,6 +169,7 @@ async function fetchUserName(id) {
     userNames.value[id] = res?.username || "Không rõ người quét";
   } catch {
     userNames.value[id] = "Không rõ người quét";
+    toast.error("Lỗi tải tên người dùng");
   }
 }
 
