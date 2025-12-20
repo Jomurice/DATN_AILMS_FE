@@ -2,6 +2,9 @@
   <div>
     <Header />
     <TopNavAdmin />
+    <!-- <TopNavLogisticManager  /> -->
+    <!-- <TopNavWarehouseOperator  /> -->
+    
     <div class="header-offset" aria-hidden="true">
     </div>
 
@@ -36,6 +39,8 @@ import { computed } from "vue";
 // import { routes } from "../../router";
 import Header from "../layout/Header.vue";
 import TopNavAdmin from "../layout/TopNavAdmin.vue"
+import TopNavWarehouseOperator from "../layout/TopNavWarehouseOperator.vue";
+import TopNavLogisticManager from "../layout/TopNavLogisticManager.vue";
 
 const route = useRoute();
 const router = useRouter();
