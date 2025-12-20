@@ -12,6 +12,7 @@ export const tokenService = defineStore("auth", {
       state.user?.userId ||
       state.user?.uid ||
       state.user?.sub ||
+      state.user?.scope ||
       "",
     userName: (state) =>
       state.user?.username ||
@@ -19,6 +20,10 @@ export const tokenService = defineStore("auth", {
       state.user?.name ||
       state.user?.email ||
       state.user?.sub || // fallback cuối
+      "",
+
+    userRole: (state) =>
+      state.user?.scope || // fallback cuối
       "",
   },
   actions: {

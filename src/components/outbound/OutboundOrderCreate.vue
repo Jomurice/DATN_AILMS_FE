@@ -67,7 +67,32 @@
               </div>
             </div>
 
-            <div class="col">
+            <div class="col search-customer-wrapper">
+              <label class="lbl">Kho</label>
+
+              <input type="text" v-model="searchWarehouse" class="ipt" :disabled="!!responseOrder?.warehouseId"
+                placeholder="Nhập tên kho"  @focus="loadWarehouse" />
+
+              <!-- Dropdown list -->
+              <div v-if="showDropdownW" class="dropdown-list">
+                <div v-if="isLoading" class="dropdown-item loading">Đang tìm...</div>
+
+                <div v-else-if="warehouse.length === 0" class="dropdown-item no-result">
+                  Không tìm thấy kho
+                </div>
+
+                <div v-else class="dropdown-item" v-for="w in warehouse" :key="w.id"
+                  @click="selectWarehouse(w)">
+                  <div class="name">{{ w.name }} </div>
+                </div>
+              </div>
+            </div>
+
+
+            <div class="d-flex gap-2">
+  
+
+            <div class="col col-6">
               <label class="lbl">Ngày tạo</label>
               <input v-model="responseOrder.createAt" type="date" class="ipt" disabled />
             </div>
@@ -76,6 +101,8 @@
               <label class="lbl">Người tạo</label>
               <input type="text" v-model="username" class="ipt" disabled />
             </div>
+            </div>
+
           </div>
         </div>
       </Transition>
@@ -205,6 +232,7 @@ import { outboundOrderService } from "../../services/outbound/outboundOrderServi
 import { outboundItemService } from "../../services/outbound/OutboundOrderItemService";
 import { stockService } from "../../services/StockService";
 import { customerService } from "../../services/outbound/CustomerService";
+import { warehouseService} from "../../services/WarehouseService";
 import CustomerForm from "./CustomerForm.vue";
 
 const auth = tokenService();
@@ -217,11 +245,15 @@ const orders = ref({
   customerId: "",
   createdBy: auth.userId || null,
   createAt: "",
+  warehouseId: "",
   items: [],
 });
 
 const products = ref([]);
 const responseOrder = ref([]);
+const warehouse = ref([]);
+const searchWarehouse = ref("");
+const selectedWarehouse = ref(null);
 const form = ref({ productId: "", name: "", orderQuantity: 1, note: "" });
 const err = ref("");
 const submitting = ref(false);
@@ -229,6 +261,7 @@ const stock = ref(0);
 const searchCustomer = ref("");
 const customers = ref([]);
 const showDropdown = ref(false);
+const showDropdownW = ref(false);
 const showForm = ref(false);
 const isLoading = ref(false);
 const selectedCustomer = ref(null);
@@ -309,6 +342,8 @@ async function createOrder() {
 
   orders.value = responseOrder.value
   orders.value.customerId = selectedCustomer.value ? selectedCustomer.value.id : null;
+  orders.value.warehouseId = selectedWarehouse.value ? selectedWarehouse.value.id : null;
+  console.log(orders.value)
   if (!orders.value.customerId?.trim()) return showToast("Chưa nhập thông tin khách hàng.");
   if (responseOrder.value.length === 0) return showToast("Chưa có sản phẩm nào trong đơn.");
   submitting.value = true;
@@ -319,21 +354,42 @@ async function createOrder() {
     await outboundOrderService.updateStatus(responseOrder.value.id, orders.value)
     localStorage.removeItem("currentOrder");
     showToast('Tạo đơn hàng thành công');
-    resetForm();
+
     responseOrder.value = [];
+    code.value = '';
+    searchCustomer.value = '';
+    searchWarehouse.value = '';
   } catch (error) {
     console.error("Error creating order:", error);
   } finally {
     submitting.value = false;
   }
+
+  resetForm();
+  
 }
 
 async function selectProduct(product) {
   form.value.productId = product.id;
   form.value.name = product.name;
-  stock.value = await stockService.getStocks(product.id);
-  console.log("Selected product:", form.value, "Stock:", stock.value, " Product:", product.id);
-}
+
+  if(!selectedWarehouse.value){
+    showToast("Vui lòng chọn kho !")
+    form.value.productId = '';
+    return;
+  }
+
+  const payload = {
+    productId:product.id,
+    warehouseId:selectedWarehouse.value.id
+  }
+  try {
+    stock.value = await stockService.getStocks(payload);
+    console.log("Selected product:", form.value, "Stock:", stock.value, " Product:", product.id);
+  } catch (error) {
+    console.log("selectProduct Error:",error);
+  }
+};
 
 function validateAdd() {
   err.value = "";
@@ -363,6 +419,7 @@ async function handleAddItem() {
     productId: form.value.productId,
     orderQuantity: Number(form.value.orderQuantity),
   };
+  orders.value.warehouseId = selectedWarehouse.value.id
 
   try {
     // Chưa có order thì tạo mới
@@ -371,6 +428,7 @@ async function handleAddItem() {
       orders.value.items.push(newItem);
 
       // tạo order
+      console.log(orders.value)
       responseOrder.value = await outboundOrderService.create(orders.value);
       code.value = responseOrder.value.code;
 
@@ -423,6 +481,8 @@ async function handleAddItem() {
   } finally {
     isLoading.value = false;
   }
+
+  resetForm();
 }
 
 
@@ -437,7 +497,6 @@ function resetForm() {
   form.value = { productId: "", name: "", orderQuantity: 1, note: "" };
   err.value = "";
   stock.value = 0;
-  searchCustomer.value = "";
 };
 
 function clearOrder() {
@@ -471,7 +530,7 @@ async function searchCustomers() {
 
     isLoading.value = true;
     try {
-      console.log("Search:", searchCustomer.value.trim());
+
       const res = await customerService.getAll({
         page: 0,
         size: 10,
@@ -506,6 +565,26 @@ async function loadCustomer() {
   }
 }
 
+async function loadWarehouse() {
+  showDropdownW.value = true;
+  if (!searchWarehouse.value.trim()) {
+     try {
+    warehouse.value = await warehouseService.getAllWarehouses();
+  } catch (error) {
+    console.error("Error loading warehouse:", error);
+    warehouse.value = [];
+  }
+  }
+}
+
+function selectWarehouse(warehouse) {
+  selectedWarehouse.value = warehouse;
+  searchWarehouse.value = warehouse.name;
+  stock.value = 0
+  form.value.productId = ""
+  warehouse.value = [];
+  showDropdownW.value = false;
+}
 
 function selectCustomer(customer) {
   selectedCustomer.value = customer;
@@ -572,6 +651,10 @@ async function load() {
       const fullOrder = await outboundOrderService.getById(savedOrder.id);
       responseOrder.value = fullOrder || [];
       code.value = fullOrder.code;
+      
+      const warehouse = await warehouseService.getWarehouseById(fullOrder.warehouseId);
+      selectedWarehouse.value = warehouse;
+      searchWarehouse.value = warehouse?.name;
     }
   } catch (e) {
     console.error("loadProduct failed", e);
@@ -580,7 +663,7 @@ async function load() {
   finally {
     isLoading.value = false;
   }
-  resetForm();
+  // resetForm();
 }
 
 function showToast(msg = '') { toastMsg.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toastMsg.value = '', 1600); }

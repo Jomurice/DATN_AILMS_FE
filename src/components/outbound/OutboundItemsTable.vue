@@ -34,25 +34,23 @@
 
   <!-- Modal: Serial đã quét -->
     <div v-if="modalSku" class="modal-overlay">
-      <div class="card w-50 p-2 notranslate" translate="no">
+      <div class="card w-25 p-2 notranslate" translate="no">
         <div class="d-flex align-items-center justify-content-between">
           <h5 class="mb-0">Đã quét Serial — SKU: {{ modalSku }}</h5>
           <button class="btn btn-sm btn-outline-secondary" @click="emit('close')">Đóng</button>
         </div>
-        <div class="table-responsive mt-2">
+        <div class="table-responsive mt-2 ">
           <table class="table table-sm" translate="no">
             <thead>
               <tr>
                 <th class="notranslate">Serial</th>
                 <th>Trạng thái</th>
-                <th>Vị trí</th>
               </tr>
             </thead>
             <tbody>
               <tr v-for="s in modalSerials.content" :key="s.serialNumber">
                 <td class="mono nowrap notranslate">{{ s.serialNumber }}</td>
                 <td class="nowrap">{{ s.status }}</td>
-                <td class="nowrap notranslate">{{ s.warehouseId || s.binId || '—' }}</td>
               </tr>
               <tr v-if="!modalSerials?.content?.length">
                 <td colspan="3" class="text-center text-muted">Chưa có serial</td>

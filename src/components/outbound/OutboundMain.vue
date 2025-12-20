@@ -11,8 +11,8 @@
 
       <!-- Actions -->
       <div class="px-3 py-3 d-flex justify-content-end">
-        <button v-if="isConfirmCancel" class="btn btn-warning mx-2" @click="$emit('reject')">Không hủy</button>
-        <button v-if="isConfirmCancel" class="btn btn-danger mx-2" @click="$emit('confirm')">Xác nhận
+        <!-- <button v-if="isConfirmCancel" class="btn btn-warning mx-2" @click="$emit('reject')">Không hủy</button> -->
+        <button v-if="isConfirmCancel" class="btn btn-warning mx-2 " @click="$emit('confirm')">Lý do hủy
           hủy</button>
         <button class="btn btn-success" :disabled="!isAllScanned || submitting" @click="$emit('export')">
           {{ submitting ? 'Đang xuất hàng...' : 'Xuất hàng' }}

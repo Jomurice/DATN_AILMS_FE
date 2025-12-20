@@ -114,8 +114,8 @@ const statCards = computed(() => [
   },
   {
     title: "Đã xuất",
-    display: "đang cập nhật",
-    note: "đang cập nhật",
+    display: fmt(stats.value.exported),
+    note: "Cập nhật hôm nay",
     icon: "fa-solid fa-truck-ramp-box",
     iconClass: "bg-info-subtle text-info",
   },

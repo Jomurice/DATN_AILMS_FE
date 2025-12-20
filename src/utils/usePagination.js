@@ -1,6 +1,6 @@
 import { computed } from 'vue'
 
-export function usePagination(listRef, payloadRef, delta = 3) {
+export function usePagination(listRef, payloadRef, delta = 2) {
   const totalPages = computed(() =>
     Math.ceil((listRef.value?.totalElements || 0) / payloadRef.value.size)
   )
@@ -17,10 +17,3 @@ export function usePagination(listRef, payloadRef, delta = 3) {
 
   return { totalPages, visiblePages }
 };
-
-// function changePage(listData, newPage,payload) {
-//   listData.value.conntent = [];
-//   if (newPage < 0 || newPage >= Math.ceil((listData.value.totalElements || 0) / payload.value.size)) return;
-//   payload.value.page = newPage;
-//   loadOrders();
-// };

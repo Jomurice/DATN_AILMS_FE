@@ -13,11 +13,6 @@
         </div>
 
         <div class="d-flex gap-2">
-          <div class="text-center">
-            <button class="btn btn-outline-danger btn-sm" @click="contactModalVisible = true">
-              <i class="fa-solid fa-envelope me-1"></i> Liên hệ Admin
-            </button>
-          </div>
           <RouterLink class="btn btn-outline-primary btn-sm" to="/outbound/new">+ Tạo phiếu xuất</RouterLink>
           <button class="btn btn-outline-secondary btn-sm" @click="selectedOrder = null">← Quay lại</button>
         </div>

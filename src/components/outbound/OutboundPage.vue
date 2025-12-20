@@ -1,19 +1,27 @@
 <template>
   <div class="pbox">
-    <OutboundAside :orders="orders" :loading="loading" :payload="payloadSearch" :visible-pages="orderPagination.visiblePages.value"
-      :status="payloadSearch.status" :total-pages="orderPagination.totalPages.value" @search="handleSearch" 
-      @change-status="handleChangeStatus" @select-order="openOrder" @change-page="handleOrderPageChange" @clear-input="clearInputSearch" />
+    <OutboundAside :orders="orders" :loading="loading" :payload="payloadSearch"
+      :visible-pages="orderPagination.visiblePages.value" :status="payloadSearch.status"
+      :total-pages="orderPagination.totalPages.value" @search="handleSearch" @change-status="handleChangeStatus"
+      @select-order="openOrder" @change-page="handleOrderPageChange" @clear-input="clearInputSearch" />
 
     <OutboundMain :order="selectedOrder" :customer="customer" :qrScannerVisible="qrScannerVisible"
-      :modal-serials="modalSerials" :modal-sku="modalSku" :serial="quickSerial" :payload="payloadSerial" 
-      :visible-pages="serialPagination.visiblePages.value" @scan="handleQuickScan" @scanQr="handleScanQr" @change-page="handleSerialPageChange"
-      @stopCamera="stopQrScanner" @export="confirmExport" @cancel="openCancelModal" @confirm="confirmCancel" 
-      @reject="rejectCancel" @open-serials-modal="openSerialsModal" @close="closeModalSerial" />
+      :modal-serials="modalSerials" :modal-sku="modalSku" :serial="quickSerial" :payload="payloadSerial"
+      :visible-pages="serialPagination.visiblePages.value" @scan="handleQuickScan" @scanQr="handleScanQr"
+      @change-page="handleSerialPageChange" @stopCamera="stopQrScanner" @export="confirmExport"
+      @cancel="openCancelModal" @confirm="openNoteCancelModal" @reject="rejectCancel" @open-serials-modal="openSerialsModal"
+      @close="closeModalSerial" />
 
-    <ConfirmModal :show="showCancelModal" title="Xác nhận hủy phiếu xuất"
+    <ConfirmModal modal-id="confirmCancel" :show="modalState === 'CONFIRM_CANCEL'" title="Xác nhận hủy phiếu xuất"
       message="Hành động này sẽ hoàn trả serial về kho. Bạn có chắc chắn muốn hủy phiếu này không?"
-      confirm-text="Xác nhận hủy" cancel-text="Không" @confirm="cancelModalVisible = true, showCancelModal = false"
-      @cancel="showCancelModal = false" />
+      confirm-text="Xác nhận hủy"  @close-modal="closeCancelModal" @confirm="() => {cancelModalVisible = true; closeCancelModal();}"
+      @cancel="closeCancelModal" />
+
+    <ConfirmModal modal-id="noteCancel" :show="modalState === 'NOTE_CANCEL'" title="Lý do hủy"
+      :message=  "selectedOrder?.note"
+      confirm-text="Xác nhận hủy" cancel-text="Không hủy" @close-modal="closeCancelModal" @confirm="confirmCancel"
+      @cancel=" rejectCancel" />
+
 
     <!-- modal cancel outbound -->
     <div v-if="cancelModalVisible" class="modal-overlay">
@@ -56,7 +64,7 @@ import { tokenService } from "@/services/TokenService";
 import OutboundAside from './OutboundAside.vue'
 import OutboundMain from './OutboundMain.vue'
 import ConfirmModal from '../modal/ConfirmModal.vue'
-import {usePagination} from '../../utils/usePagination'
+import { usePagination } from '../../utils/usePagination'
 import { outboundOrderService } from '../../services/outbound/outboundOrderService'
 import { customerService } from '../../services/outbound/CustomerService'
 import { Html5Qrcode } from "html5-qrcode";
@@ -78,7 +86,9 @@ const qrScannerVisible = ref(false);
 const toastMsg = ref("");
 let toastTimer = null;
 const showCancelModal = ref(false);
+const showNoteCancelModal = ref(false);
 const cancelModalVisible = ref(false);
+const modalState = ref(null)
 const note = ref('');
 
 const status = ref('')
@@ -87,24 +97,35 @@ const payloadSearch = ref({
   status: null,
   page: 0,
   size: 5,
-  sort: "code,asc"
+  sort: "createAt,desc"
 });
 
 const payloadSerial = ref({
   sku: '',
   page: 0,
-  size: 3,
+  size: 5,
 });
 
 const openCancelModal = () => {
-  showCancelModal.value = true;
+  modalState.value = 'CONFIRM_CANCEL'
+  console.log(modalState.value) 
+}
+const openNoteCancelModal = () => {
+  modalState.value = 'NOTE_CANCEL'
+  console.log(modalState.value)
+}
+
+
+const closeCancelModal = () =>{
+  modalState.value = null
 };
+
 
 const closeModalSerial = () => {
   payloadSerial.value = {
     sku: '',
     page: 0,
-    size: 3,
+    size: 5,
   };
   modalSku.value = null;
   modalSerials.value = [];
@@ -160,7 +181,6 @@ async function loadOrders() {
 
     // payloadSearch.value.status = status.value || null
     orders.value = await outboundOrderService.search(payloadSearch.value);
-    console.log('Loading orders with status:', orders.value.content);
   } catch (error) {
     console.error('Failed to load outbound orders:', error)
   } finally {
@@ -188,17 +208,15 @@ async function openSerialsModal(sku) {
   modalSerials.value = [];
 
   if (!modalSku.value) {
-  showToast('SKU không hợp lệ')
-  return
-}
+    showToast('SKU không hợp lệ')
+    return
+  }
   payloadSerial.value.sku = modalSku.value;
-  console.log('Loading serials for SKU:', modalSku.value);
 
   try {
-    modalSerials.value = await outboundOrderService.getSerials(selectedOrder.value.id,payloadSerial.value);
-    console.log('Loaded serials for SKU', modalSerials.value);
+    modalSerials.value = await outboundOrderService.getSerials(selectedOrder.value.id, payloadSerial.value);
   } catch {
-    showToast('Không tải được serial đã quét');
+    showToast('Không tải được chi tiết đơn hàng');
   }
 };
 
@@ -228,18 +246,19 @@ async function cancelOutbound() {
     canceledBy: userId.value,
   };
 
-  canceling.value = true;
+  cancelModalVisible.value = true;
   try {
     await outboundOrderService.cancelOrder(selectedOrder.value.id, req);
     showToast('Đã gửi yêu cầu hủy đơn');
-    orders.value = await outboundOrderService.getAll();
-    cancelModalVisible.value = false;
+    openSerialsModal();
+    resetForm();
+    loadOrders();
     note.value = '';
   } catch (error) {
     console.log('Cancel outbound error:', error);
     showToast('Gửi yêu cầu hủy đơn thất bại');
   } finally {
-    canceling.value = false;
+    cancelModalVisible.value = false;
   }
 };
 
@@ -247,23 +266,27 @@ async function confirmCancel() {
   try {
     await outboundOrderService.confirmCancel(selectedOrder.value.id);
     showToast('Hủy đơn thành công');
-    orders.value = await outboundOrderService.getAll();
+    resetForm();
+    loadOrders();
   } catch (error) {
     console.log('Confirm cancel error:', error);
     showToast('Hủy đơn thất bại');
   }
+  showNoteCancelModal.value = false
 };
 
 async function rejectCancel() {
   try {
     await outboundOrderService.rejectCancel(selectedOrder.value.id);
     showToast('Đã từ chối hủy đơn');
+    showNoteCancelModal.value = false
+    loadOrders();
     resetForm();
-    orders.value = await outboundOrderService.getAll();
   } catch (error) {
     console.log('Reject cancel error:', error);
     showToast('Từ chối hủy đơn thất bại');
   }
+  
 };
 
 async function handleQuickScan(serialInput) {
@@ -374,9 +397,8 @@ async function confirmExport() {
   try {
     await outboundOrderService.confirmExport(selectedOrder.value.id, req);
     showToast('Đã xuất hàng & xác nhận phiếu');
-    const updatedOrder = await outboundOrderService.getById(selectedOrder.value.id, { includeItems: true });
-    selectedOrder.value = normalizeOrder(updatedOrder);
     resetForm();
+    loadOrders();
   } catch (error) {
     console.log('Confirm export error:', error);
     showToast('Xuất hàng thất bại');
@@ -392,7 +414,15 @@ function showToast(msg = '') { toastMsg.value = msg; clearTimeout(toastTimer); t
 function resetForm() {
   note.value = '';
   selectedOrder.value = null;
-
+  customer.value = '';
+  modalSerials.value = null;
+  payloadSearch.value = {
+    search: null,
+    status: null,
+    page: 0,
+    size: 5,
+    sort: "createAt,desc"
+  }
 };
 
 
@@ -404,7 +434,8 @@ watch(status, () => {
 
 onMounted(async () => {
   auth.loadToken();
-  userId.value = auth.userId;
+  userId.value = auth.userRole;
+  console.log(userId.value)
   loadOrders();
 });
 </script>
