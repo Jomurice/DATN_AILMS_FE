@@ -235,6 +235,7 @@ import { customerService } from "../../services/outbound/CustomerService";
 import { warehouseService} from "../../services/WarehouseService";
 import CustomerForm from "./CustomerForm.vue";
 import { toast } from "vue-sonner";
+import router from "../../router";
 
 const auth = tokenService();
 auth.loadToken();
@@ -274,69 +275,6 @@ const searchProduct = ref("");
 const codeInput = ref(null);
 
 
-// function clip(s, n = 20) {
-//   if (!s) return "";
-//   return s.length > n ? s.slice(0, n) + "..." : s;
-// }
-
-/* -------- import excel/csv -------- */
-// async function onImport(ev) {
-//   const file = ev.target.files?.[0];
-//   if (!file) return;
-//   try {
-//     let rows = [];
-//     const ext = file.name.split(".").pop()?.toLowerCase();
-
-//     if (ext === "xlsx" || ext === "xls") {
-//       let XLSX = null;
-//       try {
-//         XLSX = (await import(/* @vite-ignore */ "xlsx")).default;
-//       } catch {
-//         // nếu chưa cài xlsx → fallback CSV
-//       }
-//       if (XLSX) {
-//         const buf = await file.arrayBuffer();
-//         const wb = XLSX.read(buf);
-//         const ws = wb.Sheets[wb.SheetNames[0]];
-//         rows = XLSX.utils.sheet_to_json(ws); // [{SKU:'abc', QTY:10}, ...]
-//       } else {
-//         rows = csvToJson(await file.text());
-//       }
-//     } else {
-//       rows = csvToJson(await file.text());
-//     }
-//     let added = 0;
-//     rows.forEach(r => {
-//       const sku = String(r.SKU ?? r.sku ?? "").trim();
-//       const q = Number(r.QTY ?? r.qty ?? r.quantity ?? 0);
-//       if (!sku || !q || q < 1) return;
-//       const p = products.value.find(x => String(x.sku || "").toLowerCase() === sku.toLowerCase());
-//       if (!p) return;
-//       const ex = form.value.items.find(x => x.productId === p.id);
-//       if (ex) ex.orderQuantity = Math.min(9999, (ex.orderQuantity || 0) + q);
-//       else form.value.items.push({
-//         productId: p.id, orderQuantity: Math.min(9999, q),
-//         sku: p.sku, name: p.name, categoryName: p.categoryName, brandName: p.brandName, color: p.color,
-//       });
-//       added++;
-//     });
-//     alert(`Đã nhập ${added} dòng từ file.`);
-//   } catch (e) { console.error(e); alert("Không đọc được file. Kiểm tra cột SKU và QTY."); }
-//   finally { ev.target.value = ""; }
-// }
-
-// function csvToJson(text) {
-//   const items = text.split(/\r?\n/).filter(Boolean);
-//   if (items.length < 2) return [];
-//   const headers = splitCSVitem(items[0]); const out = [];
-//   for (let i = 1; i < items.length; i++) {
-//     const parts = splitCSVitem(items[i]); const obj = {};
-//     headers.forEach((h, idx) => (obj[h] = parts[idx]));
-//     out.push(obj);
-//   }
-//   return out;
-// }
-// function splitCSVitem(item) { return item.split(",").map(x => x.replace(/^"|"$/g, "").trim()); }
 
 
 async function createOrder() {
@@ -345,8 +283,8 @@ async function createOrder() {
   orders.value.customerId = selectedCustomer.value ? selectedCustomer.value.id : null;
   orders.value.warehouseId = selectedWarehouse.value ? selectedWarehouse.value.id : null;
   console.log(orders.value)
-  if (!orders.value.customerId?.trim()) return showToast("Chưa nhập thông tin khách hàng.");
-  if (responseOrder.value.length === 0) return showToast("Chưa có sản phẩm nào trong đơn.");
+  if (!orders.value.customerId?.trim()) return toast.error("Chưa nhập thông tin khách hàng.");
+  if (responseOrder.value.length === 0) return toast.error("Chưa có sản phẩm nào trong đơn.");
   submitting.value = true;
 
   orders.value.status = "CONFIRMED";
@@ -354,14 +292,17 @@ async function createOrder() {
   try {
     await outboundOrderService.updateStatus(responseOrder.value.id, orders.value)
     localStorage.removeItem("currentOrder");
-    showToast('Tạo đơn hàng thành công');
-
+    toast.success("Tạo đơn hàng thành công");
+    // showToast('Tạo đơn hàng thành công');
+    router.push("/outbound");
+    resetForm();
     responseOrder.value = [];
     code.value = '';
     searchCustomer.value = '';
     searchWarehouse.value = '';
   } catch (error) {
     console.error("Error creating order:", error);
+    toast.error("Tạo đơn hàng thất bại.");
   } finally {
     submitting.value = false;
   }
@@ -388,7 +329,7 @@ async function selectProduct(product) {
     stock.value = await stockService.getStocks(payload);
     console.log("Selected product:", form.value, "Stock:", stock.value, " Product:", product.id);
   } catch (error) {
-    console.log("selectProduct Error:",error);
+    toast.error("Không thể tải thông tin tồn kho.");
   }
 };
 
@@ -404,6 +345,7 @@ function validateAdd() {
   }
 
   if (form.value.orderQuantity > stock.value) {
+    toast.warning(`Số lượng vượt quá tồn kho (${stock.value}).`);
     showToast(`Số lượng vượt quá tồn kho (${stock.value}).`);
     return false;
   }
@@ -445,7 +387,7 @@ async function handleAddItem() {
       // add item lên server
       await outboundItemService.addItem(orders.value, responseOrder.value.id);
 
-      showToast("Đã thêm sản phẩm vào đơn");
+      toast.success("Đã thêm sản phẩm vào đơn");
 
       load();
       return;
@@ -475,10 +417,11 @@ async function handleAddItem() {
 
     await outboundItemService.addItem(orders.value, responseOrder.value.id);
 
-    showToast("Đã thêm sản phẩm vào đơn");
+    toast.success("Đã thêm sản phẩm vào đơn");
     load();
   } catch (error) {
     console.error("Error:", error);
+    toast.error("Không thể thêm sản phẩm vào đơn.");
   } finally {
     isLoading.value = false;
   }
@@ -489,9 +432,16 @@ async function handleAddItem() {
 
 
 async function removeItem(idProduct) {
-  if (!confirm("Bạn có chắc muốn xóa sản phẩm khỏi đơn ?")) return;
-  await outboundItemService.deleteItem(responseOrder.value.id, idProduct);
-  load();
+  try {
+    if (!confirm("Bạn có chắc muốn xóa sản phẩm khỏi đơn ?")) return;
+    await outboundItemService.deleteItem(responseOrder.value.id, idProduct);
+    load();
+    toast.success("Đã xóa sản phẩm khỏi đơn");
+  } catch (error) {
+    console.error("Error removing item:", error);
+    toast.error("Không thể xóa sản phẩm khỏi đơn.");
+  }
+  
 }
 
 function resetForm() {
@@ -561,6 +511,7 @@ async function loadCustomer() {
       console.log("Loaded customers:", customers.value);
     } catch (error) {
       console.error("Error loading customers:", error);
+      toast.error("Không thể tải danh sách khách hàng.");
       customers.value = [];
     }
   }
@@ -603,7 +554,7 @@ function selectCustomer(customer) {
 
 async function searchOrders() {
   if (!code.value.trim()) {
-    showToast("Vui lòng nhập mã phiếu để tìm kiếm.");
+    toast.error("Vui lòng nhập mã phiếu để tìm kiếm.");
     return;
   };
 
@@ -622,17 +573,21 @@ async function searchOrders() {
           code: responseOrder.value.code,
         })
       );
-      showToast("Đã tải đơn hàng.");
+      toast.success("Đã tải đơn hàng.");
+      
     } else {
-      showToast("Không tìm thấy đơn hàng.");
+      toast.error("Không tìm thấy đơn hàng.");
+      
     }
   } catch (error) {
     console.error("Error searching order:", error);
     const msg = error.response?.data?.message;
     if (msg === 'Order already completed') {
-      showToast("Đơn hàng đã được tạo !");
+      toast.error("Đơn hàng đã hoàn thành, không thể chỉnh sửa.");
+      
     } else
-      showToast("Lỗi khi tìm đơn hàng.");
+    toast.error("Lỗi khi tìm đơn hàng.");
+    
   } finally {
     isLoading.value = false;
   }
@@ -659,6 +614,7 @@ async function load() {
     }
   } catch (e) {
     console.error("loadProduct failed", e);
+    toast.error("Không thể tải danh sách sản phẩm.");
     products.value = [];
   }
   finally {

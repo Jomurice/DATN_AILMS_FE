@@ -151,6 +151,8 @@ import { warehouseService } from "@/services/WarehouseService";
 
 import { productDetailsService } from "@/services/product/productDetailsService";
 import { supplierService } from "@/services/purchaseOrder/supplierService.js";
+import { toast } from "vue-sonner";
+
 
 const router = useRouter();
 
@@ -246,6 +248,7 @@ async function searchSuppliers() {
       });
       suppliers.value = res.content || res || [];
     } catch (e) {
+      toast.error("Lỗi khi tìm nhà phân phối.");
       console.error(e);
       suppliers.value = [];
     }
@@ -328,11 +331,11 @@ async function submit() {
       purchaseOrderId: res.id,
       createdByUserId: userId.value,
     });
-    alert("Tạo đơn thành công!");
+    toast.success("Tạo đơn nhập thành công");
     router.push("/inbound");
   } catch (e) {
     console.error(e);
-    alert("Lỗi khi tạo đơn.");
+  toast.error("Lỗi khi tạo đơn nhập.");
   } finally {
     submitting.value = false;
   }
@@ -353,7 +356,13 @@ async function loadProducts() {
 }
 
 async function loadWarehouses() {
-  warehouses.value = await warehouseService.getAllWarehouses("/api/warehouses");
+  try {
+    warehouses.value = await warehouseService.getAllWarehouses("/api/warehouses");
+  } catch (error) {
+    toast.error("Lỗi khi tải danh sách kho.");
+    console.error(error);
+  }
+  
 }
 
 async function init() {

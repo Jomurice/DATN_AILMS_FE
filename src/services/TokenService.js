@@ -19,7 +19,11 @@ export const tokenService = defineStore("auth", {
       state.user?.preferred_username ||
       state.user?.name ||
       state.user?.email ||
-      state.user?.sub || // fallback cuối
+      state.user?.sub ||
+       // fallback cuối
+      "",
+      userRole: (state) =>
+      state.user?.scope || // fallback cuối
       "",
 
     userRole: (state) =>

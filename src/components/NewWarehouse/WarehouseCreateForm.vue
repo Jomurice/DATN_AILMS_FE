@@ -68,11 +68,9 @@ function validateForm() {
   // LOCATION
   if (!form.value.location) {
     errors.value.location = "Bắt buộc";
-    toast.warning("Vui lòng nhập vị trí kho hàng");
     ok = false;
   } else if (form.value.location.length > MAX_LENGTH) {
     errors.value.location = `Tối đa ${MAX_LENGTH} ký tự`;
-    toast.warning(`Vị trí kho hàng tối đa ${MAX_LENGTH} ký tự`);
     ok = false;
   }
 

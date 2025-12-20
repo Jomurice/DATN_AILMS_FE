@@ -198,7 +198,9 @@ async function updateDashboardData() { // Thống nhất tên hàm
 onMounted(async () => {
   try {
     warehouses.value = (await warehouseService.getAllWarehouses()) || [];
-  } catch {}
+  } catch {
+    toast.error("Lỗi tải danh sách kho");
+  }
   await updateDashboardData();
 });
 
