@@ -1,7 +1,7 @@
 <template>
   <div>
     <Header />
-    <TopNav />
+    <TopNavAdmin />
     <div class="header-offset" aria-hidden="true">
     </div>
 
@@ -35,7 +35,7 @@ import { useRoute, useRouter } from "vue-router";
 import { computed } from "vue";
 // import { routes } from "../../router";
 import Header from "../layout/Header.vue";
-import TopNav from "../layout/TopNav.vue"
+import TopNavAdmin from "../layout/TopNavAdmin.vue"
 
 const route = useRoute();
 const router = useRouter();

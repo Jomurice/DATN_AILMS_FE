@@ -163,6 +163,7 @@ import ProductDetail from './ProductDetail.vue'
 import { productService } from '../../services/product/productService'
 import { menuService } from '../../services/MenuService'
 import { productDetailService } from '../../services/product/productDetailService'
+import { toast } from 'vue-sonner'
 
 const products = ref([]);
 const product = ref([]);
@@ -258,10 +259,12 @@ async function getByProductId(id) {
   try {
     product.value = await productService.getById(id);
     console.log('dsad', product.value);
+    
     const p = await productDetailService.getByProductId(product.value.id);
     if (p) product.value = { ...product.value, ...p };
     console.log(product.value);
   } catch (error) {
+    toast.error('Tải dữ liệu thất bại !');
     console.log("error", error);
   }
 }

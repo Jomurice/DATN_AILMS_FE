@@ -114,7 +114,7 @@
 <script setup>
 import { ref, onMounted } from "vue";
 import { inventoryCheckService } from "../../services/inventoryCheckService";
-
+import { toast } from "vue-sonner";
 const list = ref([]);
 const loading = ref(false);
 const selectedCheck = ref(null);
@@ -171,7 +171,9 @@ async function load() {
         totalPages.value = 1;
     }
     if (!list.value.find(i => i.id === selectedCheck.value?.id)) selectedCheck.value = null;
-  } catch (e) { list.value = []; } 
+  } catch (e) { list.value = [];
+    toast.error("Lỗi tải danh sách phiếu kiểm kê.");
+  } 
   finally { loading.value = false; }
 }
 
@@ -195,7 +197,11 @@ async function deleteCheck() {
     await inventoryCheckService.delete(selectedCheck.value.id);
     selectedCheck.value = null;
     load();
-  } catch (e) { alert("Xóa thất bại: " + (e.response?.data?.message || "Có lỗi xảy ra")); }
+  } catch (e) {
+  
+    // alert("Xóa thất bại: " + (e.response?.data?.message || "Có lỗi xảy ra"));
+    toast.error("Xóa phiếu kiểm kê thất bại.");
+  }
 }
 
 onMounted(load);

@@ -33,6 +33,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { passwordService } from '../../services/PasswordService';
+import { toast } from 'vue-sonner';
 
 const router = useRouter();
 const forgotPassword = ref({
@@ -79,11 +80,13 @@ async function handleForgot() {
         await passwordService.forgotPass(forgotPassword.value);
         localStorage.setItem('email',forgotPassword.value.email);
         isOtp.value = true;
+        toast.success("Mã OTP đã được gửi đến email của bạn, vui lòng kiểm tra!");
         showMessage("Mã OTP đã được gửi đến email của bạn, vui lòng kiểm tra!", 'success');
         startResendTimer();
     } catch (error) {
         const errorMsg = "Đã xảy ra lỗi. Vui lòng thử lại sau.";
         console.log("error",error);
+        toast.error(errorMsg);
         showMessage(errorMsg, 'error');
     } finally {
         isLoading.value = false;
@@ -92,6 +95,7 @@ async function handleForgot() {
 
 async function handleVerify() {
     if (forgotPassword.value.otpCode.length < 6) {
+        toast.error("OTP phải có ít nhất 6 ký tự!");
         showMessage("OTP phải có ít nhất 6 ký tự!", 'error');
         return;
     }
@@ -102,8 +106,10 @@ async function handleVerify() {
         router.push('change-password');
     } catch (error) {
         const errorMsg = "Mã OTP không hợp lệ!";
+        toast.error('Mật khẩu xác nhận phải giống mật khẩu mới !');
         console.log("error",error);
         showMessage(errorMsg, 'error');
+        
     } finally {
         isLoading.value = false;
     }
@@ -113,13 +119,15 @@ async function handleResendOtp() {
     if (resendDisabled.value) return;
     isLoading.value = true;
     try {
-         await passwordService.forgotPass(forgotPassword.value);
+        await passwordService.forgotPass(forgotPassword.value);
         localStorage.setItem('email',forgotPassword.value.email);
-        showMessage("Đã gửi lại mã OTP mới. Vui lòng kiểm tra email!", 'success');
+        toast.success("Đã gửi lại mã OTP mới. Vui lòng kiểm tra email!");
         startResendTimer();
+        showMessage("Đã gửi lại mã OTP mới. Vui lòng kiểm tra email!", 'success');
     } catch (error) {
         const errorMsg = "Đã xảy ra lỗi khi gửi lại OTP.";
         console.log("error",error);
+        toast.error(errorMsg);
         showMessage(errorMsg, 'error');
     } finally {
         isLoading.value = false;

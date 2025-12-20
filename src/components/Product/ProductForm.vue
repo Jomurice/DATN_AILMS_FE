@@ -109,6 +109,7 @@ import { categoryService } from '../../services/categoryService'
 
 import { brandService } from '../../services/BrandService'
 import Attribute from './Attribute.vue'
+import { toast } from 'vue-sonner'
 
 const route = useRoute();
 const router = useRouter();
@@ -173,12 +174,12 @@ async function submitForm() {
   try {
     if (isEdit.value) await productService.update(productId, { ...form.value })
     else await productService.create({ ...form.value })
-
+    toast.success('Lưu sản phẩm thành công !');
     router.push('/product')
   } catch (e) {
     error.value = 'Lưu thất bại.'
     console.log("error", e);
-
+    toast.error(error.value);
   } finally {
     submitting.value = false
   }

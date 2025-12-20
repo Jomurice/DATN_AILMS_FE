@@ -121,6 +121,7 @@ import { ref, onMounted, computed, watch } from "vue";
 import { inventoryCheckService } from "../../services/inventory/CreateInventoryService.js"; 
 import { tokenService } from "../../services/TokenService.js"; 
 import { warehouseService } from "../../services/WarehouseService.js";
+import { toast } from "vue-sonner";
 
 // --- KHỞI TẠO & DỮ LIỆU STATE ---
 const auth = tokenService();
@@ -172,11 +173,13 @@ watch(() => inventoryForm.value.warehouseId, async (newWarehouseId) => {
             });
             console.log('LocalItems sau map:', localItems.value);
             showToast(`Đã tải ${localItems.value.length} sản phẩm cần kiểm kê.`);
+            toast.success(`Đã tải ${localItems.value.length} sản phẩm cần kiểm kê.`);
 
         } catch (error) {
             console.error("Lỗi tải sản phẩm theo kho:", error);
             console.error('Error response:', error.response?.data || error.message);
-            showToast("❌ Lỗi: Không thể tải danh sách sản phẩm tồn kho.");
+            // showToast("❌ Lỗi: Không thể tải danh sách sản phẩm tồn kho.");
+            toast.error("Lỗi: Không thể tải danh sách sản phẩm tồn kho.");
         }
     } else {
         console.log('No warehouse selected');
@@ -211,13 +214,15 @@ function handleCancelCheck() {
 function confirmCancel() {
     resetForm();
     isCancelModalVisible.value = false;
-    showToast("Phiếu kiểm kê đã được huỷ.");
+    // showToast("Phiếu kiểm kê đã được huỷ.");
+    toast.success("Phiếu kiểm kê đã được huỷ.");
 }
 
 // --- HÀM TẠO PHIẾU - LƯU VÀO DB TỰ ĐỘNG ---
 async function handleCreateCheck() {
   if (!isValidForm.value) {
-    showToast("Vui lòng nhập đầy đủ thông tin bắt buộc và chọn kho.");
+    // showToast("Vui lòng nhập đầy đủ thông tin bắt buộc và chọn kho.");
+    toast.error("Vui lòng nhập đầy đủ thông tin bắt buộc và chọn kho.");
     return;
   }
   
@@ -253,7 +258,8 @@ async function handleCreateCheck() {
     }
     
     console.log('=== TẠO PHIẾU: Thành công - Lưu vào DB ===');
-    showToast(`✅ Tạo phiếu kiểm kê ${inventoryForm.value.code} thành công!`);
+    // showToast(`✅ Tạo phiếu kiểm kê ${inventoryForm.value.code} thành công!`);
+    toast.success(`Tạo phiếu kiểm kê ${inventoryForm.value.code} thành công!`); 
     resetForm(); 
 
   } catch (error) {
@@ -261,6 +267,7 @@ async function handleCreateCheck() {
     console.error('Full error:', error.response || error);
     const errorMessage = error.response?.data?.message || error.message || 'Lỗi không xác định.';
     showToast(`❌ Lỗi tạo phiếu: ${errorMessage}`);
+    toast.error(`Lỗi tạo phiếu: ${errorMessage}`);
   } finally {
     submitting.value = false;
   }
@@ -277,7 +284,9 @@ async function loadInitialData() {
     warehouses.value = await warehouseService.getAllWarehouses();
     console.log('Warehouses loaded:', warehouses.value);
   } catch (e) {
+    toast.error("Không thể load danh sách kho.");
     console.error("Không thể load danh sách kho:", e);
+    
   }
 }
 

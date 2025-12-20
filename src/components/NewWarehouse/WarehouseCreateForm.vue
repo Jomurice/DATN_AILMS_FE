@@ -1,41 +1,99 @@
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { ref } from "vue";
 import { warehouseService } from "../../services/warehouseService";
-import { locationService } from "../../services/locationService";
+import { toast } from "vue-sonner";
 
+/* =====================
+  CONSTANT
+===================== */
+const MAX_LENGTH = 60;
+
+/* =====================
+  FORM STATE
+===================== */
 const form = ref({
   name: "",
   code: "",
   type: "",
   parentId: null,
-  location: "", // 👈 обычная строка
+  location: "",
 });
 
-const warehouses = ref([]);
-const loading = ref(false);
-const successMessage = ref("");
-const errorMessage = ref("");
+const errors = ref({
+  name: "",
+  code: "",
+  type: "",
+  location: "",
+});
 
-// 📦 Загрузка всех складов (если нужно выбрать родителя)
-async function loadOptions() {
-  try {
-    warehouses.value = await warehouseService.getAllWarehouses();
-  } catch (e) {
-    console.error("Lỗi khi tải dữ liệu:", e);
+const loading = ref(false);
+
+/* =====================
+  VALIDATION 
+===================== */
+function validateForm() {
+  let ok = true;
+
+  errors.value = {
+    name: "",
+    code: "",
+    type: "",
+    location: "",
+  };
+
+  // NAME
+  if (!form.value.name) {
+    errors.value.name = "Bắt buộc";
+    ok = false;
+  } else if (form.value.name.length > MAX_LENGTH) {
+    errors.value.name = `Tối đa ${MAX_LENGTH} ký tự`;
+    ok = false;
   }
+
+  // CODE
+  if (!form.value.code) {
+    errors.value.code = "Bắt buộc";
+    ok = false;
+  } else if (form.value.code.length > MAX_LENGTH) {
+    errors.value.code = `Tối đa ${MAX_LENGTH} ký tự`;
+    ok = false;
+  }
+
+  // TYPE
+  if (!form.value.type) {
+    errors.value.type = "Bắt buộc";
+    ok = false;
+  }
+
+  // LOCATION
+  if (!form.value.location) {
+    errors.value.location = "Bắt buộc";
+    toast.warning("Vui lòng nhập vị trí kho hàng");
+    ok = false;
+  } else if (form.value.location.length > MAX_LENGTH) {
+    errors.value.location = `Tối đa ${MAX_LENGTH} ký tự`;
+    toast.warning(`Vị trí kho hàng tối đa ${MAX_LENGTH} ký tự`);
+    ok = false;
+  }
+
+  return ok;
 }
 
-// 🧾 Создание склада
+/* =====================
+  SUBMIT
+===================== */
 async function createWarehouse() {
+  if (!validateForm()) {
+    toast.warning("Vui lòng kiểm tra lại dữ liệu");
+    return;
+  }
+
   loading.value = true;
-  successMessage.value = "";
-  errorMessage.value = "";
 
   try {
     await warehouseService.createWarehouse(form.value);
-    successMessage.value = "Tạo kho hàng thành công!";
+    toast.success("Tạo kho hàng thành công!");
 
-    // сбрасываем форму
     form.value = {
       name: "",
       code: "",
@@ -43,91 +101,108 @@ async function createWarehouse() {
       parentId: null,
       location: "",
     };
-
-    await loadOptions();
-  } catch (err) {
-    console.error("Error create:", err);
-    errorMessage.value = "Không thể tạo kho hàng!";
+  } catch (e) {
+    console.error(e);
+    toast.error("Không thể tạo kho hàng!");
   } finally {
     loading.value = false;
   }
 }
-
-// 🔁 Если выбран родительский склад — копируем его location (строкой)
-watch(
-  () => form.value.parentId,
-  (newParentId) => {
-    if (newParentId) {
-      const parent = warehouses.value.find((w) => w.id === newParentId);
-      if (parent?.location) {
-        form.value.location = parent.location; // 👈 строка
-      }
-    }
-  }
-);
-
-onMounted(() => {
-  loadOptions();
-});
 </script>
 
 <template>
   <div class="card mb-4 p-3 shadow-sm">
     <h5 class="mb-3 fw-bold">Tạo kho hàng mới</h5>
 
-    <div v-if="successMessage" class="alert alert-success">{{ successMessage }}</div>
-    <div v-if="errorMessage" class="alert alert-danger">{{ errorMessage }}</div>
-
     <form @submit.prevent="createWarehouse" class="row g-3">
+
+      <!-- NAME -->
       <div class="col-md-6">
         <label class="form-label">Tên kho hàng</label>
-        <input v-model="form.name" type="text" class="form-control" required />
+        <input
+          v-model="form.name"
+          type="text"
+          class="form-control"
+          :maxlength="MAX_LENGTH"
+          :class="{ 'is-invalid': errors.name }"
+        />
+        <div class="d-flex justify-content-between">
+          <div class="invalid-feedback d-block">
+            {{ errors.name }}
+          </div>
+          <small class="text-muted">
+            {{ form.name.length }}/{{ MAX_LENGTH }}
+          </small>
+        </div>
       </div>
 
+      <!-- CODE -->
       <div class="col-md-6">
         <label class="form-label">Mã kho</label>
-        <input v-model="form.code" type="text" class="form-control" required />
+        <input
+          v-model="form.code"
+          type="text"
+          class="form-control"
+          :maxlength="MAX_LENGTH"
+          :class="{ 'is-invalid': errors.code }"
+        />
+        <div class="d-flex justify-content-between">
+          <div class="invalid-feedback d-block">
+            {{ errors.code }}
+          </div>
+          <small class="text-muted">
+            {{ form.code.length }}/{{ MAX_LENGTH }}
+          </small>
+        </div>
       </div>
 
+      <!-- TYPE -->
       <div class="col-md-6">
         <label class="form-label">Loại</label>
-        <select v-model="form.type" class="form-select" required>
-          <option disabled value="">-- Chọn loại kho --</option>
+        <select
+          v-model="form.type"
+          class="form-select"
+          :class="{ 'is-invalid': errors.type }"
+        >
+          <option disabled value="">-- Chọn loại --</option>
           <option value="WAREHOUSE">WAREHOUSE</option>
-          <option value="ZONE">ZONE</option>
-          <option value="AISLE">AISLE</option>
-          <option value="SHELF">SHELF</option>
-          <option value="BIN">BIN</option>
         </select>
+        <div class="invalid-feedback d-block">
+          {{ errors.type }}
+        </div>
       </div>
 
+      <!-- LOCATION -->
       <div class="col-md-6">
-        <label class="form-label">Kho cha</label>
-        <select v-model="form.parentId" class="form-select">
-          <option :value="null">-- Không có --</option>
-          <option v-for="w in warehouses" :key="w.id" :value="w.id">
-            {{ w.name }} ({{ w.code }})
-          </option>
-        </select>
-      </div>
-
-      <!-- 🗺 location как строка -->
-      <div class="col-md-6">
-        <label class="form-label">Vị trí (Location)</label>
+        <label class="form-label">Vị trí</label>
         <input
           v-model="form.location"
           type="text"
           class="form-control"
-          placeholder="Nhập vị trí (ví dụ: Hanoi - Ward 5)"
-          required
+          :maxlength="MAX_LENGTH"
+          :class="{ 'is-invalid': errors.location }"
         />
+        <div class="d-flex justify-content-between">
+          <div class="invalid-feedback d-block">
+            {{ errors.location }}
+          </div>
+          <small class="text-muted">
+            {{ form.location.length }}/{{ MAX_LENGTH }}
+          </small>
+        </div>
       </div>
 
+      <!-- SUBMIT -->
       <div class="col-12 text-end">
-        <button type="submit" class="btn btn-success" :disabled="loading">
+        <button
+          type="submit"
+          class="btn btn-success"
+          :disabled="loading"
+        >
           {{ loading ? "Đang tạo..." : "Tạo kho hàng" }}
         </button>
       </div>
+
     </form>
   </div>
 </template>

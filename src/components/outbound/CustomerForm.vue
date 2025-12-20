@@ -65,13 +65,13 @@
                         placeholder="Nhập địa chỉ" />
                 </div>
 
-                <div v-if="toast.message" :class="{
-                    'toast-success': toast.type === 'success',
-                    'toast-error': toast.type === 'error',
-                    'toast-warning': toast.type === 'warning',
-                    'toast-info': toast.type === 'info'
+                <div v-if="toastMessage.message" :class="{
+                    'toast-success': toastMessage.type === 'success',
+                    'toast-error': toastMessage.type === 'error',
+                    'toast-warning': toastMessage.type === 'warning',
+                    'toast-info': toastMessage.type === 'info'
                 }">
-                    {{ toast.message }}
+                    {{ toastMessage.message }}
                 </div>
             </div>
 
@@ -104,7 +104,7 @@
 <script setup>
 import { ref, defineProps, onMounted } from 'vue';
 import { customerService } from '../../services/outbound/CustomerService';
-
+import { toast } from 'vue-sonner';
 const emit = defineEmits(['save', 'cancel']);
 
 const props = defineProps({
@@ -114,7 +114,7 @@ const props = defineProps({
     }
 });
 
-const toast = ref({
+const toastMessage = ref({
     message: "",
     type: ""
 });
@@ -145,19 +145,20 @@ function resetForm() {
 }
 
 function showToast(message, type = "info") {
-    toast.value.message = message;
-    toast.value.type = type;
+    toastMessage.value.message = message;
+    toastMessage.value.type = type;
 
     setTimeout(() => {
-        toast.value.message = "";
-        toast.value.type = "";
+        toastMessage.value.message = "";
+        toastMessage.value.type = "";
     }, 3000);
 }
 
 
 async function handleSubmit() {
     if (!customer.value.firstName || !customer.value.lastName || !customer.value.email || !customer.value.phone || !customer.value.address) {
-        return showToast('Vui lòng điền đầy đủ thông tin !', 'error');
+            
+        return toast.error('Vui lòng điền đầy đủ thông tin !');;
     }
     const vietnamPhoneRegex = /^(0|\+84)(3[2-9]|5[6|8|9]|7[0|6-9]|8[1-5]|9[0-9])[0-9]{7}$/
     if (/\d/.test(customer.value.lastName) || /\s/.test(customer.value.lastName)) return showToast('Họ không được chứa khoảng trắng và số !', 'error');
@@ -175,17 +176,22 @@ async function handleSubmit() {
         }
 
         emit('save', result);
-        showToast('Lưu thông tin khách hàng thành công!', 'success');
+        // showToast('Lưu thông tin khách hàng thành công!', 'success');
+        toast.success('Lưu thông tin khách hàng thành công!');
         resetForm();
     } catch (error) {
         console.error('Error saving customer:', error);
         const errorMessage = error.response?.data?.message || 'Đã xảy ra lỗi khi lưu thông tin khách hàng.';
         if(errorMessage == 'Phone already exists') {
+            toast.error('Số điện thoại đã tồn tại!');
             showToast('Số điện thoại đã tồn tại!', 'error');
+            toast.error('Số điện thoại đã tồn tại!');
         }else if(errorMessage == 'Email already exists') {
             showToast('Email đã tồn tại!', 'error');
+            toast.error('Email đã tồn tại!');
         }else {
             showToast(errorMessage, 'error');
+            toast.error(errorMessage);
         }
         
     } finally {
@@ -201,6 +207,7 @@ async function loadCustomer(id) {
         Object.assign(customer.value, data);
     } catch (error) {
         console.error('Error loading customer:', error);
+        toast.error('Không thể tải thông tin khách hàng.');
     }
 }
 

@@ -314,6 +314,7 @@ import { customerService } from "../../services/outbound/CustomerService";
 import { Html5Qrcode } from "html5-qrcode";
 import { watch } from "vue";
 import ConfirmModal from "../modal/ConfirmModal.vue";
+import { toast } from "vue-sonner";
 
 
 const auth = tokenService();
@@ -386,7 +387,8 @@ async function openSerialsModal(sku) {
   try {
     modalSerials.value = await outboundOrderService.getSerials(selectedOrder.value.id, sku);
   } catch {
-    showToast('Không tải được serial đã quét');
+    // showToast('Không tải được serial đã quét');
+    toast.error('Không tải được serial đã quét');
   }
 };
 
@@ -430,16 +432,19 @@ async function openOrder(o) {
     customer.value = await customerService.getById(full.customerId);
     selectedOrder.value = normalizeOrder(full);
     modalSerials.value = {};
+    toast.success('Đã tải chi tiết phiếu');
   } catch (error) {
     console.error('Cannot load order details', error);
-    showToast('Không tải được chi tiết phiếu');
+    // showToast('Không tải được chi tiết phiếu');
+    toast.error('Không tải được chi tiết phiếu');
   }
 };
 
 async function cancelOutbound() {
   if (!selectedOrder.value) return;
   if (!note.value) {
-    showToast('Vui lòng nhập lý do hủy đơn');
+    // showToast('Vui lòng nhập lý do hủy đơn');
+    toast.warning('Vui lòng nhập lý do hủy đơn');
     return;
   }
   const req = {
@@ -450,13 +455,15 @@ async function cancelOutbound() {
   canceling.value = true;
   try {
     await outboundOrderService.cancelOrder(selectedOrder.value.id, req);
-    showToast('Đã gửi yêu cầu hủy đơn');
+    toast.success('Đã gửi yêu cầu hủy đơn');
+    // showToast('Đã gửi yêu cầu hủy đơn');
     orders.value = await outboundOrderService.getAll();
     cancelModalVisible.value = false;
     note.value = '';
   } catch (error) {
     console.log('Cancel outbound error:', error);
-    showToast('Gửi yêu cầu hủy đơn thất bại');
+    // showToast('Gửi yêu cầu hủy đơn thất bại');
+    toast.error('Gửi yêu cầu hủy đơn thất bại');
   } finally {
     canceling.value = false;
   }
@@ -465,24 +472,28 @@ async function cancelOutbound() {
 async function confirmCancel() {
   try {
     await outboundOrderService.confirmCancel(selectedOrder.value.id);
-    showToast('Hủy đơn thành công');
+    // showToast('Hủy đơn thành công');
+    toast.success('Hủy đơn thành công');
     orders.value = await outboundOrderService.getAll();
   } catch (error) {
     console.log('Confirm cancel error:', error);
-    showToast('Hủy đơn thất bại');
+    // showToast('Hủy đơn thất bại');
+    toast.error('Hủy đơn thất bại');
   }
 };
 
 async function rejectCancel() {
   try {
     await outboundOrderService.rejectCancel(selectedOrder.value.id);
-    showToast('Đã từ chối hủy đơn');
+    // showToast('Đã từ chối hủy đơn');
+    toast.success('Đã từ chối hủy đơn');
     resetForm();
     orders.value = await outboundOrderService.getAll();
 
   } catch (error) {
     console.log('Reject cancel error:', error);
-    showToast('Từ chối hủy đơn thất bại');
+    // showToast('Từ chối hủy đơn thất bại');
+    toast.error('Từ chối hủy đơn thất bại');
   }
 };
 
@@ -497,7 +508,8 @@ async function handleQuickScan(serialInput) {
   if (!serial) return;
 
   if (!selectedOrder.value?.items?.length) {
-    showToast('Chưa chọn phiếu');
+    // showToast('Chưa chọn phiếu');
+    toast.error('Chưa chọn phiếu');
     return;
   }
 
@@ -515,7 +527,8 @@ async function handleQuickScan(serialInput) {
       reqScanned
     );
 
-    showToast('Quét thành công');
+    // showToast('Quét thành công');
+    toast.success('Quét thành công');
 
     // reload order
     const updatedOrder = await outboundOrderService.getById(
@@ -529,13 +542,17 @@ async function handleQuickScan(serialInput) {
     console.log('Quick scan error:', msg);
 
     if (msg === 'Serial had been scanned') {
-      showToast('Serial này đã được quét trước đó');
+      // showToast('Serial này đã được quét trước đó');
+      toast.warning('Serial này đã được quét trước đó');
     } else if (msg === 'Serial not found') {
-      showToast('Không tìm thấy serial này trong kho');
+      // showToast('Không tìm thấy serial này trong kho');
+      toast.error('Không tìm thấy serial này trong kho');
     } else if (msg === 'Serial not in order') {
-      showToast('Serial không thuộc sản phẩm trong phiếu');
+      // showToast('Serial không thuộc sản phẩm trong phiếu');
+      toast.error('Serial không thuộc sản phẩm trong phiếu');
     } else {
-      showToast('Quét thất bại');
+      // showToast('Quét thất bại');
+      toast.error('Quét thất bại');
     }
   } finally {
     quickSerial.value = '';
@@ -545,7 +562,9 @@ async function handleQuickScan(serialInput) {
 
 
 function startQrScanner() {
-  if (!selectedOrder.value) return showToast("Chọn phiếu trước khi quét QR");
+  if (!selectedOrder.value) 
+  
+  return toast.error("Chọn phiếu trước khi quét QR");;
   qrScannerVisible.value = true;
   qrScanner.value = new Html5Qrcode("qr-reader");
   qrScanner.value.start(
@@ -563,7 +582,8 @@ function startQrScanner() {
     }
   ).catch(err => {
     console.error("QR Scanner start error", err);
-    showToast("Không thể mở camera để quét QR");
+    // showToast("Không thể mở camera để quét QR");
+    toast.error("Không thể mở camera để quét QR");
     qrScannerVisible.value = false;
   });
 };
@@ -590,19 +610,22 @@ async function confirmExport() {
   };
   try {
     await outboundOrderService.confirmExport(selectedOrder.value.id, req);
-    showToast('Đã xuất hàng & xác nhận phiếu');
+    // showToast('Đã xuất hàng & xác nhận phiếu');
+    toast.success('Đã xuất hàng & xác nhận phiếu');
     const updatedOrder = await outboundOrderService.getById(selectedOrder.value.id, { includeItems: true });
     selectedOrder.value = normalizeOrder(updatedOrder);
     resetForm();
   } catch (error) {
     console.log('Confirm export error:', error);
-    showToast('Xuất hàng thất bại');
+    // showToast('Xuất hàng thất bại');
+    toast.error('Xuất hàng thất bại');
   }
 };
 
 function checkSearInput() {
   if (!searchInput.value) {
-    showToast('Vui lòng nhập mã phiếu để tìm kiếm');
+    // showToast('Vui lòng nhập mã phiếu để tìm kiếm');
+    toast.warning('Vui lòng nhập mã phiếu để tìm kiếm');
     return false;
   }
   handleSearch();
@@ -625,7 +648,8 @@ async function handleSearch() {
   try {
     orders.value = await outboundOrderService.search(payloadSearch.value);
   } catch {
-    showToast('Không tìm thấy phiếu xuất phù hợp');
+    // showToast('Không tìm thấy phiếu xuất phù hợp');
+    toast.error('Không tìm thấy phiếu xuất phù hợp');
   } finally {
     loading.value = false;
   }
@@ -645,7 +669,10 @@ async function load() {
   try {
     orders.value = await outboundOrderService.search(payloadSearch.value);
     console.log('Loaded orders:', orders.value);
-  } catch { showToast('Không tải được danh sách phiếu'); }
+  } catch { 
+    // showToast('Không tải được danh sách phiếu'); 
+    toast.error('Không tải được danh sách phiếu');
+  }
   finally { loading.value = false; }
 };
 
