@@ -1,6 +1,11 @@
 <script setup>
-import HomeUser from './components/home/HomeUser.vue';
+  import {onMounted} from 'vue';
+  import { tokenService } from './services/TokenService';
+  const authStore = tokenService();
 
+  onMounted(async () => {
+    await authStore.loadToken();
+  });
 </script>
 <style>
 html,
