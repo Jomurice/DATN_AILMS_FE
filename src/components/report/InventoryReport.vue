@@ -95,7 +95,10 @@
     </div>
 
     <!-- PAGINATION -->
-    <div class="d-flex justify-content-between align-items-center mt-3">
+    <div
+      v-if="totalPages > 1"
+      class="d-flex justify-content-between align-items-center mt-3"
+    >
       <div class="text-muted">
         Tổng: {{ totalElements }} dòng
       </div>
@@ -120,13 +123,12 @@
 </template>
 
 <script>
-import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
-
-import { reportService } from '../../services/report/reportService';
-import { productService } from '../../services/product/productService';
-import { warehouseService } from '../../services/WarehouseService';
 import { toast } from 'vue-sonner';
+
+import { reportService } from '@/services/report/reportService';
+import { productService } from '@/services/product/productService';
+import { warehouseService } from '@/services/WarehouseService';
 
 export default {
   name: 'InventoryReport',
@@ -162,11 +164,15 @@ export default {
         this.products = await productService.getAll();
       } catch (e) {
         console.error(e);
-        toast.error('Tải dữ liệu thất bại!');
+        toast.error('Tải dữ liệu danh mục thất bại');
       }
     },
 
     async search() {
+      if (!this.warehouseId) {
+        toast.error('Vui lòng chọn kho!');
+        return;
+      }
       this.page = 0;
       await this.loadReport();
     },
@@ -178,64 +184,56 @@ export default {
     },
 
     async loadReport() {
-      if (!this.warehouseId) {
-        toast.error('Vui lòng chọn kho!');
-        return;
-      }
-
       this.loading = true;
       try {
         const res = await reportService.getInventorySummary({
-          startDate: this.startDate,
-          endDate: this.endDate,
+          startDate: this.startDate || null,
+          endDate: this.endDate || null,
           warehouseId: this.warehouseId,
           productId: this.productId || null,
           page: this.page,
           size: this.size
         });
 
-        this.reportData = res.result.content || [];
-        this.totalPages = res.result.totalPages;
-        this.totalElements = res.result.totalElements;
+        const result = res.result;
+        this.reportData = result.content || [];
+        this.totalPages = result.totalPages;
+        this.totalElements = result.totalElements;
       } catch (e) {
         console.error(e);
-        toast.error('Tải báo cáo thất bại!');
+        toast.error('Tải báo cáo thất bại');
       } finally {
         this.loading = false;
       }
     },
 
-    // ===== EXPORT EXCEL 
     async exportExcel() {
-    const res = await reportService.getInventorySummary({
-      startDate: this.startDate,
-      endDate: this.endDate,
-      warehouseId: this.warehouseId,
-      productId: this.productId || null,
-      page: 0,
-      size: 999999 // lấy toàn bộ
-    });
+      const res = await reportService.getInventorySummary({
+        startDate: this.startDate || null,
+        endDate: this.endDate || null,
+        warehouseId: this.warehouseId,
+        productId: this.productId || null,
+        page: 0,
+        size: 999999
+      });
 
-    const data = res.result.content || [];
+      const data = res.result.content || [];
 
-    //  Header info 
-    const headerRows = [
-      ['BÁO CÁO NHẬP - XUẤT - TỒN'],
-      [`Từ ngày: ${this.startDate || '---'}  Đến ngày: ${this.endDate || '---'}`],
-      [`Kho: ${this.warehouses.find(w => w.id === this.warehouseId)?.name || ''}`],
-      [
-        `Sản phẩm: ${
-          this.productId
-            ? this.products.find(p => p.id === this.productId)?.name
-            : 'Tất cả sản phẩm trong kho'
-        }`
-      ],
-      [] 
-    ];
+      const headerRows = [
+        ['BÁO CÁO NHẬP - XUẤT - TỒN'],
+        [`Từ ngày: ${this.startDate || '---'}  Đến ngày: ${this.endDate || '---'}`],
+        [`Kho: ${this.warehouses.find(w => w.id === this.warehouseId)?.name || ''}`],
+        [
+          `Sản phẩm: ${
+            this.productId
+              ? this.products.find(p => p.id === this.productId)?.name
+              : 'Tất cả sản phẩm'
+          }`
+        ],
+        []
+      ];
 
-    //  Table header 
-    const tableHeader = [
-      [
+      const tableHeader = [[
         'SKU',
         'Sản phẩm',
         'Kho',
@@ -243,43 +241,39 @@ export default {
         'Nhập',
         'Xuất',
         'Tồn cuối'
-      ]
-    ];
+      ]];
 
-    //  Table data 
-    const tableData = data.map(i => [
-      i.sku,
-      i.productName,
-      i.warehouseName,
-      i.openingStock,
-      i.totalIn,
-      i.totalOut,
-      i.closingStock
-    ]);
+      const tableData = data.map(i => [
+        i.sku,
+        i.productName,
+        i.warehouseName,
+        i.openingStock,
+        i.totalIn,
+        i.totalOut,
+        i.closingStock
+      ]);
 
-    const ws = XLSX.utils.aoa_to_sheet([
-      ...headerRows,
-      ...tableHeader,
-      ...tableData
-    ]);
+      const ws = XLSX.utils.aoa_to_sheet([
+        ...headerRows,
+        ...tableHeader,
+        ...tableData
+      ]);
 
-    
-    ws['!merges'] = [
-      { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } }, 
-      { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
-      { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
-      { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } }
-    ];
+      ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
+        { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
+        { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } }
+      ];
 
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'BaoCaoNXT');
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'BaoCao_NXT');
 
-    XLSX.writeFile(
-      wb,
-      `BaoCao_NXT_${this.startDate}_${this.endDate}.xlsx`
-    );
-  }
-
+      XLSX.writeFile(
+        wb,
+        `BaoCao_NXT_${this.startDate || 'ALL'}_${this.endDate || 'ALL'}.xlsx`
+      );
+    }
   }
 };
 </script>
