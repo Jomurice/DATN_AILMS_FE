@@ -131,13 +131,13 @@ const user = ref({
   gender: "",
   address: "",
   roles: [],
-  // avatar: ""
+
 });
 const showOldPassword = ref(false);
 const showNewPassword = ref(false);
 const showConfirmPassword = ref(false);
 
-//Phần modal
+
 const isChangePassword = ref(false);
 const changePasswordForm = ref({
   oldPassword: "",
@@ -176,11 +176,17 @@ async function submitChangePassword() {
 
   changePasswordError.value = "";
 
-  if (changePasswordForm.value.newPassword.length < 6)
+  if (changePasswordForm.value.newPassword.length < 6){
+    toast.error("Mật khẩu mới phải từ 6 - 30 ký tự.");
     return changePasswordError.value = "Mật khẩu mới phải từ 6 - 30 ký tự.";
+  }
+    
 
-  if (changePasswordForm.value.newPassword !== changePasswordForm.value.confirmPassword)
+  if (changePasswordForm.value.newPassword !== changePasswordForm.value.confirmPassword){
+    toast.error("Mật khẩu xác nhận không khớp !");
     return changePasswordError.value = "Mật khẩu xác nhận không khớp !";
+  }
+    
 
   try {
     console.log(changePasswordForm.value)

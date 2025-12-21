@@ -434,7 +434,7 @@ watch(status, () => {
 
 onMounted(async () => {
   auth.loadToken();
-  userId.value = auth.userRole;
+  userId.value = auth.userId || '';
   console.log(userId.value)
   loadOrders();
 });

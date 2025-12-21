@@ -106,9 +106,16 @@ const handleLogin = async () => {
     auth.setToken(data.result?.token);
     router.push("/profile");
   } catch (error) {
-    if (error.response?.data?.message === 'User blocked') { apiError.value = "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với quản lý để được hỗ trợ !"; }
-    else apiError.value = "Tên đăng nhập hoặc mật khẩu không đúng !";
-    toast.error("Đăng nhập thất bại!");
+    if (error.response?.data?.message === 'User blocked' ) {
+      toast.error("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với quản lý để được hỗ trợ !"); 
+      apiError.value = "Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với quản lý để được hỗ trợ !";
+    
+    }
+    else{
+      apiError.value = "Tên đăng nhập hoặc mật khẩu không đúng !";
+      toast.error("Đăng nhập thất bại!");
+    } 
+    
   } finally {
     loading.value = false;
   }

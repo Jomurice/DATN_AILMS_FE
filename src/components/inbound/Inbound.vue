@@ -397,13 +397,13 @@ async function handleQuickCameraScan(serialInput) {
       toast.error("Serial không khớp với SKU nào trong phiếu", { duration: 3000 });
       return;
     }
-
+    console.log("Scan success:", serial);
     await api.post("/api/product-details/confirm-scan", {
       serialNumber: serial,
       warehouseId: selectedOrder.value?.warehouseId,
       scannedByUserId: userId.value
     });
-
+    
     toast.success("Quét thành công!", { duration: 2000 });
 
     const updated = await purchaseOrderService.getPurchaseOrderById(selectedOrder.value.id, { includeItems: true });
