@@ -8,11 +8,6 @@
           <button class="btn btn-outitem-primary btn-primary" title="Thêm khách hàng mới"
             @click="showCustomerForm = true">+ Thêm mới</button>
         </div>
-
-        <div class="btn border-primary btn-outitem-primary btn-sm">
-          <label for="file" class="m-0"><i class="fas fa-file-import"></i> Excel/CSV</label>
-          <input id="file" type="file" accept=".xlsx,.xls,.csv" @change="onImport" hidden />
-        </div>
       </div>
     </div>
 
@@ -30,16 +25,16 @@
             <div class="col ">
               <label class="lbl">Mã phiếu</label>
               <nav class="d-flex gap-2 align-items-center">
-                <div class="position-relative" style="width: 670px;">
-                  <input ref="codeInput" v-model.trim="code" class="ipt" style="width: 670px;" :disabled="!!responseOrder?.id"
+                <div class="position-relative w-100">
+                  <input ref="codeInput" v-model.trim="code" class="ipt w-100" :disabled="!!responseOrder?.id"
                     placeholder="Nhập mã phiếu muốn tìm" />
-
                   <button v-if="code || responseOrder?.id" class="btn-clear" @click="clearOrder" type="button">
                     ✕
                   </button>
                 </div>
 
-                <button class="btn btn-sm btn-primary" :disabled="!!responseOrder?.id"  @click="searchOrders">
+
+                <button class="btn btn-sm btn-primary" :disabled="!!responseOrder?.id" @click="searchOrders">
                   <i class="fa-solid fa-magnifying-glass"></i>
                 </button>
               </nav>
@@ -71,7 +66,7 @@
               <label class="lbl">Kho</label>
 
               <input type="text" v-model="searchWarehouse" class="ipt" :disabled="!!responseOrder?.warehouseId"
-                placeholder="Nhập tên kho"  @focus="loadWarehouse" />
+                placeholder="Nhập tên kho" @focus="loadWarehouse" />
 
               <!-- Dropdown list -->
               <div v-if="showDropdownW" class="dropdown-list">
@@ -81,8 +76,7 @@
                   Không tìm thấy kho
                 </div>
 
-                <div v-else class="dropdown-item" v-for="w in warehouse" :key="w.id"
-                  @click="selectWarehouse(w)">
+                <div v-else class="dropdown-item" v-for="w in warehouse" :key="w.id" @click="selectWarehouse(w)">
                   <div class="name">{{ w.name }} </div>
                 </div>
               </div>
@@ -90,17 +84,17 @@
 
 
             <div class="d-flex gap-2">
-  
 
-            <div class="col col-6">
-              <label class="lbl">Ngày tạo</label>
-              <input v-model="responseOrder.createAt" type="date" class="ipt" disabled />
-            </div>
 
-            <div class="col">
-              <label class="lbl">Người tạo</label>
-              <input type="text" v-model="username" class="ipt" disabled />
-            </div>
+              <div class="col col-6">
+                <label class="lbl">Ngày tạo</label>
+                <input v-model="createAtFe" type="date" class="ipt" disabled />
+              </div>
+
+              <div class="col">
+                <label class="lbl">Người tạo</label>
+                <input type="text" v-model="username" class="ipt" disabled />
+              </div>
             </div>
 
           </div>
@@ -142,7 +136,7 @@
 
               <div class="col">
                 <label for="" class="lbl">Ghi chú</label>
-                <input type="text" v-model.trim="form.note" class="ipt" placeholder="Thông tin chi tiết của hàng hóa"
+                <input type="text" v-model.trim="form.note" class="ipt" placeholder="Ghi chú đơn hàng"
                   maxlength="255"></input>
               </div>
             </div>
@@ -214,9 +208,11 @@
     <div v-if="toastMsg" class="toast-box">{{ toastMsg }}</div>
 
     <!-- Modal thêm khách hàng -->
-    <div v-if="showCustomerForm" class="modal-overlay">
-      <CustomerForm @save="handleCustomerSave" @cancel="showCustomerForm = false" />
-    </div>
+    <transition name="fade">
+      <div v-if="showCustomerForm" class="modal-overlay">
+        <CustomerForm @save="handleCustomerSave" @cancel="handleCancelModal" />
+      </div>
+    </transition>
     <div v-if="isLoading" class="modal-overlay-loading text-center py-5">
       <div class="spinner-border text-info" role="status"></div>
       <div class="small mx-2 fs-5 text-info mt-2">Đang tải...</div>
@@ -225,20 +221,19 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from "vue";
+import { ref, onMounted } from "vue";
 import { productService } from "../../services/product/productService";
 import { tokenService } from "../../services/TokenService";
 import { outboundOrderService } from "../../services/outbound/outboundOrderService";
 import { outboundItemService } from "../../services/outbound/OutboundOrderItemService";
 import { stockService } from "../../services/StockService";
 import { customerService } from "../../services/outbound/CustomerService";
-import { warehouseService} from "../../services/WarehouseService";
+import { warehouseService } from "../../services/WarehouseService";
 import CustomerForm from "./CustomerForm.vue";
 import { toast } from "vue-sonner";
 import router from "../../router";
 
 const auth = tokenService();
-auth.loadToken();
 const username = auth.userName || "—";
 
 const orders = ref({
@@ -246,7 +241,7 @@ const orders = ref({
   code: "",
   customerId: "",
   createdBy: auth.userId || null,
-  createAt: "",
+  createAt: todayStr(),
   warehouseId: "",
   items: [],
 });
@@ -267,16 +262,24 @@ const showDropdownW = ref(false);
 const showForm = ref(false);
 const isLoading = ref(false);
 const selectedCustomer = ref(null);
-const toastMsg = ref("");
-let toastTimer = null;
 const showCustomerForm = ref(false);
 const code = ref("");
 const searchProduct = ref("");
 const codeInput = ref(null);
+const createAtFe = ref('');
 
 
+const handleCancelModal = () =>{
+  showCustomerForm.value = false;
+}
+
+createAtFe.value = todayStr();
+function todayStr() {
+  return new Date().toISOString().slice(0, 10);
+}
 
 
+// api
 async function createOrder() {
 
   orders.value = responseOrder.value
@@ -293,42 +296,39 @@ async function createOrder() {
     await outboundOrderService.updateStatus(responseOrder.value.id, orders.value)
     localStorage.removeItem("currentOrder");
     toast.success("Tạo đơn hàng thành công");
-    // showToast('Tạo đơn hàng thành công');
-    router.push("/outbound");
     resetForm();
     responseOrder.value = [];
     code.value = '';
     searchCustomer.value = '';
     searchWarehouse.value = '';
   } catch (error) {
-    console.error("Error creating order:", error);
+    console.log(error)
     toast.error("Tạo đơn hàng thất bại.");
   } finally {
     submitting.value = false;
   }
 
   resetForm();
-  
+
 }
 
 async function selectProduct(product) {
   form.value.productId = product.id;
   form.value.name = product.name;
 
-  if(!selectedWarehouse.value){
-    showToast("Vui lòng chọn kho !")
+  if (!selectedWarehouse.value) {
+    toast.error("Vui lòng chọn kho !")
     form.value.productId = '';
     return;
   }
 
   const payload = {
-    productId:product.id,
-    warehouseId:selectedWarehouse.value.id
+    productId: product.id,
+    warehouseId: selectedWarehouse.value.id
   }
   try {
     stock.value = await stockService.getStocks(payload);
-    console.log("Selected product:", form.value, "Stock:", stock.value, " Product:", product.id);
-  } catch (error) {
+  } catch {
     toast.error("Không thể tải thông tin tồn kho.");
   }
 };
@@ -336,17 +336,16 @@ async function selectProduct(product) {
 function validateAdd() {
   err.value = "";
   if (!form.value.productId) {
-    err.value = "Chưa chọn sản phẩm.";
+    toast.error("Vui lòng chọn sản phẩm.");
     return false;
   }
   if (!form.value.orderQuantity || form.value.orderQuantity < 1 || form.value.orderQuantity > 999) {
-    err.value = "Số lượng phải từ 1–999.";
+    toast.error("Số lượng phải từ 1–999.");
     return false;
   }
 
   if (form.value.orderQuantity > stock.value) {
     toast.warning(`Số lượng vượt quá tồn kho (${stock.value}).`);
-    showToast(`Số lượng vượt quá tồn kho (${stock.value}).`);
     return false;
   }
   return true;
@@ -371,7 +370,6 @@ async function handleAddItem() {
       orders.value.items.push(newItem);
 
       // tạo order
-      console.log(orders.value)
       responseOrder.value = await outboundOrderService.create(orders.value);
       code.value = responseOrder.value.code;
 
@@ -419,8 +417,7 @@ async function handleAddItem() {
 
     toast.success("Đã thêm sản phẩm vào đơn");
     load();
-  } catch (error) {
-    console.error("Error:", error);
+  } catch {
     toast.error("Không thể thêm sản phẩm vào đơn.");
   } finally {
     isLoading.value = false;
@@ -437,11 +434,10 @@ async function removeItem(idProduct) {
     await outboundItemService.deleteItem(responseOrder.value.id, idProduct);
     load();
     toast.success("Đã xóa sản phẩm khỏi đơn");
-  } catch (error) {
-    console.error("Error removing item:", error);
+  } catch {
     toast.error("Không thể xóa sản phẩm khỏi đơn.");
   }
-  
+
 }
 
 function resetForm() {
@@ -508,9 +504,7 @@ async function loadCustomer() {
         status: true
       });
       customers.value = res?.content || res || [];
-      console.log("Loaded customers:", customers.value);
-    } catch (error) {
-      console.error("Error loading customers:", error);
+    } catch {
       toast.error("Không thể tải danh sách khách hàng.");
       customers.value = [];
     }
@@ -520,12 +514,12 @@ async function loadCustomer() {
 async function loadWarehouse() {
   showDropdownW.value = true;
   if (!searchWarehouse.value.trim()) {
-     try {
-    warehouse.value = await warehouseService.getAllWarehouses();
-  } catch (error) {
-    console.error("Error loading warehouse:", error);
-    warehouse.value = [];
-  }
+    try {
+      warehouse.value = await warehouseService.getAllWarehouses();
+    } catch (error) {
+      console.error("Error loading warehouse:", error);
+      warehouse.value = [];
+    }
   }
 }
 
@@ -545,13 +539,6 @@ function selectCustomer(customer) {
   showDropdown.value = false;
 }
 
-// document.addEventListener("click", (e) => {
-//   const wrapper = document.querySelector('.search-customer-wrapper');
-//   if (wrapper && !wrapper.contains(e.target)) {
-//     showDropdown.value = false;
-//   }
-// });
-
 async function searchOrders() {
   if (!code.value.trim()) {
     toast.error("Vui lòng nhập mã phiếu để tìm kiếm.");
@@ -565,7 +552,7 @@ async function searchOrders() {
     if (order) {
       responseOrder.value = order;
       code.value = order.code;
-      console.log("Found order:", responseOrder.value);
+
       localStorage.setItem(
         "currentOrder",
         JSON.stringify({
@@ -574,20 +561,19 @@ async function searchOrders() {
         })
       );
       toast.success("Đã tải đơn hàng.");
-      
+
     } else {
       toast.error("Không tìm thấy đơn hàng.");
-      
+
     }
   } catch (error) {
-    console.error("Error searching order:", error);
     const msg = error.response?.data?.message;
     if (msg === 'Order already completed') {
       toast.error("Đơn hàng đã hoàn thành, không thể chỉnh sửa.");
-      
+
     } else
-    toast.error("Lỗi khi tìm đơn hàng.");
-    
+      toast.error("Lỗi khi tìm đơn hàng.");
+
   } finally {
     isLoading.value = false;
   }
@@ -607,13 +593,14 @@ async function load() {
       const fullOrder = await outboundOrderService.getById(savedOrder.id);
       responseOrder.value = fullOrder || [];
       code.value = fullOrder.code;
-      
+      createAtFe.value = fullOrder.createAt;
+
       const warehouse = await warehouseService.getWarehouseById(fullOrder.warehouseId);
       selectedWarehouse.value = warehouse;
       searchWarehouse.value = warehouse?.name;
     }
-  } catch (e) {
-    console.error("loadProduct failed", e);
+  } catch {
+
     toast.error("Không thể tải danh sách sản phẩm.");
     products.value = [];
   }
@@ -622,8 +609,6 @@ async function load() {
   }
   // resetForm();
 }
-
-function showToast(msg = '') { toastMsg.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toastMsg.value = '', 1600); }
 
 
 onMounted(() => {
@@ -762,6 +747,15 @@ onMounted(() => {
   overflow: auto;
 }
 
+.nav-tabs {
+  flex-wrap: wrap;
+}
+
+.nav-tabs .nav-link {
+  font-size: 14px;
+  padding: 6px 10px;
+}
+
 .tbl {
   width: 100%;
   border-collapse: collapse;
@@ -792,6 +786,16 @@ onMounted(() => {
   font-variant-numeric: tabular-nums;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
 
 .err {
   color: #b91c1c;
@@ -866,6 +870,7 @@ onMounted(() => {
   left: 0;
   width: 100vw;
   height: 100vh;
+  padding: 16px;
   background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
@@ -895,11 +900,42 @@ onMounted(() => {
   filter: brightness(0.97);
 }
 
-@media (max-width: 900px) {
 
-  .grid,
-  .grid-2 {
-    grid-template-columns: 1fr;
+
+@media (max-width: 768px) {
+  .btn {
+    width: 100%;
+  }
+
+  .col .btn {
+    width: 15%;
+  }
+
+  .grid {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .nav-tabs {
+    flex-wrap: wrap;
+  }
+
+  .bar {
+    justify-content: center;
+  }
+
+  .dropdown-list {
+    max-height: 180px;
+  }
+
+  .modal-overlay {
+    padding-top: 200px;
+    overflow-y: auto;
+  }
+
+  .modal-overlay td.mono {
+    white-space: normal;
+    word-break: break-all;
   }
 }
 </style>

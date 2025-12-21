@@ -1,12 +1,12 @@
 <template>
-    <div class="w-50 bg-white rounded-4 shadow">
+    <div class="bg-white rounded-4 shadow form  ">
         <div class="bg-primary text-white p-2 rounded-top d-flex justify-content-between align-items-center">
             <h4 class="m-0">Thêm / Sửa thông tin khách hàng</h4>
-            <button class="btn btn-sm btn-light" @click="$emit('cancel')">Đóng</button>
+            <button class="btn btn-sm btn-light" @click="emit('cancel')">Đóng</button>
         </div>
 
         <!-- Form -->
-        <form action="" @submit.prevent="handleSubmit">
+        <form @submit.prevent="handleSubmit">
             <div class="p-4 row g-4">
                 <!-- Họ -->
                 <div class="col-md-6">
@@ -64,15 +64,6 @@
                     <textarea type="text" id="address" rows="3" v-model="customer.address" class="form-control"
                         placeholder="Nhập địa chỉ" />
                 </div>
-
-                <div v-if="toastMessage.message" :class="{
-                    'toast-success': toastMessage.type === 'success',
-                    'toast-error': toastMessage.type === 'error',
-                    'toast-warning': toastMessage.type === 'warning',
-                    'toast-info': toastMessage.type === 'info'
-                }">
-                    {{ toastMessage.message }}
-                </div>
             </div>
 
 
@@ -83,21 +74,11 @@
                     <span v-if="submitting" class="spinner-border spinner-border-sm me-1"></span>
                     <i class="fas fa-save"></i> Lưu
                 </button>
-                <button class="btn btn-secondary ms-2" @click="$emit('cancel')">Hủy</button>
+                <button class="btn btn-secondary ms-2" @click="emit('cancel')">Hủy</button>
             </div>
         </form>
     </div>
 
-    <!-- <transition name="fade">
-        <div v-if="toast.message" class="toast-box" :class="{
-            'toast-success': toast.type === 'success',
-            'toast-error': toast.type === 'error',
-            'toast-warning': toast.type === 'warning',
-            'toast-info': toast.type === 'info'
-        }">
-            {{ toast.message }}
-        </div>
-    </transition> -->
 </template>
 
 
@@ -114,10 +95,7 @@ const props = defineProps({
     }
 });
 
-const toastMessage = ref({
-    message: "",
-    type: ""
-});
+
 
 const submitting = ref(false);
 const error = ref(null);
@@ -158,7 +136,7 @@ function showToast(message, type = "info") {
 async function handleSubmit() {
     if (!customer.value.firstName || !customer.value.lastName || !customer.value.email || !customer.value.phone || !customer.value.address) {
             
-        return toast.error('Vui lòng điền đầy đủ thông tin !');;
+        return toast.error('Vui lòng điền đầy đủ thông tin !');
     }
     const vietnamPhoneRegex = /^(0|\+84)(3[2-9]|5[6|8|9]|7[0|6-9]|8[1-5]|9[0-9])[0-9]{7}$/
     if (/\d/.test(customer.value.lastName) || /\s/.test(customer.value.lastName)) return showToast('Họ không được chứa khoảng trắng và số !', 'error');
@@ -176,7 +154,7 @@ async function handleSubmit() {
         }
 
         emit('save', result);
-        // showToast('Lưu thông tin khách hàng thành công!', 'success');
+
         toast.success('Lưu thông tin khách hàng thành công!');
         resetForm();
     } catch (error) {
@@ -223,45 +201,14 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.toast-box {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 12px 16px;
-    border-radius: 8px;
-    color: white;
-    z-index: 9999;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-    font-weight: 500;
-    min-width: 200px;
-    text-align: center;
+
+.form{
+    width: 75%;
 }
 
-/* Màu theo trạng thái */
-.toast-success {
-    color: #28a745;
-}
-
-.toast-error {
-    color: #dc3545;
-}
-
-.toast-warning {
-    color: black;
-}
-
-.toast-info {
-    color: #17a2b8;
-}
-
-/* Fade animation */
-.fade-enter-active,
-.fade-leave-active {
-    transition: opacity 0.3s;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-    opacity: 0;
+@media(max-width: 768px){
+    .form{
+        width: 100%;
+    }
 }
 </style>

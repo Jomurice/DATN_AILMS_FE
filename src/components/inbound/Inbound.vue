@@ -1,5 +1,5 @@
 <template>
-  <div class="container-fluid px-3 py-4">
+  <div class="container-fluid mb-3">
     <div class="pbox">
       <!-- Aside -->
       <aside class="side">
@@ -9,32 +9,25 @@
 
         <!-- Search Input -->
         <div class="mb-3">
-          <input
-            v-model="searchKeyword"
-            @input="debounceSearch"
-            class="form-control"
-            placeholder="Tìm kiếm theo mã đơn, nhà cung cấp..."
-          />
+          <input v-model="searchInput" @input="debounceSearch" class="form-control"
+            placeholder="Tìm kiếm theo mã đơn, nhà cung cấp..." />
         </div>
 
         <!-- Status Filter -->
         <div class="mb-2 d-flex gap-2 flex-wrap">
           <button class="btn btn-sm" :class="chip('ALL')" @click="setStatus('ALL')">Tất cả</button>
           <button class="btn btn-sm" :class="chip('IN_BOUND')" @click="setStatus('IN_BOUND')">Chờ xử lý</button>
-          <button class="btn btn-sm" :class="chip('IN_PROGRESS')" @click="setStatus('IN_PROGRESS')">Đang thực hiện</button>
+          <button class="btn btn-sm" :class="chip('IN_PROGRESS')" @click="setStatus('IN_PROGRESS')">Đang thực
+            hiện</button>
           <button class="btn btn-sm" :class="chip('COMPLETED')" @click="setStatus('COMPLETED')">Hoàn tất</button>
         </div>
 
         <div class="list-group small">
-          <button v-for="o in orders" :key="o.id"
+          <button v-for="o in orders.content" :key="o.id"
             class="list-group-item list-group-item-action d-flex justify-content-between align-items-center"
             :class="{ active: selectedOrder?.id === o.id }" @click="openOrder(o)">
             <div>
-              <button
-                class="btn btn-outline-success btn-sm qr-btn me-2"
-                title="Tải QR"
-                @click.stop="download(o.id)"
-              >
+              <button class="btn btn-outline-success btn-sm qr-btn me-2" title="Tải QR" @click.stop="download(o.id)">
                 <i class="fa-solid fa-qrcode"></i>
                 <span class="d-none d-md-inline ms-1">QR</span>
               </button>
@@ -46,7 +39,7 @@
             <small class="text-muted">{{ formatDate(o.createdAt || o.eta) }}</small>
           </button>
 
-          <div v-if="!loading && !orders.length" class="text-muted p-3">
+          <div v-if="!loading && !orders?.content?.length" class="text-muted p-3">
             Không có phiếu phù hợp
           </div>
           <div v-if="loading" class="text-center py-3">
@@ -54,28 +47,25 @@
           </div>
         </div>
 
+
+        <Pagination v-if="totalPages > 1" :total-pages="orderPagination.totalPages.value" :payload="payloadSearch" :visible-pages="orderPagination.visiblePages.value"
+          @change-page="goToPage" />
         <!-- Pagination -->
-        <div v-if="totalPages > 1" class="d-flex justify-content-between align-items-center mt-3 gap-2">
-          <button 
-            class="btn btn-sm btn-outline-secondary" 
-            :disabled="currentPage === 0"
-            @click="goToPage(currentPage - 1)"
-          >
+        <!-- <div v-if="totalPages > 1" class="d-flex justify-content-between align-items-center mt-3 gap-2">
+          <button class="btn btn-sm btn-outline-secondary" :disabled="currentPage === 0"
+            @click="goToPage(currentPage - 1)">
             <i class="fa-solid fa-chevron-left"></i>
           </button>
-          
+
           <span class="small text-muted">
             Trang {{ currentPage + 1 }} / {{ totalPages }}
           </span>
-          
-          <button 
-            class="btn btn-sm btn-outline-secondary"
-            :disabled="currentPage >= totalPages - 1"
-            @click="goToPage(currentPage + 1)"
-          >
+
+          <button class="btn btn-sm btn-outline-secondary" :disabled="currentPage >= totalPages - 1"
+            @click="goToPage(currentPage + 1)">
             <i class="fa-solid fa-chevron-right"></i>
           </button>
-        </div>
+        </div> -->
       </aside>
 
       <!-- Main -->
@@ -83,9 +73,11 @@
         <div class="section-card" v-if="selectedOrder">
           <div class="d-flex align-items-center justify-content-between px-3 pt-3 pb-2">
             <div class="fw-bold">
-              <div>{{ selectedOrder.code }} — <span class="text-muted">{{ cut(selectedOrder.supplier, 28) }}</span></div>
+              <div>{{ selectedOrder.code }} — <span class="text-muted">{{ cut(selectedOrder.supplier, 28) }}</span>
+              </div>
               <small class="text-muted">
-                Ngày tạo: {{ formatDate(selectedOrder.createdAt || selectedOrder.eta) }} • Trạng thái: {{ viStatus(selectedOrder.status) }}
+                Ngày tạo: {{ formatDate(selectedOrder.createdAt || selectedOrder.eta) }} • Trạng thái: {{
+                  viStatus(selectedOrder.status) }}
               </small>
             </div>
             <div class="d-flex gap-2">
@@ -102,14 +94,9 @@
             </div>
 
             <div class="flex-grow-1 d-flex align-items-center gap-2">
-              <input
-                ref="quickInputRef"
-                v-model.trim="quickSerial"
-                @keyup.enter="handleQuickScan"
-                class="form-control mono"
-                placeholder="Quét nhanh serial… (vd: iphone15prm-0001)"
-                :disabled="!canScan"
-              />
+              <input ref="quickInputRef" v-model.trim="quickSerial" @keyup.enter="handleQuickScan"
+                class="form-control mono" placeholder="Quét nhanh serial… (vd: iphone15prm-0001)"
+                :disabled="!canScan" />
               <button class="btn btn-primary" @click="handleQuickScan" :disabled="!canScan">Quét</button>
               <button class="btn btn-success" @click="startQrScanner" :disabled="!canScan">Quét QR</button>
             </div>
@@ -163,7 +150,8 @@
                   <td class="nowrap">{{ cut(it.color || '—', 16) }}</td>
                   <td class="text-end nowrap mono">
                     <span>{{ it.scannedQuantity || 0 }}/{{ it.orderQuantity }}</span>
-                    <button class="btn btn-link btn-sm ms-1" title="Xem serial đã quét" @click="openSerialsModal(it.sku, it.productId)">
+                    <button class="btn btn-link btn-sm ms-1" title="Xem serial đã quét"
+                      @click="openSerialsModal(it.sku, it.productId)">
                       <i class="fa-solid fa-eye"></i>
                     </button>
                   </td>
@@ -176,11 +164,7 @@
           </div>
 
           <div class="px-3 py-3 d-flex justify-content-end">
-            <button 
-              class="btn btn-success" 
-              :disabled="!canComplete" 
-              @click="completeOrder"
-            >
+            <button class="btn btn-success" :disabled="!canComplete" @click="completeOrder">
               Nhập hàng
             </button>
           </div>
@@ -209,7 +193,7 @@
               <tr>
                 <th class="notranslate">Serial</th>
                 <th>Trạng thái</th>
-            
+
               </tr>
             </thead>
             <tbody>
@@ -240,6 +224,8 @@ import { tokenService } from "@/services/TokenService";
 import api from "@/services/axios";
 import { Html5Qrcode } from "html5-qrcode";
 import { toast } from "vue-sonner";
+import { usePagination } from '../../utils/usePagination'
+import Pagination from "../Pagination.vue";
 
 // ===== Refs =====
 const auth = tokenService();
@@ -257,16 +243,23 @@ const toastMsg = ref("");
 let toastTimer = null;
 
 // Pagination & Search
+const searchInput = ref('');
 const currentPage = ref(0);
 const pageSize = ref(10);
 const totalPages = ref(0);
 const totalElements = ref(0);
-const searchKeyword = ref("");
+const payloadSearch = ref({
+  page: 0,
+  size: 5,
+  status: '',
+  keyword: ''
+});
 let searchTimeout = null;
 
 // QR Scanner
 const qrScanner = ref(null);
 const qrScannerVisible = ref(false);
+const orderPagination = usePagination(orders,payloadSearch);
 
 // ======== Helpers ========
 const cut = (s, n = 20) => s && s.length > n ? s.slice(0, n) + "..." : s || "";
@@ -286,7 +279,7 @@ const key = (s) => String(s || "").trim().toLowerCase();
 const chip = (s) => ({ "btn-outline-secondary": status.value !== s, "btn-primary text-white": status.value === s });
 const viStatus = (s) => {
   const k = String(s || "").toUpperCase();
-  if (k === "IN_BOUND" ) return "Chờ xử lý";
+  if (k === "IN_BOUND") return "Chờ xử lý";
   if (k === "IN_PROGRESS") return "Đang thực hiện";
   if (k === "COMPLETED") return "Hoàn tất";
   return s || "—";
@@ -298,17 +291,17 @@ const viStatus = (s) => {
 const canComplete = computed(() => {
   if (!selectedOrder.value) return false;
   const s = String(selectedOrder.value.status || "").toUpperCase();
-  
- 
+
+
   if (s === "COMPLETED" || s === "DONE") return false;
-  
-  
+
+
   if (!selectedOrder.value.items?.length) return false;
-  
+
   const allItemsScanned = selectedOrder.value.items.every(item => {
     return (item.scannedQuantity || 0) >= (item.orderQuantity || 0);
   });
-  
+
   return allItemsScanned;
 });
 
@@ -330,46 +323,40 @@ const setStatus = (s) => {
 const debounceSearch = () => {
   clearTimeout(searchTimeout);
   searchTimeout = setTimeout(() => {
+    // orders.value = null;
     currentPage.value = 0;
     loadOrders();
   }, 500);
 };
 
-const goToPage = (page) => {
-  if (page >= 0 && page < totalPages.value) {
-    currentPage.value = page;
-    loadOrders();
-  }
+function goToPage (page) {
+  payloadSearch.value.page = page;
+  loadOrders();
 };
 
 async function loadOrders() {
+  orders.value = [];
   loading.value = true;
+  
   try {
     auth.loadToken();
     userId.value = auth.userId;
-    
+
     const statusParam = status.value === "ALL" ? null : status.value;
-    const keywordParam = searchKeyword.value.trim() || null;
+    const keywordParam = searchInput.value.trim() || null;
     
-    console.log('Loading orders with params:', { 
-      page: currentPage.value, 
-      size: pageSize.value, 
-      status: statusParam, 
-      keyword: keywordParam 
-    });
-    
-    const result = await purchaseOrderService.searchPurchaseOrders({
-      page: currentPage.value,
-      size: pageSize.value,
-      status: statusParam,
-      keyword: keywordParam
-    });
-    
+    payloadSearch.value.keyword = keywordParam;
+    payloadSearch.value.status = statusParam;
+
+
+    const result = await purchaseOrderService.searchPurchaseOrders(payloadSearch.value);
+
     console.log('Loaded orders:', result);
-    
-    orders.value = result.content || [];
+
+    orders.value = result || [];
     totalPages.value = result.totalPages || 0;
     totalElements.value = result.totalElements || 0;
+    console.log("orders",orders.value)
   } catch (err) {
     console.error("Load orders error", err);
     toast.error("Lỗi tải danh sách phiếu");
@@ -442,13 +429,13 @@ async function handleQuickCameraScan(serialInput) {
 
     const updated = await purchaseOrderService.getPurchaseOrderById(selectedOrder.value.id, { includeItems: true });
     selectedOrder.value = normalizeOrder(updated);
-    
+
     const orderIndex = orders.value.findIndex(o => o.id === selectedOrder.value.id);
     if (orderIndex !== -1) {
       orders.value[orderIndex].status = selectedOrder.value.status;
     }
-    
-    
+
+
     scannedBySku.value = {};
     for (const itm of selectedOrder.value.items || []) {
       scannedBySku.value[key(itm.sku)] = {
@@ -464,7 +451,7 @@ async function handleQuickCameraScan(serialInput) {
     const code = err.response?.data?.code;
     const msg = err.response?.data?.message;
     if (code === "SERIAL_ALREADY_SCANNED") toast.error("Serial này đã được scan trước đó");
-    else if ( msg=== "Serial already scanned or in warehouse") toast.error("Serial tồn tại trong hệ thống");
+    else if (msg === "Serial already scanned or in warehouse") toast.error("Serial tồn tại trong hệ thống");
     else if (code === "SERIAL_NOT_FOUND") toast.error("Serial không tồn tại trong hệ thống");
     else if (code === "SKU_MISMATCH") toast.error("Serial không khớp với SKU trong phiếu");
     else toast.error(msg || "Có lỗi xảy ra khi quét");
@@ -500,21 +487,21 @@ async function handleQuickScan() {
     });
 
     toast.success("Quét thành công!");
-    
-    
+
+
     const updated = await purchaseOrderService.getPurchaseOrderById(
       selectedOrder.value.id,
       { includeItems: true }
     );
     selectedOrder.value = normalizeOrder(updated);
-    
-  
+
+
     const orderIndex = orders.value.findIndex(o => o.id === selectedOrder.value.id);
     if (orderIndex !== -1) {
       orders.value[orderIndex].status = selectedOrder.value.status;
     }
-    
-    
+
+
     scannedBySku.value = {};
     for (const itm of selectedOrder.value.items || []) {
       scannedBySku.value[key(itm.sku)] = {
@@ -548,18 +535,18 @@ async function handleQuickScan() {
 
 async function completeOrder() {
   if (!selectedOrder.value) return;
-  
+
   try {
-    await api.post(`/api/purchase-orders/${selectedOrder.value.id}/complete`, {}, { 
-      params: { userId: userId.value } 
+    await api.post(`/api/purchase-orders/${selectedOrder.value.id}/complete`, {}, {
+      params: { userId: userId.value }
     });
-    
+
     toast.success("Nhập kho thành công!");
-    
-    
+
+
     await loadOrders();
-    
-    
+
+
     selectedOrder.value = null;
   } catch (err) {
     console.error("Complete error", err);
@@ -590,21 +577,21 @@ function showToast(msg = "") {
 function startQrScanner() {
   if (!selectedOrder.value) return toast.error("Chọn phiếu trước khi quét QR");
   if (!canScan.value) return toast.error("Không thể quét cho phiếu đã hoàn tất");
-  
+
   qrScannerVisible.value = true;
-  
+
   setTimeout(() => {
     qrScanner.value = new Html5Qrcode("qr-reader");
     qrScanner.value.start(
       { facingMode: "environment" },
-      { 
+      {
         fps: 30,
         qrbox: { width: 300, height: 300 },
         aspectRatio: 1.0
       },
       (decodedText) => {
         handleQuickCameraScan(decodedText);
-        
+
       },
       (errorMessage) => {
       }
@@ -647,28 +634,103 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.pbox { display: flex; gap: 16px; width: 100%; }
-.side {
-  width: 320px; background: #fff; border-radius: 14px; padding: 14px;
-  position: sticky; top: 96px; height: calc(100vh - 110px); overflow: auto;
+.pbox {
+  display: flex;
+  gap: 16px;
+  width: 100%;
 }
-.brand { font-weight: 700; font-size: 18px; display: flex; align-items: center; margin-bottom: 10px; }
-.main { flex: 1; display: flex; flex-direction: column; gap: 16px; }
-.section-card { background: #fff; border: 1px solid #eef2f7; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+
+.side {
+  width: 320px;
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px;
+  position: sticky;
+  top: 96px;
+  height: calc(100vh - 110px);
+  overflow: auto;
+}
+
+.brand {
+  font-weight: 700;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-card {
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
 
 .badge-card {
-  background: #fff; border: 1px solid #eef2f7; border-radius: 10px;
-  padding: 8px 14px; text-align: center; display: inline-flex; flex-direction: column; min-width: 140px;
+  background: #fff;
+  border: 1px solid #eef2f7;
+  border-radius: 10px;
+  padding: 8px 14px;
+  text-align: center;
+  display: inline-flex;
+  flex-direction: column;
+  min-width: 140px;
 }
-.badge-card .num { font-weight: 700; color: #1f2937; font-size: 18px; }
 
-.table-balanced th, .table-balanced td { vertical-align: middle; white-space: nowrap; height: 56px; }
-.nowrap { white-space: nowrap; }
-.thead-soft th { background: #cfe3ff; color: #0b1324; font-weight: 600; letter-spacing: 0.2px; border-top: 1px solid #9ec5fe; border-bottom: 1px solid #9ec5fe; }
-.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+.badge-card .num {
+  font-weight: 700;
+  color: #1f2937;
+  font-size: 18px;
+}
 
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 10000; }
-.toast-box { position: fixed; bottom: 20px; right: 20px; background: #111; color: #fff; padding: 10px 14px; border-radius: 8px; z-index: 20000; }
+.table-balanced th,
+.table-balanced td {
+  vertical-align: middle;
+  white-space: nowrap;
+  height: 56px;
+}
+
+.nowrap {
+  white-space: nowrap;
+}
+
+.thead-soft th {
+  background: #cfe3ff;
+  color: #0b1324;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  border-top: 1px solid #9ec5fe;
+  border-bottom: 1px solid #9ec5fe;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 10000;
+}
+
+.toast-box {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: #111;
+  color: #fff;
+  padding: 10px 14px;
+  border-radius: 8px;
+  z-index: 20000;
+}
 
 .serial-modal-card {
   width: 90%;
@@ -676,7 +738,7 @@ onMounted(async () => {
   max-height: 80vh;
   display: flex;
   flex-direction: column;
-  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
 
 .serial-table-wrapper {
@@ -708,7 +770,7 @@ onMounted(async () => {
   position: sticky;
   top: 0;
   z-index: 10;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 /* QR Scanner Styles */
@@ -730,7 +792,7 @@ onMounted(async () => {
   margin: 0 auto;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 #qr-reader {
@@ -802,30 +864,41 @@ onMounted(async () => {
 }
 
 @media (max-width: 992px) {
-  .pbox { flex-direction: column; }
-  .side { width: 100%; height: auto; position: static; }
-  .serial-modal-card { width: 95%; max-width: none; }
-  
+  .pbox {
+    flex-direction: column;
+  }
+
+  .side {
+    width: 100%;
+    height: auto;
+    position: static;
+  }
+
+  .serial-modal-card {
+    width: 95%;
+    max-width: none;
+  }
+
   .qr-scanner-corner {
     width: 40px;
     height: 40px;
   }
-  
+
   .qr-scanner-corner.top-left {
     margin-top: -100px;
     margin-left: -100px;
   }
-  
+
   .qr-scanner-corner.top-right {
     margin-top: -100px;
     margin-right: -100px;
   }
-  
+
   .qr-scanner-corner.bottom-left {
     margin-bottom: -100px;
     margin-left: -100px;
   }
-  
+
   .qr-scanner-corner.bottom-right {
     margin-bottom: -100px;
     margin-right: -100px;
