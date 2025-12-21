@@ -7,7 +7,10 @@
         <i class="fa-solid fa-bell fs-5"></i>
       </div>
       <RouterLink to="/profile" class="profile d-inline-flex align-items-center">
-        <i class="fa-regular fa-circle-user fs-1"></i>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+  <path stroke-linecap="round" stroke-linejoin="round" d="M17.982 18.725A7.488 7.488 0 0 0 12 15.75a7.488 7.488 0 0 0-5.982 2.975m11.963 0a9 9 0 1 0-11.963 0m11.963 0A8.966 8.966 0 0 1 12 21a8.966 8.966 0 0 1-5.982-2.275M15 9.75a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+</svg>
+
       </RouterLink>
 
     </div>
@@ -33,6 +36,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import api from "@/services/axios";
+import { toast } from "vue-sonner";
 
 const router = useRouter();
 const showConfirm = ref(false);
@@ -43,6 +47,7 @@ function confirmLogout() {
   api.post("/auth/logout", {
     token: token
   }).finally(() => {
+    toast.success("Đăng xuất thành công!");
     localStorage.removeItem("accessToken");
     showConfirm.value = false;
     router.replace("/login");
@@ -136,6 +141,10 @@ function confirmLogout() {
   border: none;
   padding: 6px 14px;
   border-radius: 6px;
+}
+.size-6 {
+  width: 30px;
+  height: 30px;
 }
 </style>
 

@@ -104,6 +104,7 @@
 <script setup>
 import { ref, onMounted, computed, nextTick } from "vue";
 import { brandService } from "../../services/randService";
+import { toast } from "vue-sonner";
 
 const list = ref([]);
 const loading = ref(false);
@@ -133,7 +134,7 @@ async function loadData() {
   try {
     list.value = await brandService.getAll();
   } catch (e) {
-    showToast("Lỗi khi tải dữ liệu", true);
+    toast.error("Không thể tải dữ liệu thương hiệu"); 
   } finally {
     loading.value = false;
   }
@@ -163,15 +164,17 @@ async function saveBrand() {
   try {
     if (isCreating.value) {
       await brandService.create({ name: brandForm.value.name });
-      showToast("Đã thêm thương hiệu mới");
+      toast.success("Thêm thành công");
     } else {
       await brandService.update(brandForm.value.id, { name: brandForm.value.name });
-      showToast("Cập nhật thành công");
+      
+      toast.success("Cập nhật thành công");
     }
     await loadData();
     closeModal();
   } catch (e) {
-    showToast("Không thể lưu dữ liệu", true);
+    toast.error("Lưu thất bại");
+    
   } finally {
     submitting.value = false;
   }
@@ -181,10 +184,11 @@ async function handleDelete(id) {
   if (!confirm("Bạn có chắc chắn muốn xóa thương hiệu này?")) return;
   try {
     await brandService.delete(id);
-    showToast("Đã xóa");
+    toast.success("Xóa thành công");
     await loadData();
   } catch (e) {
-    showToast("Thương hiệu đang được sử dụng", true);
+    toast.error("Xóa thất bại");
+   
   }
 }
 
