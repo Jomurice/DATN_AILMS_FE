@@ -1,12 +1,12 @@
 <template>
   <div class="pbox">
-    <OutboundAside :orders="orders" :loading="loading" :payload="payloadSearch"
+    <OutboundAside class="aside" :orders="orders" :loading="loading" :payload="payloadSearch" :show-side="showSide"
       :visible-pages="orderPagination.visiblePages.value" :status="payloadSearch.status"
-      :total-pages="orderPagination.totalPages.value" @search="handleSearch" @change-status="handleChangeStatus"
+      :total-pages="orderPagination.totalPages.value" @show-side="showSideModal" @search="handleSearch" @change-status="handleChangeStatus"
       @select-order="openOrder" @change-page="handleOrderPageChange" @clear-input="clearInputSearch" />
 
-    <OutboundMain :order="selectedOrder" :customer="customer" :qrScannerVisible="qrScannerVisible"
-      :modal-serials="modalSerials" :modal-sku="modalSku" :serial="quickSerial" :payload="payloadSerial"
+    <OutboundMain :order="selectedOrder" :customer="customer" :qrScannerVisible="qrScannerVisible" :role="role" :loading-order="loadingOrder"
+      :modal-serials="modalSerials" :modal-sku="modalSku" :serial="quickSerial" :payload="payloadSerial" :loading="loadingModalSku"
       :visible-pages="serialPagination.visiblePages.value" @scan="handleQuickScan" @scanQr="handleScanQr"
       @change-page="handleSerialPageChange" @stopCamera="stopQrScanner" @export="confirmExport"
       @cancel="openCancelModal" @confirm="openNoteCancelModal" @reject="rejectCancel" @open-serials-modal="openSerialsModal"
@@ -19,8 +19,8 @@
 
     <ConfirmModal modal-id="noteCancel" :show="modalState === 'NOTE_CANCEL'" title="Lý do hủy"
       :message=  "selectedOrder?.note"
-      confirm-text="Xác nhận hủy" cancel-text="Không hủy" @close-modal="closeCancelModal" @confirm="confirmCancel"
-      @cancel=" rejectCancel" />
+      confirm-text="Xác nhận hủy" cancel-text="Không hủy" @close-modal="closeCancelModal" @confirm="() => {confirmCancel(); closeCancelModal()}"
+      @cancel="() => {rejectCancel(), closeCancelModal()}" />
 
 
     <!-- modal cancel outbound -->
@@ -59,7 +59,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { tokenService } from "@/services/TokenService";
 import OutboundAside from './OutboundAside.vue'
 import OutboundMain from './OutboundMain.vue'
@@ -68,28 +68,35 @@ import { usePagination } from '../../utils/usePagination'
 import { outboundOrderService } from '../../services/outbound/outboundOrderService'
 import { customerService } from '../../services/outbound/CustomerService'
 import { Html5Qrcode } from "html5-qrcode";
+import { toast } from "vue-sonner";
+
 
 // state
 const auth = tokenService();
 const userId = ref('');
+const role = ref('');
+
 const orders = ref('');
 const selectedOrder = ref(null);
 const customer = ref({});
-const loading = ref(false);
-const loadingScan = ref(false);
 const modalSku = ref('');
 const modalSerials = ref({});
 const quickSerial = ref('');
 const quickInputRef = ref(null);
 const qrScanner = ref(null);
 const qrScannerVisible = ref(false);
-const toastMsg = ref("");
-let toastTimer = null;
-const showCancelModal = ref(false);
 const showNoteCancelModal = ref(false);
 const cancelModalVisible = ref(false);
 const modalState = ref(null)
 const note = ref('');
+const showSide = ref(false)
+
+// loading
+const loading = ref(false);
+const loadingScan = ref(false);
+const loadingModalSku = ref(false);
+const loadingOrder = ref(false);
+
 
 const status = ref('')
 const payloadSearch = ref({
@@ -106,20 +113,12 @@ const payloadSerial = ref({
   size: 5,
 });
 
-const openCancelModal = () => {
-  modalState.value = 'CONFIRM_CANCEL'
-  console.log(modalState.value) 
-}
-const openNoteCancelModal = () => {
-  modalState.value = 'NOTE_CANCEL'
-  console.log(modalState.value)
-}
+const openCancelModal = () => modalState.value = 'CONFIRM_CANCEL'
+const openNoteCancelModal = () => modalState.value = 'NOTE_CANCEL'
+const closeCancelModal = () => modalState.value = null
 
-
-const closeCancelModal = () =>{
-  modalState.value = null
-};
-
+const orderPagination = usePagination(orders, payloadSearch);
+const serialPagination = usePagination(modalSerials, payloadSerial);
 
 const closeModalSerial = () => {
   payloadSerial.value = {
@@ -131,6 +130,17 @@ const closeModalSerial = () => {
   modalSerials.value = [];
 };
 
+const showSideModal = () =>{
+  if(showSide.value === true) {
+    showSide.value = false ;
+    return;
+  }
+
+  showSide.value = true;
+
+  
+}
+
 function clearInputSearch() {
   payloadSearch.value.search = null;
   loadOrders();
@@ -138,7 +148,7 @@ function clearInputSearch() {
 
 function handleSearch(keyword) {
   if (!keyword) {
-    showToast('Vui lòng nhập mã phiếu để tìm kiếm');
+    toast.error('Vui lòng nhập mã phiếu để tìm kiếm');
     return false;
   }
 
@@ -167,12 +177,6 @@ function handleSerialPageChange(p) {
 
 
 
-const orderPagination = usePagination(orders, payloadSearch);
-const serialPagination = usePagination(modalSerials, payloadSerial);
-
-
-
-
 // api
 async function loadOrders() {
   orders.value = [];
@@ -181,14 +185,16 @@ async function loadOrders() {
 
     // payloadSearch.value.status = status.value || null
     orders.value = await outboundOrderService.search(payloadSearch.value);
-  } catch (error) {
-    console.error('Failed to load outbound orders:', error)
+  } catch {
+    toast.error("Lỗi tải danh sách đơn xuất ")
   } finally {
     loading.value = false
   }
 }
 
 async function openOrder(o) {
+  loadingOrder.value = true;
+  selectedOrder.value = [];
   try {
     let full = o;
     if (!Array.isArray(o.items) || !o.items.length) {
@@ -197,9 +203,11 @@ async function openOrder(o) {
     customer.value = await customerService.getById(full.customerId);
     selectedOrder.value = normalizeOrder(full);
     modalSerials.value = {};
-  } catch (error) {
-    console.error('Cannot load order details', error);
-    showToast('Không tải được chi tiết phiếu');
+    showSide.value = false;
+  } catch {
+    toast.error('Không tải được chi tiết phiếu');
+  }finally{
+    loadingOrder.value = false;
   }
 };
 
@@ -208,15 +216,18 @@ async function openSerialsModal(sku) {
   modalSerials.value = [];
 
   if (!modalSku.value) {
-    showToast('SKU không hợp lệ')
+    toast.error('SKU không hợp lệ')
     return
   }
   payloadSerial.value.sku = modalSku.value;
 
+  loadingModalSku.value = true;
   try {
     modalSerials.value = await outboundOrderService.getSerials(selectedOrder.value.id, payloadSerial.value);
   } catch {
-    showToast('Không tải được chi tiết đơn hàng');
+    toast.error('Không tải được chi tiết đơn hàng');
+  }finally{
+    loadingModalSku.value = false
   }
 };
 
@@ -238,7 +249,7 @@ function normalizeOrder(order) {
 async function cancelOutbound() {
   if (!selectedOrder.value) return;
   if (!note.value) {
-    showToast('Vui lòng nhập lý do hủy đơn');
+    toast.error('Vui lòng nhập lý do hủy đơn');
     return;
   }
   const req = {
@@ -249,14 +260,13 @@ async function cancelOutbound() {
   cancelModalVisible.value = true;
   try {
     await outboundOrderService.cancelOrder(selectedOrder.value.id, req);
-    showToast('Đã gửi yêu cầu hủy đơn');
-    openSerialsModal();
+    toast.success('Đã gửi yêu cầu hủy đơn');
     resetForm();
     loadOrders();
     note.value = '';
-  } catch (error) {
-    console.log('Cancel outbound error:', error);
-    showToast('Gửi yêu cầu hủy đơn thất bại');
+  } catch (e) {
+    console.log(e)
+    toast.error('Gửi yêu cầu hủy đơn thất bại');
   } finally {
     cancelModalVisible.value = false;
   }
@@ -265,12 +275,11 @@ async function cancelOutbound() {
 async function confirmCancel() {
   try {
     await outboundOrderService.confirmCancel(selectedOrder.value.id);
-    showToast('Hủy đơn thành công');
+    toast.success('Hủy đơn thành công');
     resetForm();
     loadOrders();
-  } catch (error) {
-    console.log('Confirm cancel error:', error);
-    showToast('Hủy đơn thất bại');
+  } catch {
+    toast.error('Hủy đơn thất bại');
   }
   showNoteCancelModal.value = false
 };
@@ -278,13 +287,12 @@ async function confirmCancel() {
 async function rejectCancel() {
   try {
     await outboundOrderService.rejectCancel(selectedOrder.value.id);
-    showToast('Đã từ chối hủy đơn');
+    toast.success('Đã từ chối hủy đơn');
     showNoteCancelModal.value = false
-    loadOrders();
     resetForm();
-  } catch (error) {
-    console.log('Reject cancel error:', error);
-    showToast('Từ chối hủy đơn thất bại');
+    loadOrders();
+  } catch {
+    toast.error('Từ chối hủy đơn thất bại');
   }
   
 };
@@ -297,12 +305,12 @@ async function handleQuickScan(serialInput) {
 
   const serial = quickSerial.value.trim() || '';
   if (!serial) {
-    showToast('Vui lòng nhập mã serial để quét');
+    toast.error('Vui lòng nhập mã serial để quét');
     return
   };
 
   if (!selectedOrder.value?.items?.length) {
-    showToast('Chưa chọn phiếu');
+    toast.error('Chưa chọn phiếu');
     return;
   }
 
@@ -319,7 +327,7 @@ async function handleQuickScan(serialInput) {
       reqScanned
     );
 
-    showToast('Quét thành công');
+    toast.success('Quét thành công');
 
     // reload order
     const updatedOrder = await outboundOrderService.getById(
@@ -330,16 +338,15 @@ async function handleQuickScan(serialInput) {
 
   } catch (error) {
     const msg = error.response?.data?.message;
-    console.log('Quick scan error:', msg);
 
     if (msg === 'Serial had been scanned') {
-      showToast('Serial này đã được quét trước đó');
+      toast.error('Serial này đã được quét trước đó');
     } else if (msg === 'Serial not found') {
-      showToast('Không tìm thấy serial này trong kho');
+      toast.error('Không tìm thấy serial này trong kho');
     } else if (msg === 'Serial not in order') {
-      showToast('Serial không thuộc sản phẩm trong phiếu');
+      toast.error('Serial không thuộc sản phẩm trong phiếu');
     } else {
-      showToast('Quét thất bại');
+      toast.error('Quét thất bại');
     }
   } finally {
     quickSerial.value = '';
@@ -350,8 +357,7 @@ async function handleQuickScan(serialInput) {
 
 
 function handleScanQr() {
-  console.log("Starting QR scan...");
-  if (!selectedOrder.value) return showToast("Chọn phiếu trước khi quét QR");
+  if (!selectedOrder.value) return toast.error("Chọn phiếu trước khi quét QR");
   qrScannerVisible.value = true;
   qrScanner.value = new Html5Qrcode("qr-reader");
   qrScanner.value.start(
@@ -368,8 +374,7 @@ function handleScanQr() {
       console.log("error scan: ", errorMessage)
     }
   ).catch(err => {
-    console.error("QR Scanner start error", err);
-    showToast("Không thể mở camera để quét QR");
+    toast.error("Không thể mở camera để quét QR");
     qrScannerVisible.value = false;
   });
 };
@@ -380,7 +385,6 @@ function stopQrScanner() {
       qrScanner.value.clear();
       qrScannerVisible.value = false;
     }).catch(err => {
-      console.error("QR Scanner stop error", err);
       qrScannerVisible.value = false;
     });
   } else {
@@ -396,20 +400,15 @@ async function confirmExport() {
   };
   try {
     await outboundOrderService.confirmExport(selectedOrder.value.id, req);
-    showToast('Đã xuất hàng & xác nhận phiếu');
+    toast.success('Đã xuất hàng & xác nhận phiếu');
     resetForm();
     loadOrders();
   } catch (error) {
     console.log('Confirm export error:', error);
-    showToast('Xuất hàng thất bại');
+    toast.error('Xuất hàng thất bại');
   }
 };
 
-
-
-
-
-function showToast(msg = '') { toastMsg.value = msg; clearTimeout(toastTimer); toastTimer = setTimeout(() => toastMsg.value = '', 1600); }
 
 function resetForm() {
   note.value = '';
@@ -434,8 +433,8 @@ watch(status, () => {
 
 onMounted(async () => {
   auth.loadToken();
-  userId.value = auth.userId || '';
-  console.log(userId.value)
+  userId.value = auth.userId;
+  role.value = auth.role
   loadOrders();
 });
 </script>
@@ -446,6 +445,11 @@ onMounted(async () => {
   gap: 16px;
   width: 100%;
   min-height: calc(100vh - 150px);
+}
+
+.pbox > *:last-child {
+  flex: 1;
+  min-width: 0;
 }
 
 .modal-overlay {
@@ -470,5 +474,20 @@ onMounted(async () => {
   padding: 10px 14px;
   border-radius: 8px;
   z-index: 20000;
+}
+
+/* mobile */
+
+@media (max-width: 768px) {
+  .pbox {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+
+    .modal-overlay .card {
+    width: 95% !important;
+    padding: 16px !important;
+  }
 }
 </style>

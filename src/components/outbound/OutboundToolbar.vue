@@ -28,14 +28,17 @@
         <div class="flex-grow-1 d-flex align-items-center gap-2">
           <div class="search-box">
             <input ref="quickInputRef" v-model.trim="serialInput" @keyup.enter="clearSerial"
-              class="form-control mono" style="width: 740px;" placeholder="Quét nhanh serial… (vd: iphone15prm-0001)" />
+              class="form-control mono serial-input" placeholder="Nhập số serial để quét" />
+
 
             <button v-if="serialInput" class="btn-clear" @click="clearSerial" type="button">
               ✕
             </button>
           </div>
-          <button class="btn btn-primary" :disabled="!isCancel" @click="clearSerial">Quét</button>
-          <button class="btn btn-success" :disabled="!isCancel" @click="$emit('scan-qr')">Quét QR</button>
+          <nav class="d-flex gap-2 scan">
+            <button class="btn btn-primary" :disabled="!isCancel" @click="clearSerial">Quét</button>
+            <button class="btn btn-success" :disabled="!isCancel" @click="$emit('scan-qr')">Quét QR</button>
+          </nav>
         </div>
       </div>
       <div v-if="qrScannerVisible" class="my-3">
@@ -80,7 +83,7 @@ const toViStatus = s => {
 
 const isCancel = computed(() => {
   const statusUp = String(props.selectedOrder?.status || '').toUpperCase()
-  return !['EXPORT', 'PENDING_CANCEL', 'CANCELLED'].includes(statusUp)
+  return !['EXPORT', 'PENDING_CANCEL', 'CANCELLED',''].includes(statusUp)
 })
 
 
@@ -109,6 +112,10 @@ const clearSerial = () => {
   position: relative;
 }
 
+.serial-input {
+  width: 740px;
+}
+
 .btn-clear {
   position: absolute;
   top: 50%;
@@ -123,5 +130,55 @@ const clearSerial = () => {
 
 .btn-clear:hover {
   color: #dc3545;
+}
+
+/* mobile */
+
+@media (max-width: 768px) {
+  .serial-input {
+    width: 100%;
+  }
+
+  .search-box {
+    width: 100%;
+  }
+
+  .px-3.pb-2.d-flex {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 8px;
+  }
+
+  .px-3.pb-2 .d-flex.gap-2 {
+    width: 100%;
+  }
+
+  .px-3.pb-2 .btn {
+    flex: 1;
+  }
+
+  .flex-grow-1.d-flex {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .scan {
+    width: 100%;
+  }
+
+  .scan .btn {
+    width: 100%;
+  }
+
+  .badge-card {
+    min-width: 100%;
+  }
+
+  #qr-reader {
+    max-width: 100%;
+    overflow: hidden;
+  }
+
 }
 </style>

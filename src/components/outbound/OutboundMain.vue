@@ -1,25 +1,29 @@
 <template>
   <div class="main p-3">
     <!-- toolbar -->
-    <OutboundToolbar @scan="emit('scan', $event)" @scan-qr="emit('scan-qr')" @stop-camera="emit('stop-camera')"  
-    :selectedOrder="order" :customer="customer" :serial="serial" :qr-scanner-visible="qrScannerVisible"/>
+    <OutboundToolbar @scan="emit('scan', $event)" @scan-qr="emit('scan-qr')" @stop-camera="emit('stop-camera')"
+      :selectedOrder="order" :customer="customer" :serial="serial" :qr-scanner-visible="qrScannerVisible" />
 
     <div v-if="order">
       <!-- Item table -->
-      <OutboundItemsTable :items="order.items" :modal-sku="modalSku" :modal-serials="modalSerials" :payload="payload" :visible-pages="visiblePages"
-      @open-serials-modal="emit('open-serials-modal', $event)" @close="emit('close')" @change-page="emit('change-page', $event)" />
+      <OutboundItemsTable :items="order.items" :modal-sku="modalSku" :modal-serials="modalSerials" :payload="payload" :loading="loading"
+        :visible-pages="visiblePages" :loading-order="loadingOrder" @open-serials-modal="emit('open-serials-modal', $event)"
+         @close="emit('close')" @change-page="emit('change-page', $event)" />
 
       <!-- Actions -->
       <div class="px-3 py-3 d-flex justify-content-end">
         <!-- <button v-if="isConfirmCancel" class="btn btn-warning mx-2" @click="$emit('reject')">Không hủy</button> -->
-        <button v-if="isConfirmCancel" class="btn btn-warning mx-2 " @click="$emit('confirm')">Lý do hủy
-          hủy</button>
-        <button class="btn btn-success" :disabled="!isAllScanned || submitting" @click="$emit('export')">
-          {{ submitting ? 'Đang xuất hàng...' : 'Xuất hàng' }}
+        <button v-if="isConfirmCancel && role === 'ADMIN'" class="btn btn-warning mx-2 " @click="$emit('confirm')">
+          Lý do hủy
         </button>
-        <div v-if="toastMsg" class="toast-box">{{ toastMsg }}</div>
-        <button class="btn btn-danger ms-2" :disabled="!isCancel" @click="$emit('cancel')">Hủy
-          đơn</button>
+        <nav v-if="isConfirmCancel === false">
+          <button class="btn btn-success" :disabled="!isAllScanned || submitting" @click="$emit('export')">
+            {{ submitting ? 'Đang xuất hàng...' : 'Xuất hàng' }}
+          </button>
+          <button class="btn btn-danger ms-2" :disabled="!isCancel" @click="$emit('cancel')">
+            Hủy đơn
+          </button>
+        </nav>
       </div>
     </div>
 
@@ -30,7 +34,9 @@ import { ref, computed } from 'vue'
 import OutboundToolbar from './OutboundToolbar.vue'
 import OutboundItemsTable from './OutboundItemsTable.vue'
 
+
 const props = defineProps({
+  role:String,
   order: Object,
   customer: Object,
   qrScannerVisible: Boolean,
@@ -39,11 +45,13 @@ const props = defineProps({
   modalSerials: Array,
   serial: String,
   payload: Object,
-  visiblePages: Array
+  visiblePages: Array,
+  loading:Boolean,
+  loadingOrder: Boolean
 })
 
 
-const emit = defineEmits(['scan', 'scan-qr', 'stop-camera', 'export', 'cancel', 'confirm', 'reject','open-serials-modal','close','change-page'])
+const emit = defineEmits(['scan', 'scan-qr', 'stop-camera', 'export', 'cancel', 'confirm', 'reject', 'open-serials-modal', 'close', 'change-page'])
 
 
 const toastMsg = ref('')
@@ -60,7 +68,7 @@ const isAllScanned = computed(() => {
 
 const isCancel = computed(() => {
   const statusUp = String(props.order?.status || '').toUpperCase()
-  return !['EXPORT', 'PENDING_CANCEL', 'CANCELLED'].includes(statusUp)
+  return !['EXPORT', 'PENDING_CANCEL', 'CANCELLED',''].includes(statusUp)
 })
 
 const isConfirmCancel = computed(() => {

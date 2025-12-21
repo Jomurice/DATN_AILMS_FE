@@ -1,18 +1,23 @@
 <template>
-  <aside class="side">
+  <button class="btn btn-outline-secondary d-md-none mb-2" @click="emit('show-side')">
+    Danh sách đơn
+  </button>
+
+  <aside class="side" :class="{ 'd-none d-md-block': !showSide }">
     <div class="brand"><i class="fa-solid fa-truck-ramp-box me-2"></i>Đơn xuất (Phiếu xuất)</div>
 
     <!-- search -->
     <div class="d-flex gap-2 mb-2">
       <div class="search-box">
-        <input class="form-control" style="width: 240px;" v-model.trim="q" placeholder="Nhập mã phiếu muốn tìm"
+        <input class="form-control search-input" v-model.trim="q" placeholder="Nhập mã phiếu muốn tìm"
           @keyup.enter="search(q)" />
+
 
         <button v-if="q" class="btn-clear" @click="clear" type="button">
           ✕
         </button>
       </div>
-      <button class="btn btn-primary" @click="search( q)">
+      <button class="btn btn-search btn-primary" @click="search(q)">
         <i class="fa-solid fa-magnifying-glass"></i>
       </button>
     </div>
@@ -29,7 +34,7 @@
 
     <!-- List orders -->
     <div class="list-group small">
-      <button v-for="o in orders.content || []" :key="o.id" @click="$emit('select-order', o)"
+      <button v-for="o in orders.content || []" :key="o.id" @click="selectOder(o)"
         class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
         <div>
           <div class="fw-bold">{{ clip(o.code, 20) }}</div>
@@ -49,14 +54,15 @@
     </div>
 
     <!-- pagination -->
-    <OutboundPagination v-if="orders?.totalPages > 1" :payload="payload" :visiblePages="visiblePages" :total-pages="totalPages"
+    <Pagination v-if="orders?.totalPages > 1" :payload="payload" :visiblePages="visiblePages" :total-pages="totalPages"
       @change-page="changePage" />
 
   </aside>
 </template>
+
 <script setup>
 import { ref } from 'vue';
-import OutboundPagination from '../Pagination.vue';
+import Pagination from '../Pagination.vue';
 
 const props = defineProps({
   orders: Object,
@@ -64,7 +70,8 @@ const props = defineProps({
   status: String,
   payload: Object,
   visiblePages: Array,
-  totalPages: Number
+  totalPages: Number,
+  showSide: Boolean
 });
 
 const emit = defineEmits([
@@ -72,7 +79,8 @@ const emit = defineEmits([
   'clear-input',
   'change-status',
   'select-order',
-  'change-page'
+  'change-page',
+  'show-side'
 ]);
 
 const q = ref('');
@@ -85,6 +93,10 @@ const clear = () => {
 const search = (keyword) => {
   emit('search', keyword)
 };
+
+const selectOder = (o) =>{
+  emit('select-order',o)
+}
 
 const changePage = (p) => {
   emit('change-page', p)
@@ -120,6 +132,10 @@ const toViStatus = s => {
   overflow: auto;
 }
 
+.search-input {
+  width: 240px;
+}
+
 .brand {
   font-weight: 700;
   font-size: 18px;
@@ -146,5 +162,48 @@ const toViStatus = s => {
 
 .btn-clear:hover {
   color: #dc3545;
+}
+
+/* mobile */
+
+@media (max-width: 768px) {
+  .side {
+    width: 100%;
+    position: relative;
+    top: 0;
+    border-radius: 0;
+    padding: 12px;
+    max-height: none;
+  }
+
+  .btn{
+    width: 30%;
+  }
+
+  .btn-search{
+    width: 10%;
+  }
+
+  .search-box{
+    width: 90%;
+  }
+
+  .search-input {
+    width: 100%;
+  }
+
+  .side .btn-sm {
+    font-size: 12px;
+    padding: 4px 8px;
+  }
+
+  .list-group-item {
+    padding: 10px;
+  }
+
+  .list-group-item small {
+    display: block;
+    margin-top: 4px;
+  }
 }
 </style>

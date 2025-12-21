@@ -5,6 +5,7 @@ export const tokenService = defineStore("auth", {
   state: () => ({
     token: null,
     user: null, // payload decode
+    role: "",
   }),
   getters: {
     userId: (state) =>
@@ -20,22 +21,28 @@ export const tokenService = defineStore("auth", {
       state.user?.name ||
       state.user?.email ||
       state.user?.sub ||
-       // fallback cuối
+      // fallback cuối
       "",
-      userRole: (state) =>
-      state.user?.scope || // fallback cuối
-      "",
-
     userRole: (state) =>
       state.user?.scope || // fallback cuối
       "",
+
   },
   actions: {
     setToken(token) {
       this.token = token;
       localStorage.setItem("accessToken", token);
       try {
-        this.user = jwtDecode(token);
+        const t = jwtDecode(token);
+
+        this.user = t;
+
+        // if (t.exp * 1000 < Date.now()) {
+        //   this.logout();
+        //   return;
+        // };
+
+        this.role = typeof t.scope === "string" ? t.scope.slice(5) : ""
       } catch (e) {
         this.user = null;
       }
@@ -49,6 +56,7 @@ export const tokenService = defineStore("auth", {
     logout() {
       this.token = null;
       this.user = null;
+      this.role = "";
       localStorage.removeItem("accessToken");
     },
   },

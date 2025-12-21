@@ -2,11 +2,10 @@
   <div>
     <Header />
 
-    
     <div v-if="rolesLoaded">
-      <TopNavAdmin v-if="role === 'ROLE_ADMIN'" />
-      <TopNavLogisticManager v-if="role === 'ROLE_LM'" />
-      <TopNavWarehouseOperator v-if="role === 'ROLE_WO'" />
+      <TopNavAdmin v-if="role === 'ADMIN'" />
+      <TopNavLogisticManager v-if="role === 'LM'" />
+      <TopNavWarehouseOperator v-if="role === 'WO'" />
     </div>
 
     <div class="header-offset" aria-hidden="true"></div>
@@ -34,8 +33,8 @@ const authState = tokenService();
 
 
 function loadUserRole() {
-  authState.loadToken();
-  role.value = authState.userRole || "";  
+
+  role.value = authState.role || "";  
   rolesLoaded.value = true;
 }
 
