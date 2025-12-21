@@ -102,8 +102,10 @@ const handleLogin = async () => {
   try {
     const data = await authService.login(username.value, password.value)
     toast.success("Đăng nhập thành công!");
-    console.log(data)
-    auth.setToken(data.result?.token);
+    // Lấy cả token và refreshToken từ kết quả trả về của API
+    const accessToken = data.result?.token;
+    const refreshToken = data.result?.refreshToken;
+    auth.setToken(accessToken, refreshToken);
     router.push("/profile");
   } catch (error) {
     if (error.response?.data?.message === 'User blocked' ) {

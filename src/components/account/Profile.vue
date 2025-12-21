@@ -115,13 +115,14 @@ import { tokenService } from '../../services/TokenService';
 import { passwordService } from "../../services/PasswordService";
 import { useRouter } from "vue-router";
 import { toast } from "vue-sonner";
+import { computed } from "vue";
 
 const router = useRouter();
 const auth = tokenService();
-auth.loadToken();
+const userId = computed(() => auth.userId);
 storeToRefs(auth);
 
-const userId = auth.userId;
+// const userId = auth.userId;
 const user = ref({
   username: "",
   name: "",
@@ -151,7 +152,7 @@ const changePasswordError = ref("");
 
 async function loadProfile() {
   try {
-    const response = await userService.getUserById(userId);
+    const response = await userService.getUserById(userId.value);
     const data = response;
     user.value = {
       ...data,
@@ -219,8 +220,8 @@ function exitModal() {
   isChangePassword.value = false;
 }
 
-onMounted(() => {
-  loadProfile();
+onMounted(async () => {
+ await loadProfile();
 });
 
 </script>
