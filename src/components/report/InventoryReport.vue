@@ -44,7 +44,7 @@
           </button>
           <button
             class="btn btn-success"
-            :disabled="!reportData.length"
+            
             @click="exportExcel"
           >
             Xuất Excel
@@ -207,43 +207,39 @@ export default {
       }
     },
 
-    async exportExcel() {
-      const res = await reportService.getInventorySummary({
-        startDate: this.startDate || null,
-        endDate: this.endDate || null,
-        warehouseId: this.warehouseId,
-        productId: this.productId || null,
-        page: 0,
-        size: 999999
-      });
+   async exportExcel() {
+  if (!this.warehouseId) {
+    toast.error('Vui lòng chọn kho!');
+    return;
+  }
 
-      const data = res.result.content || [];
+  try {
+    this.loading = true;
 
-      const headerRows = [
-        ['BÁO CÁO NHẬP - XUẤT - TỒN'],
-        [`Từ ngày: ${this.startDate || '---'}  Đến ngày: ${this.endDate || '---'}`],
-        [`Kho: ${this.warehouses.find(w => w.id === this.warehouseId)?.name || ''}`],
-        [
-          `Sản phẩm: ${
-            this.productId
-              ? this.products.find(p => p.id === this.productId)?.name
-              : 'Tất cả sản phẩm'
-          }`
-        ],
-        []
-      ];
+    const res = await reportService.getInventorySummary({
+      startDate: this.startDate || null, // YYYY-MM-DD
+      endDate: this.endDate || null,     // YYYY-MM-DD
+      warehouseId: this.warehouseId,
+      productId: this.productId || null,
+      page: 0,
+      size: 999999
+    });
 
-      const tableHeader = [[
-        'SKU',
-        'Sản phẩm',
-        'Kho',
-        'Tồn đầu',
-        'Nhập',
-        'Xuất',
-        'Tồn cuối'
-      ]];
+    const data = res.result?.content || [];
 
-      const tableData = data.map(i => [
+    if (!data.length) {
+      toast.warning('Không có dữ liệu để xuất');
+      return;
+    }
+
+    // ===== HEADER =====
+    const ws = XLSX.utils.aoa_to_sheet([
+      ['BÁO CÁO NHẬP - XUẤT - TỒN'],
+      [`Từ ngày: ${this.startDate || '---'}  Đến ngày: ${this.endDate || '---'}`],
+      [`Kho: ${this.warehouses.find(w => w.id === this.warehouseId)?.name || ''}`],
+      [],
+      ['SKU', 'Sản phẩm', 'Kho', 'Tồn đầu', 'Nhập', 'Xuất', 'Tồn cuối'],
+      ...data.map(i => [
         i.sku,
         i.productName,
         i.warehouseName,
@@ -251,31 +247,34 @@ export default {
         i.totalIn,
         i.totalOut,
         i.closingStock
-      ]);
+      ])
+    ]);
 
-      const ws = XLSX.utils.aoa_to_sheet([
-        ...headerRows,
-        ...tableHeader,
-        ...tableData
-      ]);
+    ws['!merges'] = [
+      { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
+      { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
+      { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } }
+    ];
 
-      ws['!merges'] = [
-        { s: { r: 0, c: 0 }, e: { r: 0, c: 6 } },
-        { s: { r: 1, c: 0 }, e: { r: 1, c: 6 } },
-        { s: { r: 2, c: 0 }, e: { r: 2, c: 6 } },
-        { s: { r: 3, c: 0 }, e: { r: 3, c: 6 } }
-      ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'BaoCao_NXT');
 
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'BaoCao_NXT');
+    XLSX.writeFile(
+      wb,
+      `BaoCao_NXT_${this.startDate || 'ALL'}_${this.endDate || 'ALL'}.xlsx`
+    );
 
-      XLSX.writeFile(
-        wb,
-        `BaoCao_NXT_${this.startDate || 'ALL'}_${this.endDate || 'ALL'}.xlsx`
-      );
-    }
+    toast.success('Xuất Excel thành công');
+  } catch (e) {
+    console.error(e);
+    toast.error('Xuất Excel thất bại');
+  } finally {
+    this.loading = false;
+  }
+}
   }
 };
+
 </script>
 
 <style scoped>
