@@ -148,7 +148,7 @@ import { useRouter, RouterLink } from "vue-router";
 import { purchaseOrderService } from "@/services/purchaseOrderService";
 import { tokenService } from "@/services/TokenService";
 import { warehouseService } from "@/services/WarehouseService";
-
+import { jwtDecode } from "jwt-decode";
 import { productDetailsService } from "@/services/product/productDetailsService";
 import { supplierService } from "@/services/purchaseOrder/supplierService.js";
 import { toast } from "vue-sonner";
@@ -347,7 +347,9 @@ async function initAuth() {
   const auth = tokenService();
   auth.loadToken();
   userId.value = auth.userId;
-  creatorName.value = auth.userName;
+  // creatorName.value = auth.userName;
+  creatorName.value = auth.user?.sub;
+  
 }
 
 async function loadProducts() {

@@ -61,7 +61,7 @@
               </div>
             </div>
             <div class="d-flex gap-2">
-              <RouterLink to="/inventory-check/new" class="btn btn-outline-primary btn-sm">
+              <RouterLink v-if=" rolesLoaded && (role === 'ADMIN' || role === 'LM')" to="/inventory-check/new" class="btn btn-outline-primary btn-sm">
                  <i class="fa-solid fa-plus"></i> Tạo phiếu mới
               </RouterLink>
             </div>
@@ -104,7 +104,7 @@
         <div v-else class="section-card d-flex flex-column align-items-center justify-content-center p-5 text-muted" style="min-height: 300px;">
           <i class="fa-solid fa-clipboard-list fs-1 mb-3 text-secondary opacity-50" style="font-size: 4rem;"></i>
           <h5>Chọn phiếu kiểm kê để xem chi tiết</h5>
-          <RouterLink to="/inventory-check/new" class="btn btn-primary mt-3">Tạo phiếu mới</RouterLink>
+          <RouterLink v-if=" rolesLoaded && (role === 'ADMIN' || role === 'LM')" to="/inventory-check/new" class="btn btn-primary mt-3">Tạo phiếu mới</RouterLink>
         </div>
       </main>
     </div>
@@ -115,6 +115,8 @@
 import { ref, onMounted } from "vue";
 import { inventoryCheckService } from "../../services/inventoryCheckService";
 import { toast } from "vue-sonner";
+import { tokenService } from "../../services/TokenService";
+import { on } from "../../services/eventBus";
 const list = ref([]);
 const loading = ref(false);
 const selectedCheck = ref(null);
@@ -123,6 +125,19 @@ const page = ref(0);
 const size = ref(10);
 const totalPages = ref(1);
 const currentFilter = ref("ALL");
+
+
+const role = ref("");
+const rolesLoaded = ref(false);
+
+const authState = tokenService();
+
+
+function loadUserRole() {
+
+  role.value = authState.role || "";  
+  rolesLoaded.value = true;
+}
 
 // Helpers
 const chipCls = (s) => ({ 'btn-outline-secondary': currentFilter.value !== s, 'btn-primary text-white': currentFilter.value === s });
@@ -205,7 +220,11 @@ async function deleteCheck() {
   }
 }
 
-onMounted(load);
+onMounted(() => {
+  loadUserRole();
+  load();
+  
+});
 </script>
 
 <style scoped>

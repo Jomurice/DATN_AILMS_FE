@@ -77,7 +77,7 @@
             <div class="dropdown" v-show="open === 'hethong'">
               <RouterLink to="/warehousesmenu">Kho</RouterLink>
               <RouterLink to="/admin/account">Nhân sự</RouterLink>
-              <RouterLink to="/suppliers">Nhà phân phối</RouterLink>
+              <RouterLink to="/suppliers">Nhà Cung Cấp</RouterLink>
               <RouterLink to="/customer">Khách hàng</RouterLink>
             </div>
           </div>
@@ -93,13 +93,13 @@
 import { ref, onMounted, onBeforeUnmount } from "vue";
 
 const mobileOpen = ref(false);
-const open = ref(null); // только один открытый раздел
+const open = ref(null); 
 
 const toggle = (key) => {
   open.value = open.value === key ? null : key;
 };
 
-// Закрытие при клике вне
+
 const topnavRef = ref(null);
 
 const handleClickOutside = (event) => {

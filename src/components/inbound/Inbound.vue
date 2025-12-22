@@ -88,8 +88,8 @@
                 Ngày tạo: {{ formatDate(selectedOrder.createdAt || selectedOrder.eta) }} • Trạng thái: {{ viStatus(selectedOrder.status) }}
               </small>
             </div>
-            <div class="d-flex gap-2">
-              <RouterLink class="btn btn-outline-primary btn-sm" to="/inbound/new">+ Tạo đơn mua</RouterLink>
+            <div  class="d-flex gap-2">
+              <RouterLink  v-if="rolesLoaded && role === 'ADMIN'" class="btn btn-outline-primary btn-sm" to="/inbound/new">+ Tạo đơn mua</RouterLink>
               <button class="btn btn-outline-secondary btn-sm" @click="selectedOrder = null">← Quay lại</button>
             </div>
           </div>
@@ -189,7 +189,7 @@
         <div v-else class="section-card">
           <div class="px-3 pt-3 pb-2 d-flex align-items-center justify-content-between">
             <h5 class="fw-bold mb-0">Chọn 1 phiếu mua (đơn hàng) để nhập</h5>
-            <RouterLink class="btn btn-outline-primary btn-sm" to="/inbound/new">+ Tạo đơn mua</RouterLink>
+            <RouterLink v-if="rolesLoaded && role === 'ADMIN'" class="btn btn-outline-primary btn-sm" to="/inbound/new">+ Tạo đơn mua</RouterLink>
           </div>
           <div class="p-3 text-muted">Hãy chọn phiếu từ danh sách bên trái.</div>
         </div>
@@ -417,7 +417,11 @@ async function handleQuickCameraScan(serialInput) {
     const msg = err.response?.data?.message;
     if (msg === "Serial already scanned or in warehouse") {
       toast.error("Serial tồn tại trong hệ thống", { duration: 4000 });
-    } else {
+    } else if (msg === "Serial not found") {
+      toast.error("Serial không tồn tại trong hệ thống", { duration: 4000 });
+    }
+    else {
+      console.error("Scan error", err);
       toast.error(msg || "Có lỗi xảy ra khi quét", { duration: 4000 });
     }
   } finally {
@@ -519,8 +523,23 @@ const download = async (id) => {
   }
 };
 
+
+const role = ref("");
+const rolesLoaded = ref(false);
+
+const authState = tokenService();
+
+
+function loadUserRole() {
+
+  role.value = authState.role || "";  
+  rolesLoaded.value = true;
+  console.log("User role:", role.value);
+}
+
 onMounted(async () => {
   await loadOrders();
+  loadUserRole();
 });
 </script>
 

@@ -24,8 +24,9 @@ api.interceptors.request.use(
   (config) => {
     const auth = tokenService();
     // Chỉ lấy token từ state, không await loadToken ở đây để tránh nghẽn
-    if (auth.token) {
-      config.headers.Authorization = `Bearer ${auth.token}`;
+    const token = auth.token || localStorage.getItem("accessToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
@@ -38,40 +39,20 @@ api.interceptors.response.use(
   async error => {
     const originalRequest = error.config;
     const auth = tokenService();
-
-    if (
-      error.response?.status === 401 &&
-      !originalRequest._retry
-    ) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({
-            resolve: (token) => {
-              originalRequest.headers.Authorization = `Bearer ${token}`;
-              resolve(api(originalRequest));
-            },
-            reject,
-          });
-        });
-      }
-
-      originalRequest._retry = true;
-      isRefreshing = true;
-
-      try {
+    if (error.response && error.response.status === 401 && !originalRequest._retry) {
+      try{
+      
         await auth.callRefreshToken();
         const newToken = auth.token;
-
-        processQueue(null, newToken);
+        if(!newToken){
+          return Promise.reject(error);
+        }
         originalRequest.headers.Authorization = `Bearer ${newToken}`;
 
-        return api(originalRequest); // 🔁 retry request cũ
-      } catch (err) {
-        processQueue(err, null);
+        return api(originalRequest);
+      }catch(err){
         auth.logout();
         return Promise.reject(err);
-      } finally {
-        isRefreshing = false;
       }
     }
 

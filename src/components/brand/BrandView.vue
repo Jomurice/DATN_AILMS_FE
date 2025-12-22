@@ -55,9 +55,9 @@
                   <button class="btn btn-icon btn-edit" @click="startEdit(brand)" title="Chỉnh sửa">
                     <i class="fa-solid fa-pen-to-square"></i>
                   </button>
-                  <button class="btn btn-icon btn-delete" @click="handleDelete(brand.id)" title="Xóa">
+                  <!-- <button class="btn btn-icon btn-delete" @click="handleDelete(brand.id)" title="Xóa">
                     <i class="fa-solid fa-trash-can"></i>
-                  </button>
+                  </button> -->
                 </div>
               </td>
             </tr>
