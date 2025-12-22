@@ -25,5 +25,7 @@ await auth.loadToken();
 
 app.component('Multiselect', Multiselect);
 app.component('Toaster', Toaster);
-
-app.mount('#app');
+auth.loadToken().finally(() => {
+    app.mount('#app');
+});
+// app.mount('#app');

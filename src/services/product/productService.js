@@ -44,5 +44,28 @@ export const productService = {
       String(p.name).toLowerCase().includes(s) ||
       String(p.sku).toLowerCase().includes(s)
     );
-  }
+  },
+
+  async searchProducts({
+    page = 0,
+    size = 10,
+    name = null,
+    categoryId = null,
+    brandId = null
+  }) {
+    const response = await api.get("/api/products/search-products", {
+      params: {
+        page,
+        size,
+        name,
+        categoryId,
+        brandId
+      }
+    });
+
+    return response?.data?.result;
+  },
+
+
+
 };

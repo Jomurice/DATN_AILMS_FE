@@ -159,6 +159,7 @@ async function loadData() {
     }
   } catch (error) {
     console.log("error", error);
+    toast.error('Lỗi tải dữ liệu sản phẩm.')
   } finally {
     isLoading.value = false;
   }
@@ -173,14 +174,22 @@ async function submitForm() {
   form.value.serialPrefix = form.value.sku;
   console.log(form.value);
   try {
-    if (isEdit.value) await productService.update(productId, { ...form.value })
-    else await productService.create({ ...form.value })
+    if (isEdit.value){ await productService.update(productId, { ...form.value }) }
+    else{ 
+      await productService.create({ ...form.value })
+    }
     toast.success('Lưu sản phẩm thành công !');
     router.push('/product')
   } catch (e) {
+    const msg = e.response?.data?.message;
+    if (msg === 'SKU already exists') {
+      
+      toast.error('Mã SKU đã tồn tại trong hệ thống.');
+    } else {
     error.value = 'Lưu thất bại.'
     console.log("error", e);
     toast.error(error.value);
+    }
   } finally {
     submitting.value = false
   }

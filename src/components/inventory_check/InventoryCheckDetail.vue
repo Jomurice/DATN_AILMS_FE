@@ -31,13 +31,13 @@
         <button class="btn btn-light border" @click="$router.push('/inventory-check')">Danh sách</button>
         
         <template v-if="check.status === 'IN_PROGRESS' || check.status === 'DRAFT'">
-            <button class="btn btn-success" @click="handleComplete">
+            <button v-if="rolesLoaded && (role === 'ADMIN' || role === 'LM')" class="btn btn-success" @click="handleComplete">
                 <i class="fa-solid fa-check me-1"></i> Hoàn tất
             </button>
         </template>
 
         <button 
-            v-if="check.status === 'PENDING_RECONCILIATION'" 
+            v-if="check.status === 'PENDING_RECONCILIATION' && rolesLoaded && (role === 'ADMIN' || role === 'LM')" 
             class="btn btn-dark" 
             @click="handleClose"
         >
@@ -182,6 +182,18 @@ import { toast } from "vue-sonner";
 
 const route = useRoute(); const router = useRouter(); const auth = tokenService();
 const checkId = route.params.id;
+
+const role = ref("");
+const rolesLoaded = ref(false);
+
+const authState = tokenService();
+
+
+function loadUserRole() {
+
+  role.value = authState.role || "";  
+  rolesLoaded.value = true;
+}
 
 // State
 const check = ref(null); const items = ref([]); 
@@ -403,7 +415,11 @@ async function handleClose() {
     } 
 }
 
-onMounted(() => { auth.loadToken(); loadData(); });
+onMounted(() => { 
+  auth.loadToken(); 
+  loadUserRole();
+  loadData(); 
+  });
 </script>
 
 <style scoped>
