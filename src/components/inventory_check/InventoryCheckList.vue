@@ -89,7 +89,7 @@
             </div>
 
             <div class="d-flex justify-content-end gap-2 mt-4">
-              <button v-if="selectedCheck.status === 'DRAFT'" class="btn btn-danger" @click="deleteCheck">
+              <button v-if="selectedCheck.status === 'DRAFT' && (role === 'ADMIN' || role === 'LM')" class="btn btn-danger" @click="deleteCheck">
                   <i class="fa-solid fa-trash me-1"></i> Xóa
               </button>
               
@@ -117,6 +117,7 @@ import { inventoryCheckService } from "../../services/inventoryCheckService";
 import { toast } from "vue-sonner";
 import { tokenService } from "../../services/TokenService";
 import { on } from "../../services/eventBus";
+
 const list = ref([]);
 const loading = ref(false);
 const selectedCheck = ref(null);

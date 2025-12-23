@@ -136,7 +136,7 @@ const routes = [
       {
         path: "category",
         name: "category",
-        meta: { title: "Loại sản phẩm", roles: ["ADMIN", "LM"] },
+        meta: { title: "Loại sản phẩm", roles: ["ADMIN", ] },
         component: Category,
       },
       {

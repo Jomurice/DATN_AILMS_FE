@@ -21,7 +21,7 @@ export const productDetailsService = {
     return response.data.result;
   },
 
- async getByWarehouse(warehouseId) {
+async getByWarehouse(warehouseId) {
     if (!warehouseId) return [];
     const response = await api.get(`/api/inventories/products/by-warehouse/${
       warehouseId}/instock`);

@@ -34,7 +34,7 @@
                         </div>
                         <div class="dropdown" v-show="open === 'hanghoa'">
                             <RouterLink to="/product">Hàng hóa</RouterLink>
-                            <RouterLink to="/category">Loại hàng</RouterLink>
+
                         </div>
                     </div>
 

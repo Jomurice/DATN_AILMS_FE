@@ -196,7 +196,7 @@ async function submitChangePassword() {
     changePasswordError.value = "Đổi mật khẩu thành công!";
     toast.success("Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
     localStorage.removeItem("accessToken");
-    router.push('/');
+    window.location.replace("/login")
     resetForm();
    isChangePassword.value = false;
 
