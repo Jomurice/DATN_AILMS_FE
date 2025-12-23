@@ -25,7 +25,6 @@ import Dashboard from "../components/dashboard/Dashboard.vue";
 import Inbound from "../components/inbound/Inbound.vue";
 import PurchaseOrderCreate from "../components/inbound/PurchaseOrderCreate.vue";
 import PurchaseOrderDetail from "../components/inbound/PurchaseOrderDetail.vue";
-import Outbound from "../components/outbound/Outbound.vue";
 import OutboundOrderCreate from "../components/outbound/OutboundOrderCreate.vue";
 import OutboundOrderDetail from "../components/outbound/OutboundOrderDetail.vue";
 import CustomerList from "../components/outbound/CustomerList.vue";
@@ -286,6 +285,8 @@ const router = createRouter({
 // =========================
 router.beforeEach(async (to, from, next) => {
   const authStore = tokenService();
+  const publicPages = ["/login", "/forgot-password"];
+
   
   // wating loading token and get role
   if (!authStore.token) {
@@ -296,7 +297,11 @@ router.beforeEach(async (to, from, next) => {
   const userRole = authStore.userRole;
 
   // Если пользователь не авторизован и пытается зайти на защищенный маршрут
-  if (to.path !== "/login" && !token) {
+   if (!token) {
+    if (publicPages.includes(to.path)) {
+      next(); 
+      return;
+    }
     next("/login");
     return;
   }

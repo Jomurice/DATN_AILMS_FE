@@ -51,7 +51,8 @@
                         <div class="dropdown" v-show="open === 'nhapxuat'">
 
                             <RouterLink to="/inbound">Nhập hàng</RouterLink>
-                            <RouterLink to="/outbound/new">Đơn xuất</RouterLink>
+                            <RouterLink to="/outbound">Xuất hàng</RouterLink>
+
 
                         </div>
                     </div>

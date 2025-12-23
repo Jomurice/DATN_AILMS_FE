@@ -13,8 +13,7 @@
         </div>
 
         <div class="d-flex gap-2">
-          <RouterLink class="btn btn-outline-primary btn-sm" to="/outbound/new">+ Tạo phiếu xuất</RouterLink>
-          <button class="btn btn-outline-secondary btn-sm" @click="selectedOrder = null">← Quay lại</button>
+          <RouterLink v-if="role === 'ADMIN'" class="btn btn-outline-primary btn-sm" to="/outbound/new">+ Tạo phiếu xuất</RouterLink>
         </div>
       </div>
 
@@ -51,7 +50,7 @@
     <div v-else class="section-card">
       <div class="px-3 pt-3 pb-2 d-flex align-items-center justify-content-between">
         <h5 class="fw-bold mb-0">Chọn 1 phiếu xuất để thực hiện</h5>
-        <RouterLink class="btn btn-outline-primary btn-sm" to="/outbound/new">+ Tạo phiếu xuất</RouterLink>
+        <RouterLink v-if="role === 'ADMIN'" class="btn btn-outline-primary btn-sm" to="/outbound/new">+ Tạo phiếu xuất</RouterLink>
       </div>
       <div class="p-3 text-muted">Hãy chọn phiếu từ danh sách bên trái.</div>
     </div>
@@ -68,6 +67,7 @@ const props = defineProps({
   selectedOrder: Object,
   customer: Object,
   qrScannerVisible: Boolean,
+  role: String,
 })
 
 const clip = (s, n = 20) => s && s.length > n ? (s.slice(0, n) + '...') : (s || '');

@@ -2,25 +2,25 @@
   <div class="pbox">
     <OutboundAside class="aside" :orders="orders" :loading="loading" :payload="payloadSearch" :show-side="showSide"
       :visible-pages="orderPagination.visiblePages.value" :status="payloadSearch.status"
-      :total-pages="orderPagination.totalPages.value" @show-side="showSideModal" @search="handleSearch" @change-status="handleChangeStatus"
-      @select-order="openOrder" @change-page="handleOrderPageChange" @clear-input="clearInputSearch" />
+      :total-pages="orderPagination.totalPages.value" @show-side="showSideModal" @search="handleSearch"
+      @change-status="handleChangeStatus" @select-order="openOrder" @change-page="handleOrderPageChange"
+      @clear-input="clearInputSearch" />
 
-    <OutboundMain :order="selectedOrder" :customer="customer" :qrScannerVisible="qrScannerVisible" :role="role" :loading-order="loadingOrder"
-      :modal-serials="modalSerials" :modal-sku="modalSku" :serial="quickSerial" :payload="payloadSerial" :loading="loadingModalSku"
-      :visible-pages="serialPagination.visiblePages.value" @scan="handleQuickScan" @scanQr="handleScanQr"
-      @change-page="handleSerialPageChange" @stopCamera="stopQrScanner" @export="confirmExport"
-      @cancel="openCancelModal" @confirm="openNoteCancelModal" @reject="rejectCancel" @open-serials-modal="openSerialsModal"
-      @close="closeModalSerial" />
+    <OutboundMain :order="selectedOrder" :customer="customer" :qrScannerVisible="qrScannerVisible" :role="role"
+      :loading-order="loadingOrder" :modal-serials="modalSerials" :modal-sku="modalSku" :serial="quickSerial"
+      :payload="payloadSerial" :loading="loadingModalSku" :visible-pages="serialPagination.visiblePages.value"
+      @scan="handleQuickScan" @scanQr="handleScanQr" @change-page="handleSerialPageChange" @stopCamera="stopQrScanner"
+      @export="confirmExport" @cancel="openCancelModal" @confirm="openNoteCancelModal" @reject="rejectCancel"
+      @open-serials-modal="openSerialsModal" @close="closeModalSerial" />
 
     <ConfirmModal modal-id="confirmCancel" :show="modalState === 'CONFIRM_CANCEL'" title="Xác nhận hủy phiếu xuất"
       message="Hành động này sẽ hoàn trả serial về kho. Bạn có chắc chắn muốn hủy phiếu này không?"
-      confirm-text="Xác nhận hủy"  @close-modal="closeCancelModal" @confirm="() => {cancelModalVisible = true; closeCancelModal();}"
-      @cancel="closeCancelModal" />
+      confirm-text="Xác nhận hủy" @close-modal="closeCancelModal"
+      @confirm="() => { cancelModalVisible = true; closeCancelModal(); }" @cancel="closeCancelModal" />
 
     <ConfirmModal modal-id="noteCancel" :show="modalState === 'NOTE_CANCEL'" title="Lý do hủy"
-      :message=  "selectedOrder?.note"
-      confirm-text="Xác nhận hủy" cancel-text="Không hủy" @close-modal="closeCancelModal" @confirm="() => {confirmCancel(); closeCancelModal()}"
-      @cancel="() => {rejectCancel(), closeCancelModal()}" />
+      :message="selectedOrder?.note" confirm-text="Xác nhận hủy" cancel-text="Không hủy" @close-modal="closeCancelModal"
+      @confirm="() => { confirmCancel(); closeCancelModal() }" @cancel="() => { rejectCancel(), closeCancelModal() }" />
 
 
     <!-- modal cancel outbound -->
@@ -90,6 +90,7 @@ const cancelModalVisible = ref(false);
 const modalState = ref(null)
 const note = ref('');
 const showSide = ref(false)
+const scanCooldown = ref(false);
 
 // loading
 const loading = ref(false);
@@ -130,15 +131,15 @@ const closeModalSerial = () => {
   modalSerials.value = [];
 };
 
-const showSideModal = () =>{
-  if(showSide.value === true) {
-    showSide.value = false ;
+const showSideModal = () => {
+  if (showSide.value === true) {
+    showSide.value = false;
     return;
   }
 
   showSide.value = true;
 
-  
+
 }
 
 function clearInputSearch() {
@@ -206,7 +207,7 @@ async function openOrder(o) {
     showSide.value = false;
   } catch {
     toast.error('Không tải được chi tiết phiếu');
-  }finally{
+  } finally {
     loadingOrder.value = false;
   }
 };
@@ -226,7 +227,7 @@ async function openSerialsModal(sku) {
     modalSerials.value = await outboundOrderService.getSerials(selectedOrder.value.id, payloadSerial.value);
   } catch {
     toast.error('Không tải được chi tiết đơn hàng');
-  }finally{
+  } finally {
     loadingModalSku.value = false
   }
 };
@@ -294,7 +295,7 @@ async function rejectCancel() {
   } catch {
     toast.error('Từ chối hủy đơn thất bại');
   }
-  
+
 };
 
 async function handleQuickScan(serialInput) {
@@ -302,6 +303,10 @@ async function handleQuickScan(serialInput) {
   if (typeof serialInput === 'string' && serialInput.trim()) {
     quickSerial.value = serialInput;
   }
+
+  // if (isScanning.value || scanCooldown.value) return;
+
+  // isScanning.value = true;
 
   const serial = quickSerial.value.trim() || '';
   if (!serial) {
@@ -356,6 +361,7 @@ async function handleQuickScan(serialInput) {
 };
 
 
+
 function handleScanQr() {
   if (!selectedOrder.value) return toast.error("Chọn phiếu trước khi quét QR");
   qrScannerVisible.value = true;
@@ -368,7 +374,7 @@ function handleScanQr() {
     },
     (decodedText) => {
       handleQuickScan(decodedText);
-      stopQrScanner();
+      // stopQrScanner();
     },
     (errorMessage) => {
       console.log("error scan: ", errorMessage)
@@ -384,13 +390,19 @@ function stopQrScanner() {
     qrScanner.value.stop().then(() => {
       qrScanner.value.clear();
       qrScannerVisible.value = false;
+      isScanning.value = false;
+      scanCooldown.value = false;
     }).catch(err => {
+      console.error("QR Scanner stop error", err);
       qrScannerVisible.value = false;
+      toast.error("Lỗi khi dừng camera");
     });
   } else {
     qrScannerVisible.value = false;
+    isScanning.value = false;
+    scanCooldown.value = false;
   }
-};
+}
 
 
 async function confirmExport() {
@@ -447,7 +459,7 @@ onMounted(async () => {
   min-height: calc(100vh - 150px);
 }
 
-.pbox > *:last-child {
+.pbox>*:last-child {
   flex: 1;
   min-width: 0;
 }
@@ -485,7 +497,7 @@ onMounted(async () => {
   }
 
 
-    .modal-overlay .card {
+  .modal-overlay .card {
     width: 95% !important;
     padding: 16px !important;
   }

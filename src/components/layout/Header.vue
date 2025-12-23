@@ -1,8 +1,12 @@
 <template>
-  <header class="app-header d-flex align-items-center justify-content-end px-3">
-    <div class="d-flex align-items-center gap-3">
+  <header class="app-header d-flex align-items-center justify-content-between px-3 w-100">
+    <div class="d-flex align-items-center justify-content-between gap-3 w-100">
+      <div>
+        <img src="../../assets/Gemini_Generated_Image_9xf1a19xf1a19xf1.png" alt="" style="height: 55px; width: auto;" />
+      </div>
+     <div class="d-flex align-items-center gap-3">
 
-      <!-- Notifications -->
+       <!-- Notifications -->
       <div class="notion">
         <i class="fa-solid fa-bell"></i>
       </div>
@@ -86,6 +90,7 @@
           </button>
         </div>
       </div>
+     </div>
 
     </div>
   </header>

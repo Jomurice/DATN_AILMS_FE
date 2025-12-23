@@ -20,7 +20,7 @@
           <button class="btn btn-success" :disabled="!isAllScanned || submitting" @click="$emit('export')">
             {{ submitting ? 'Đang xuất hàng...' : 'Xuất hàng' }}
           </button>
-          <button class="btn btn-danger ms-2" :disabled="!isCancel" @click="$emit('cancel')">
+          <button v-if="role === 'ADMIN' || role === 'LM' " class="btn btn-danger ms-2" :disabled="!isCancel" @click="$emit('cancel')">
             Hủy đơn
           </button>
         </nav>
